@@ -12,8 +12,8 @@
            [java.util Base64])))
 
 (def card-id-regex
-  "3 alphanumeric characters followed by 2-3 digits separated by a hyphen"
-  #"[A-Z|0-9]{3}\-[0-9]{2,3}")
+  "1-4 alphanumeric characters followed by 2-3 digits separated by a hyphen"
+  #"[A-Z|0-9]{1,4}\-[0-9]{2,3}")
 
 (s/def :card/id
   (s/and string? #(re-matches card-id-regex %)))
@@ -21,16 +21,16 @@
 (s/def :card/count
   (s/and number? #(<= 1 % 4)))
 
-(s/def :card/alternates
-  (s/and number? #(<= 0 % 4)))
+(s/def :card/parallel-id
+  (s/and number? #(<= 0 % 7)))
 
 (s/def ::card
   (s/keys :req [:card/id :card/count]
-          :opt [:card/alternates]))
+          :opt [:card/parallel-id]))
 
 (s/def ::deck-is-unique?
   (fn [cards]
-    (let [card-ids (map :card/id cards)]
+    (let [card-ids (map (juxt :card/id :card/parallel-id) cards)]
       (= (count card-ids)
          (count (set card-ids))))))
 
@@ -41,14 +41,29 @@
           0
           cards))
 
+(defn card-id-count-limit
+  [cards]
+  (->> cards
+       (group-by (fn [{:card/keys [id]}] id))
+       (reduce (fn [accl [id cards]]
+                 (conj accl [id (reduce (fn [accl {:card/keys [count]}]
+                                          (+ accl count))
+                                        0
+                                        cards)]))
+               {})
+       (every? (fn [[id card-count]]
+                 (<= card-count 4)))))
+
 (s/def :deck/digi-eggs
   (s/and (s/coll-of ::card)
          ::deck-is-unique?
+         card-id-count-limit
          (fn [cards] (<= 0 (card-count cards) 5))))
 
 (s/def :deck/deck
   (s/and (s/coll-of ::card)
          ::deck-is-unique?
+         card-id-count-limit
          (fn [cards] (= (card-count cards) 50))))
 
 (s/def :deck/name
@@ -59,7 +74,7 @@
 
 (defn get-bytes
   [^String s]
-  #?(:clj (.getBytes s)
+  #?(:clj (.getBytes s "UTF8")
      :cljs (crypt/stringToUtf8ByteArray s)))
 
 (defn- bits-with-carry
@@ -106,17 +121,24 @@
                                          (count (second id-split))])))
                           (into [])))
         deck-name (string/trim (apply str (take 63 name)))]
-    (append-to-buffer! byte-buffer version) ; Codec version & digi-egg set count
-    (append-to-buffer! byte-buffer 0) ; Dummy checksum byte
+    (append-to-buffer! byte-buffer version) ; version & digi-egg card group #
+    (append-to-buffer! byte-buffer 0) ; Placeholder checksum byte
     (append-to-buffer! byte-buffer (count deck-name)) ; Deck name length
     ;; Store decks
     (doseq [d [(group-deck digi-eggs)
                (group-deck deck)]]
       (loop [card-set-iter 0]
         (when (< card-set-iter (count d))
-          (let [[[card-set pad] cards] (nth d card-set-iter)]
-            ;; expect all card sets to be 3 characters/bytes long
-            (doseq [c (map byte (get-bytes card-set))]
+          (let [[[card-set pad] cards] (nth d card-set-iter)
+                card-set-count (reduce (fn [accl {:card/keys [count]}]
+                                         (+ accl count))
+                                       0
+                                       cards)]
+            ;; Use 4 characters/bytes to store card sets.
+            ;; At time of writing, 3 characters is max in released cards, but
+            ;; we may see ST10 in the future
+            (doseq [c (map byte
+                           (get-bytes (pprint/cl-format nil "~4a" card-set)))]
               (append-to-buffer! byte-buffer c))
             ;; 2 bits for card number zero padding
             ;; (zero padding stored as 0 indexed)
@@ -126,8 +148,8 @@
             (loop [prev-card-id 0
                    card-iter 0]
               (when (< card-iter (count cards))
-                (let [{:card/keys [id alternates count]
-                       :or {alternates 0}} (nth cards card-iter)
+                (let [{:card/keys [id parallel-id count]
+                       :or {parallel-id 0}} (nth cards card-iter)
                       id (-> id
                              (string/split #"-")
                              second
@@ -135,11 +157,11 @@
                                 :cljs (js/parseInt)))
                       id-offset (- id prev-card-id)]
                   ;; 2 bits for card count (1-4)
-                  ;; 3 bits for alternates count (0-4)
+                  ;; 3 bits for parallel id (0-7) - BT5-086 has 4 at the moment
                   ;; 3 bits for start of card id offset
                   (append-to-buffer! byte-buffer
                                      (bit-or (bit-shift-left (dec count) 6)
-                                             (bit-shift-left alternates 3)
+                                             (bit-shift-left parallel-id 3)
                                              (bits-with-carry id-offset 3)))
                   ;; rest of card id offset
                   (append-rest-to-buffer! byte-buffer id-offset 2)
@@ -166,19 +188,18 @@
 
 (defn encode
   [deck]
-  (-> deck
-      encode-bytes
-      encode-bytes->string))
+  (if (s/valid? ::deck deck)
+    (-> deck
+        encode-bytes
+        encode-bytes->string)
+    (throw (#?(:clj Exception. :cljs js/Error.)
+            (->> ["Deck provided for encoding is invalid!"
+                  ""
+                  (s/explain-str ::deck deck)]
+                 (string/join \newline))))))
 
 (defn -main
   [& [args]]
-  (let [deck (or args #?(:clj (edn/read-string (slurp *in*))))]
-    (if (s/valid? ::deck deck)
-      (-> deck
-          encode
-          println)
-      (do (println (->> ["Deck provided for encoding is invalid!"
-                         ""
-                         (s/explain-str ::deck deck)]
-                        (string/join \newline)))
-          #?(:clj (System/exit 1))))))
+  (-> (or args #?(:clj (edn/read-string (slurp *in*))))
+      encode
+      println))

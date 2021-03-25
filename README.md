@@ -1,3 +1,4 @@
+
 # Digimon Card Game (2020) Deck Codec
 
 This repository will assist in the encoding and decoding of [Digimon Card Game (2020)](https://world.digimoncard.com) deck codes. With a deck codec the community can share decks between platforms and services that implement the codec making decks portable and shareable.
@@ -7,8 +8,8 @@ The encoder enforces some restrictions that also match the current game rules of
 - 0-5 `:deck/digi-eggs` (after summing the `:card/count` values of each card)
 - 50 total `:deck/deck` cards (after summing the `:card/count` values of each card)
 - 1-4 `:card/count` for each unique `:card/id`
-- 0-4 `:card/alternates` for each unique `:card/id`
-- `:card/id`'s are expected to have 3 alphanumeric characters followed by a 2-3 digit number separated by a hypen (if this pattern changes in the future a new deck codec version will be needed)
+- 0-7 `:card/parallel-id` (this id is the canonical parallel number in the image filename on digimoncard.com)
+- `:card/id`'s are expected to have a maximum of 4 alphanumeric characters followed by a 2-3 digit number separated by a hypen (if this pattern changes in the future a new deck codec version will be needed)
 - 63 character maximum `:deck/name`
 
 
@@ -33,72 +34,152 @@ Options:
 ### Encode
 
 ```
-$ echo  "{:deck/digi-eggs [{:card/id \"ST3-01\", :card/count 4}], \
-          :deck/deck  [{:card/id \"ST3-02\", :card/count 4} \
-                       {:card/id \"ST3-03\", :card/count 4} \
-                       {:card/id \"ST3-04\", :card/count 4} \
-                       {:card/id \"ST3-05\", :card/count 2} \
-                       {:card/id \"ST3-06\", :card/count 4} \
-                       {:card/id \"ST3-07\", :card/count 4} \
-                       {:card/id \"ST3-08\", :card/count 4} \
-                       {:card/id \"ST3-09\", :card/count 4} \
-                       {:card/id \"ST3-10\", :card/count 2} \
-                       {:card/id \"ST3-11\", :card/count 2} \
-                       {:card/id \"ST3-12\", :card/count 4} \
-                       {:card/id \"ST3-13\", :card/count 4} \
-                       {:card/id \"ST3-14\", :card/count 2} \
-                       {:card/id \"ST3-15\", :card/count 4} \
-                       {:card/id \"ST3-16\", :card/count 2}], \
-          :deck/name \"Starter Deck, Heaven's Yellow [ST-3]\"}" | dcg --encode
+$ echo  "{:deck/digi-eggs [{:card/id \"BT2-001\" :card/count 4}
+                  {:card/id \"ST1-01\" :card/count 1}],
+ :deck/deck  [{:card/id \"BT3-019\" :card/count 4}
+              {:card/id \"BT3-016\" :card/count 3}
+              {:card/id \"BT3-072\" :card/count 3}
+              {:card/id \"BT3-018\" :card/count 2}
+              {:card/id \"BT3-013\" :card/count 4}
+              {:card/id \"BT2-016\" :card/count 4}
+              {:card/id \"BT1-020\" :card/count 2}
+              {:card/id \"ST1-07\" :card/count 1}
+              {:card/id \"ST1-07\" :card/parallel-id 1 :card/count 3}
+              {:card/id \"ST1-06\" :card/count 3}
+              {:card/id \"BT1-019\" :card/count 4}
+              {:card/id \"BT3-008\" :card/count 4}
+              {:card/id \"ST1-03\" :card/count 4}
+              {:card/id \"ST1-02\" :card/count 4}
+              {:card/id \"BT1-009\" :card/count 1}
+              {:card/id \"BT1-085\" :card/parallel-id 1 :card/count 2}
+              {:card/id \"ST1-16\" :card/parallel-id 1 :card/count 2}],
+ :deck/name \"Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)\"}" | dcg --encode
 
-DCGAdUkU1QzQcFTVDNPwsHBQcHBwcFBQcHBQcFBU3RhcnRlciBEZWNrLCBIZWF2ZW4ncyBZZWxsb3cgW1NULTNd
+DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp
 ```
 
 
 ### Decode
 
 ```
-$ dcg --decode DCGAdUkU1QzQcFTVDNPwsHBQcHBwcFBQcHBQcFBU3RhcnRlciBEZWNrLCBIZWF2ZW4ncyBZZWxsb3cgW1NULTNd
+$ dcg --decode DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp
 
-{:deck/digi-eggs [{:card/id "ST3-01", :card/count 4}],
- :deck/deck  [{:card/id "ST3-02", :card/count 4}
-              {:card/id "ST3-03", :card/count 4}
-              {:card/id "ST3-04", :card/count 4}
-              {:card/id "ST3-05", :card/count 2}
-              {:card/id "ST3-06", :card/count 4}
-              {:card/id "ST3-07", :card/count 4}
-              {:card/id "ST3-08", :card/count 4}
-              {:card/id "ST3-09", :card/count 4}
-              {:card/id "ST3-10", :card/count 2}
-              {:card/id "ST3-11", :card/count 2}
-              {:card/id "ST3-12", :card/count 4}
-              {:card/id "ST3-13", :card/count 4}
-              {:card/id "ST3-14", :card/count 2}
-              {:card/id "ST3-15", :card/count 4}
-              {:card/id "ST3-16", :card/count 2}],
- :deck/name "Starter Deck, Heaven's Yellow [ST-3]"}
+{:deck/digi-eggs [{:card/id "BT2-001" :card/count 4}
+                  {:card/id "ST1-01" :card/count 1}],
+ :deck/deck  [{:card/id "BT3-019" :card/count 4}
+              {:card/id "BT3-016" :card/count 3}
+              {:card/id "BT3-072" :card/count 3}
+              {:card/id "BT3-018" :card/count 2}
+              {:card/id "BT3-013" :card/count 4}
+              {:card/id "BT2-016" :card/count 4}
+              {:card/id "BT1-020" :card/count 2}
+              {:card/id "ST1-07" :card/count 1}
+              {:card/id "ST1-07" :card/parallel-id 1 :card/count 3}
+              {:card/id "ST1-06" :card/count 3}
+              {:card/id "BT1-019" :card/count 4}
+              {:card/id "BT3-008" :card/count 4}
+              {:card/id "ST1-03" :card/count 4}
+              {:card/id "ST1-02" :card/count 4}
+              {:card/id "BT1-009" :card/count 1}
+              {:card/id "BT1-085" :card/parallel-id 1 :card/count 2}
+              {:card/id "ST1-16" :card/parallel-id 1 :card/count 2}],
+ :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"}
 ```
 
 
 ## Deck Code Examples
 
 **Starter Deck, Gaia Red [ST-1]**
-`DCGAdEdU1QxQcFTVDFPwsHBwcFBwcFBQcHBwUFBU3RhcnRlciBEZWNrLCBHYWlhIFJlZCBbU1QtMV0_`
+`DCGAREdU1QxIEHBU1QxIE-CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ__`
 
 **Starter Deck, Cocytus Blue [ST-2]**
-`DCGAdMhU1QyQcFTVDJPwsHBwUHBwcFBQcHBQcFBU3RhcnRlciBEZWNrLCBDb2N5dHVzIEJsdWUgW1NULTJd`
+`DCGARMhU1QyIEHBU1QyIE-CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0_`
 
 **Starter Deck, Heaven's Yellow [ST-3]**
-`DCGAdUkU1QzQcFTVDNPwsHBQcHBwcFBQcHBQcFBU3RhcnRlciBEZWNrLCBIZWF2ZW4ncyBZZWxsb3cgW1NULTNd`
+`DCGARUkU1QzIEHBU1QzIE-CwcFBwcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIEhlYXZlbidzIFllbGxvdyBbU1QtM10_`
 
 **Starter Deck, Giga Green [ST-4]**
-`DCGAdcfU1Q0QcFTVDRPwsHBwcHBQcHBQUFBwcFBU3RhcnRlciBEZWNrLCBHaWdhIEdyZWVuIFtTVC00XQ__`
+`DCGARcfU1Q0IEHBU1Q0IE-CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIEdpZ2EgR3JlZW4gW1NULTRd`
 
 **Starter Deck, Machine Black [ST-5]**
-`DCGAdkiU1Q1QcFTVDVPwsHBwcHBQcHBQUFBwcFBU3RhcnRlciBEZWNrLCBNYWNoaW5lIEJsYWNrIFtTVC01XQ__`
+`DCGARkiU1Q1IEHBU1Q1IE-CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIE1hY2hpbmUgQmxhY2sgW1NULTVd`
 
 **Starter Deck, Venomous Violet [ST-6]**
-`DCGAdskU1Q2QcFTVDZPwsHBwcHBQcHBQUFBwcFBU3RhcnRlciBEZWNrLCBWZW5vbW91cyBWaW9sZXQgW1NULTZd`
+`DCGARskU1Q2IEHBU1Q2IE-CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIFZlbm9tb3VzIFZpb2xldCBbU1QtNl0_`
+
+
+## Encoded Binary Structure
+
+The encoded binary structure of **Starter Deck, Gaia Red [ST-1]** is used here as an example. Both the `:deck/digi-eggs` and `:deck/deck` collections are sorted by `:card/id` before encoding begins.
+
+```
+{:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
+ :deck/deck [{:card/id "ST1-02", :card/count 4}
+             {:card/id "ST1-03", :card/count 4}
+             {:card/id "ST1-04", :card/count 4}
+             {:card/id "ST1-05", :card/count 4}
+             {:card/id "ST1-06", :card/count 4}
+             {:card/id "ST1-07", :card/count 2}
+             {:card/id "ST1-08", :card/count 4}
+             {:card/id "ST1-09", :card/count 4}
+             {:card/id "ST1-10", :card/count 2}
+             {:card/id "ST1-11", :card/count 2}
+             {:card/id "ST1-12", :card/count 4}
+             {:card/id "ST1-13", :card/count 4}
+             {:card/id "ST1-14", :card/count 4}
+             {:card/id "ST1-15", :card/count 2}
+             {:card/id "ST1-16", :card/count 2}],
+ :deck/name "Starter Deck, Gaia Red [ST-1]"}
+ ```
+
+### Header (First 3 bytes)
+
+**1st byte**: `00000001`
+- Version (4 bits) and Digi-Egg card group count (4 bits)
+  - Version: `0000`
+  - Digi-Egg card group count: `0001`
+
+**2nd byte**: `00010001`
+- Checksum
+  - The checksum is truncated as the last byte of the sum of all cards
+  - This can't be computed until after the deck contents have been encoded
+
+**3rd byte**: `00011101`
+- Deck name string length
+  - in this case "Starter Deck, Gaia Red [ST-1]" is 29 characters long
+
+### Decks
+
+#### Card Set Header
+
+**Next 3 bytes (4,5,6,7)**: `01010011 01010100 00110001 00100000`
+- The beginning of the deck storage. If the Digi-Egg card group count is 0 then this starts the main deck storage
+- 4 ASCII characters which is the card set name that the cards which follow belong to, in this case `"ST1 "` with a space character that is trimmed by the decoder
+
+**8th byte**: `01000001`
+- Card number zero padding (2 bits) stored as zero-based and the count of the cards in the card group (6 bits)
+  - Card zero padding: `01`
+  - Card group count: `000001`
+
+#### Cards Within Set
+
+This is a loop that continues until all the cards within the card set have been written. After which either a new card set is started or the end of the deck has been encoded.
+
+**9th byte**: `11000001`
+- Card count (2 bits zero-based counting): `11`
+- Parallel ID (3 bits) for the card. If the card is the original and not an alternate art the value is zero. Otherwise the canonical number is the one used in the image filename. [BT5-086_P3.png](https://digimoncard.com/images/cardlist/card/BT5-086_P3.png) has a parallel ID of 3
+- Card number offset (remaining 3 bits of the first byte)
+  - The Digi-Egg card in this example belongs to the "ST1" card set and has the number "01"
+  - An offset of the number is stored which is equal to the current card number being stored (1 in this example) subtracted by the previous card number stored in the card set (starting at 0) where this is the first card of the set
+  -  If the number cannot be contained in the remaining 3 bits it is continue to the next byte using the first bit as a carry bit. If the carry bit is 0 that means the number is concluded in that byte. If the carry bit is 1 that means the number spans to the next byte using the remaining 7 bits for the number)
+
+### Deck Name
+
+Before the deck string is written, the checksum can now be calculated and the last byte of the checksum stored at the 2nd byte location.
+
+After the deck contents have been stored the deck name (truncated to 63 characters) is stored as UTF-8 bytes to complete the byte buffer.
+
+Lastly, the entire byte buffer is converted to Base64 and prefixed with `DCG` at the beginning of the string to indicate it is a Digimon Card Game deck code.
 
 
 ## License

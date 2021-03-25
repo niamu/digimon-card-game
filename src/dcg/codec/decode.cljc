@@ -51,7 +51,7 @@
     (swap! byte-idx inc)
     [ ;; 2 bits for card count (1-4)
      (inc (bit-shift-right header 6))
-     ;; 3 bits for card alternate count (0-4)
+     ;; 3 bits for card parallel-id (0-7)
      (-> header
          (bit-shift-right 3)
          (bit-and 0x07))
@@ -90,13 +90,14 @@
                    (if (condp = deck-type
                          :digi-egg (< card-set-idx digi-egg-set-count)
                          (< @byte-idx total-card-bytes))
-                     (let [;; card set is 3 bytes/characters long
+                     (let [;; card set is 4 characters/bytes
                            card-set (-> (drop @byte-idx deck-bytes)
                                         (as-> deck-bytes
-                                            (take 3 deck-bytes))
-                                        byte-buffer->string)
-                           _ (swap! byte-idx #(+ % 3))
-                           ;; card set count is 1 byte long
+                                            (take 4 deck-bytes))
+                                        byte-buffer->string
+                                        string/trim)
+                           _ (swap! byte-idx #(+ % 4))
+                           ;; card set zero padding and count is 1 byte long
                            card-set-pad-and-count (nth deck-bytes @byte-idx)
                            pad (-> card-set-pad-and-count
                                    (bit-shift-right 6)
@@ -108,7 +109,7 @@
                                           card-idx 0
                                           prev-card-base 0]
                                      (if (< card-idx card-set-count)
-                                       (let [[card-count card-alternates id]
+                                       (let [[card-count parallel-id id]
                                              (apply read-serialized-card
                                                     [deck-bytes
                                                      byte-idx
@@ -122,14 +123,14 @@
                                                                         card-set
                                                                         id)
                                                       :card/count card-count}
-                                               (not (zero? card-alternates))
-                                               (assoc :card/alternates
-                                                      card-alternates))]
+                                               (not (zero? parallel-id))
+                                               (assoc :card/parallel-id
+                                                      parallel-id))]
                                          (recur (conj cards card)
                                                 (inc card-idx)
                                                 id))
                                        cards))
-                                   concat
+                                   (concat deck)
                                    (into []))
                               (inc card-set-idx)))
                      deck))))
@@ -141,8 +142,7 @@
                   (-> (->> (drop (- (count deck-bytes) string-length)
                                  deck-bytes)
                            (take string-length))
-                      #?(:clj (-> byte-array (String. "UTF8"))
-                         :cljs (-> clj->js crypt/utf8ByteArrayToString)))
+                      byte-buffer->string)
                   "")}))
 
 (defn- decode-deck-string
