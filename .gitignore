@@ -1,7 +1,12 @@
 .cpcache
 .nrepl-port
 .dir-locals.el
+.rebel_readline_history
+.cljs_node_repl/
 target/
 .DS_Store
 cljs-test-runner-out/
-resources/
+resources/digimoncard.com
+resources/world.digimoncard.com
+resources/en
+resources/ja

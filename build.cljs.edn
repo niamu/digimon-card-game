@@ -1,0 +1,6 @@
+{:main                 dcg.json
+ :output-to            "resources/public/js/dcg.js"
+ :optimizations        :advanced
+ :pretty-print         false
+ :parallel-build       true
+ :source-map-timestamp true}

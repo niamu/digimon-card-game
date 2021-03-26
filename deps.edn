@@ -12,6 +12,15 @@
            :dcg/encode {:main-opts ["-m" "dcg.codec.encode"]}
            :dcg/decode {:main-opts ["-m" "dcg.codec.decode"]}
 
+           :figwheel
+           {:extra-paths ["dev" "resources"]
+            :extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.12"}
+                         com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
+            :main-opts ["-m" "figwheel.main" "--build" "figwheel" "--repl"]}
+           :cljs
+           {:extra-paths ["dev"]
+            :main-opts ["-m" "cljs.main" "-co" "build.cljs.edn" "-c"]}
+
            :depstar
            {:extra-deps {seancorfield/depstar {:mvn/version "0.1.5"}}}
 

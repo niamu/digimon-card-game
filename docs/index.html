@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Digimon Card Game (2020): Deck Codec</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="js/dcg.js" type="text/javascript"></script>
+  </head>
+  <body>
+    <div class="wrapper">
+      <h1>
+        <a href="https://world.digimoncard.com">Digimon Card Game (2020)</a>
+      </h1>
+      <h2>Deck Codec</h2>
+      <h3>Decode</h3>
+      <p>Decode a deck code string into a JSON deck object.</p>
+      <details>
+        <summary>Example</summary>
+        <pre><code>DCGAREdU1QxIEHBU1QxIE-CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ__</code></pre>
+      </details>
+      <form id="decode_form">
+        <input type="text" size="100" />
+        <button>Decode Deck</button>
+      </form>
+      <details id="decode_output">
+        <summary>Output</summary>
+        <pre>
+          <code></code>
+        </pre>
+      </details>
+      <h3>Encode</h3>
+      <p>Encode a JSON deck object into a deck code string.</p>
+      <details>
+        <summary>Example</summary>
+        <pre><code>
+{&quot;deck/digi-eggs&quot;: [{&quot;card/id&quot;: &quot;ST1-01&quot;, &quot;card/count&quot;: 4}],
+ &quot;deck/deck&quot;: [{&quot;card/id&quot;: &quot;ST1-02&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-03&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-04&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-05&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-06&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-07&quot;, &quot;card/count&quot;: 2},
+               {&quot;card/id&quot;: &quot;ST1-08&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-09&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-10&quot;, &quot;card/count&quot;: 2},
+               {&quot;card/id&quot;: &quot;ST1-11&quot;, &quot;card/count&quot;: 2},
+               {&quot;card/id&quot;: &quot;ST1-12&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-13&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-14&quot;, &quot;card/count&quot;: 4},
+               {&quot;card/id&quot;: &quot;ST1-15&quot;, &quot;card/count&quot;: 2},
+               {&quot;card/id&quot;: &quot;ST1-16&quot;, &quot;card/count&quot;: 2}],
+ &quot;deck/name&quot;: &quot;Starter Deck, Gaia Red [ST-1]&quot;}</code></pre>
+      </details>
+      <form id="encode_form">
+        <textarea rows="4" cols="100"></textarea>
+        <button>Encode Deck</button>
+      </form>
+      <details id="encode_output">
+        <summary>Output</summary>
+        <pre>
+          <code></code>
+        </pre>
+      </details>
+      <script>
+      decode_button = document.querySelector("form#decode_form button");
+      decode_button.onclick = function(e) {
+        e.preventDefault();
+        try {
+          input = document.querySelector("form#decode_form input[type=text]");
+          document.querySelector("details#decode_output code").innerText = "\r\n" + dcg.json.decode(input.value);
+          document.querySelector("details#decode_output").open = true;
+        } catch (e) {
+          alert(e);
+        }
+      }
+
+      encode_button = document.querySelector("form#encode_form button");
+      encode_button.onclick = function(e) {
+        e.preventDefault();
+        try {
+          input = document.querySelector("form#encode_form textarea");
+          document.querySelector("details#encode_output code").innerText = "\r\n" + dcg.json.encode(input.value);
+          document.querySelector("details#encode_output").open = true;
+        } catch (e) {
+          alert(e);
+        }
+      }
+      </script>
+    </div>
+    <footer>
+      <div class="wrapper">
+        &copy;2021 <a href="http://brendonwalsh.me">Brendon Walsh</a>
+      </div>
+    </footer>
+  </body>
+</html>

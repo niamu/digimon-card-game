@@ -15,49 +15,55 @@
      :cljs (-> b clj->js crypt/utf8ByteArrayToString)))
 
 (defn- continue?
-  [chunk num-bits]
-  (not= 0 (bit-and chunk (bit-shift-left 1 num-bits))))
+  [current-byte bits]
+  (not (zero? (bit-and current-byte (bit-shift-left 1 bits)))))
 
-(defn- read-bits-chunk
-  [chunk num-bits curr-shift out-bits]
-  (bit-or (bit-shift-left (bit-and chunk (dec (bit-shift-left 1 num-bits)))
-                          curr-shift)
+(defn- read-bits-from-byte
+  [current-byte bits delta-shift out-bits]
+  (bit-or (bit-shift-left (bit-and current-byte
+                                   (dec (bit-shift-left 1 bits)))
+                          delta-shift)
           out-bits))
 
 (defn- read-var-encoded-uint32
-  [base-value base-bits data current-byte-idx idx-end]
-  (if (or (= 0 base-bits)
-          (continue? base-value base-bits))
-    (loop [out-value (if (continue? base-value base-bits)
-                       (read-bits-chunk base-value base-bits 0 0)
-                       0)
-           delta-shift base-bits]
-      (when (> @current-byte-idx idx-end)
-        (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
-      (swap! current-byte-idx inc)
-      (cond-> (read-bits-chunk (nth data (dec @current-byte-idx))
-                               7
-                               delta-shift
-                               out-value)
-        (continue? (nth data (dec @current-byte-idx)) 7)
-        (recur (+ delta-shift 7))))
-    (read-bits-chunk base-value base-bits 0 0)))
+  [current-byte bits data current-byte-index index-end]
+  (let [bits-in-a-byte 8]
+    (if (or (zero? (dec bits))
+            (continue? current-byte (dec bits)))
+      (loop [out-bits (if (continue? current-byte (dec bits))
+                        (read-bits-from-byte current-byte (dec bits) 0 0)
+                        0)
+             delta-shift (dec bits)]
+        (when (> @current-byte-index index-end)
+          (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
+        (swap! current-byte-index inc)
+        (cond-> (read-bits-from-byte (nth data (dec @current-byte-index))
+                                     (dec bits-in-a-byte)
+                                     delta-shift
+                                     out-bits)
+          (continue? (nth data (dec @current-byte-index)) (dec bits-in-a-byte))
+          (recur (+ delta-shift (dec bits-in-a-byte)))))
+      (read-bits-from-byte current-byte (dec bits) 0 0))))
 
 (defn- read-serialized-card
-  [deck-bytes byte-idx idx-end prev-card-base]
-  (when (> @byte-idx idx-end)
+  [deck-bytes byte-index index-end prev-card-id]
+  (when (> @byte-index index-end)
     (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
-  (let [header (nth deck-bytes @byte-idx)]
-    (swap! byte-idx inc)
+  (let [header (nth deck-bytes @byte-index)]
+    (swap! byte-index inc)
     [ ;; 2 bits for card count (1-4)
      (inc (bit-shift-right header 6))
      ;; 3 bits for card parallel-id (0-7)
      (-> header
          (bit-shift-right 3)
          (bit-and 0x07))
-     ;; card id offset
-     (+ prev-card-base
-        (read-var-encoded-uint32 header 2 deck-bytes byte-idx idx-end))]))
+     ;; card id offset + previous card id
+     (+ prev-card-id
+        (read-var-encoded-uint32 header
+                                 3 ; bits
+                                 deck-bytes
+                                 byte-index
+                                 index-end))]))
 
 (defn- parse-deck
   [deck-bytes]
@@ -74,47 +80,47 @@
                          (bit-shift-right version 4)))))
         _ (when-not (= checksum (bit-and computed-checksum 0xFF))
             (throw (#?(:clj Exception. :cljs js/Error.) "Invalid checksum.")))
-        byte-idx (atom 0)
-        _ (reset! byte-idx 3)
+        byte-index (atom 0)
+        _ (reset! byte-index 3)
         digi-egg-set-count (read-var-encoded-uint32 version
-                                                    3
+                                                    4 ; bits
                                                     deck-bytes
-                                                    byte-idx
+                                                    byte-index
                                                     total-card-bytes)
         [digi-eggs main-deck]
         (reduce
          (fn [accl deck-type]
            (conj accl
                  (loop [deck []
-                        card-set-idx 0]
+                        card-set-index 0]
                    (if (condp = deck-type
-                         :digi-egg (< card-set-idx digi-egg-set-count)
-                         (< @byte-idx total-card-bytes))
+                         :digi-egg (< card-set-index digi-egg-set-count)
+                         (< @byte-index total-card-bytes))
                      (let [;; card set is 4 characters/bytes
-                           card-set (-> (drop @byte-idx deck-bytes)
+                           card-set (-> (drop @byte-index deck-bytes)
                                         (as-> deck-bytes
                                             (take 4 deck-bytes))
                                         byte-buffer->string
                                         string/trim)
-                           _ (swap! byte-idx #(+ % 4))
+                           _ (swap! byte-index #(+ % 4))
                            ;; card set zero padding and count is 1 byte long
-                           card-set-pad-and-count (nth deck-bytes @byte-idx)
+                           card-set-pad-and-count (nth deck-bytes @byte-index)
                            pad (-> card-set-pad-and-count
                                    (bit-shift-right 6)
                                    inc)
                            card-set-count (-> card-set-pad-and-count
                                               (bit-and 0x3F))
-                           _ (swap! byte-idx inc)]
+                           _ (swap! byte-index inc)]
                        (recur (->> (loop [cards []
-                                          card-idx 0
-                                          prev-card-base 0]
-                                     (if (< card-idx card-set-count)
+                                          card-index 0
+                                          prev-card-id 0]
+                                     (if (< card-index card-set-count)
                                        (let [[card-count parallel-id id]
                                              (apply read-serialized-card
                                                     [deck-bytes
-                                                     byte-idx
+                                                     byte-index
                                                      total-card-bytes
-                                                     prev-card-base])
+                                                     prev-card-id])
                                              fstr (str "~A-~" pad ",'0d")
                                              card
                                              (cond-> {:card/id
@@ -127,18 +133,18 @@
                                                (assoc :card/parallel-id
                                                       parallel-id))]
                                          (recur (conj cards card)
-                                                (inc card-idx)
+                                                (inc card-index)
                                                 id))
                                        cards))
                                    (concat deck)
                                    (into []))
-                              (inc card-set-idx)))
+                              (inc card-set-index)))
                      deck))))
          []
          [:digi-egg :deck])]
     {:deck/digi-eggs digi-eggs
      :deck/deck main-deck
-     :deck/name (if (< @byte-idx (count deck-bytes))
+     :deck/name (if (< @byte-index (count deck-bytes))
                   (-> (->> (drop (- (count deck-bytes) string-length)
                                  deck-bytes)
                            (take string-length))
@@ -147,21 +153,24 @@
 
 (defn- decode-deck-string
   [deck-code-str]
-  (when (string/starts-with? deck-code-str codec/prefix)
+  (if (string/starts-with? deck-code-str codec/prefix)
     (->> (string/replace (subs deck-code-str (count codec/prefix))
                          #"-|_" {"-" "/" "_" "="})
          #?(:clj (.decode (Base64/getDecoder))
             :cljs (b64/decodeStringToByteArray))
-         (map #(bit-and % 0xFF)))))
+         (map #(bit-and % 0xFF)))
+    (throw (#?(:clj Exception. :cljs js/Error.)
+            "Deck codes must begin with \"DCG\""))))
 
-(defn decode
+(defn ^:export decode
   [deck-code-str]
   (-> deck-code-str
       decode-deck-string
       parse-deck))
 
-(defn -main
-  [& [deck-code-str]]
-  (-> (or deck-code-str #?(:clj (string/trim (slurp *in*))))
-      decode
-      pprint/pprint))
+#?(:clj
+   (defn -main
+     [& [deck-code-str]]
+     (-> (or deck-code-str (string/trim (slurp *in*)))
+         decode
+         pprint/pprint)))

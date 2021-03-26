@@ -127,9 +127,9 @@
     ;; Store decks
     (doseq [d [(group-deck digi-eggs)
                (group-deck deck)]]
-      (loop [card-set-iter 0]
-        (when (< card-set-iter (count d))
-          (let [[[card-set pad] cards] (nth d card-set-iter)
+      (loop [card-set-index 0]
+        (when (< card-set-index (count d))
+          (let [[[card-set pad] cards] (nth d card-set-index)
                 card-set-count (reduce (fn [accl {:card/keys [count]}]
                                          (+ accl count))
                                        0
@@ -137,8 +137,9 @@
             ;; Use 4 characters/bytes to store card sets.
             ;; At time of writing, 3 characters is max in released cards, but
             ;; we may see ST10 in the future
-            (doseq [c (map byte
-                           (get-bytes (pprint/cl-format nil "~4a" card-set)))]
+            (doseq [c (->> (pprint/cl-format nil "~4a" card-set)
+                           get-bytes
+                           (map byte))]
               (append-to-buffer! byte-buffer c))
             ;; 2 bits for card number zero padding
             ;; (zero padding stored as 0 indexed)
@@ -146,10 +147,10 @@
             (append-to-buffer! byte-buffer (bit-or (bit-shift-left (dec pad) 6)
                                                    (count cards)))
             (loop [prev-card-id 0
-                   card-iter 0]
-              (when (< card-iter (count cards))
+                   card-index 0]
+              (when (< card-index (count cards))
                 (let [{:card/keys [id parallel-id count]
-                       :or {parallel-id 0}} (nth cards card-iter)
+                       :or {parallel-id 0}} (nth cards card-index)
                       id (-> id
                              (string/split #"-")
                              second
@@ -165,8 +166,8 @@
                                              (bits-with-carry id-offset 3)))
                   ;; rest of card id offset
                   (append-rest-to-buffer! byte-buffer id-offset 2)
-                  (recur id (inc card-iter))))))
-          (recur (inc card-set-iter)))))
+                  (recur id (inc card-index))))))
+          (recur (inc card-set-index)))))
     ;; Compute and store cards checksum (second byte in buffer)
     ;; Only store the first byte of checksum
     (swap! byte-buffer assoc-in [1]
@@ -178,15 +179,15 @@
     @byte-buffer))
 
 (defn- encode-bytes->string
-  [bs]
-  (if (empty? bs)
+  [byte-buffer]
+  (if (empty? byte-buffer)
     (throw (#?(:clj Exception. :cljs js/Error.) "Empty byte buffer."))
-    (as-> #?(:clj (.encodeToString (Base64/getEncoder) (byte-array bs))
-             :cljs (b64/encodeByteArray (js/Uint8Array. bs))) x
+    (as-> #?(:clj (.encodeToString (Base64/getEncoder) (byte-array byte-buffer))
+             :cljs (b64/encodeByteArray (js/Uint8Array. byte-buffer))) x
       (string/replace x #"/|=" {"/" "-" "=" "_"})
       (str codec/prefix x))))
 
-(defn encode
+(defn ^:export encode
   [deck]
   (if (s/valid? ::deck deck)
     (-> deck
@@ -198,8 +199,9 @@
                   (s/explain-str ::deck deck)]
                  (string/join \newline))))))
 
-(defn -main
-  [& [args]]
-  (-> (or args #?(:clj (edn/read-string (slurp *in*))))
-      encode
-      println))
+#?(:clj
+   (defn -main
+     [& [deck]]
+     (-> (or deck (edn/read-string (slurp *in*)))
+         encode
+         println)))

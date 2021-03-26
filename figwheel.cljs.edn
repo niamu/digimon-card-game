@@ -1,0 +1,9 @@
+{:main                 dcg.json
+ :asset-path           "/js/out"
+ :output-dir           "resources/public/js/out"
+ :output-to            "resources/public/js/dcg.js"
+ :source-map           true
+ :optimizations        :none
+ :pretty-print         false
+ :parallel-build       true
+ :source-map-timestamp true}
