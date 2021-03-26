@@ -11,6 +11,9 @@ The encoder enforces some restrictions that also match the current game rules of
 - `:card/id`'s are expected to have a maximum of 4 alphanumeric characters followed by a 2-3 digit number separated by a hypen (if this pattern changes in the future a new deck codec version will be needed)
 - 63 character maximum `:deck/name`
 
+## Demo
+
+A simple website to demonstrate this codec and the `encode`/`decode` functions is published at [niamu.github.io/digimon-card-game](https://niamu.github.io/digimon-card-game/).
 
 ## Usage
 
