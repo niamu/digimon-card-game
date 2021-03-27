@@ -3,7 +3,6 @@
   (:require
    [dcg.codec.common :as codec]
    [#?(:clj clojure.edn :cljs cljs.reader) :as edn]
-   [clojure.pprint :as pprint]
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
    #?@(:cljs [[goog.crypt :as crypt]
@@ -100,11 +99,6 @@
       (append-to-buffer! byte-buffer (bits-with-carry v 8))
       (recur (bit-shift-right v 7)))))
 
-(defn- cards-checksum
-  [byte-buffer byte-count]
-  (reduce + (->> (take byte-count @byte-buffer)
-                 (drop codec/header-size))))
-
 (defn- encode-bytes
   [{:deck/keys [digi-eggs deck name]}]
   (let [byte-buffer (atom [])
@@ -137,7 +131,10 @@
             ;; Use 4 characters/bytes to store card sets.
             ;; At time of writing, 3 characters is max in released cards, but
             ;; we may see ST10 in the future
-            (doseq [c (->> (pprint/cl-format nil "~4a" card-set)
+            (doseq [c (->> (loop [card-set card-set]
+                             (if (< (count card-set) 4)
+                               (recur (str " " card-set))
+                               card-set))
                            get-bytes
                            (map byte))]
               (append-to-buffer! byte-buffer c))
@@ -171,7 +168,7 @@
     ;; Compute and store cards checksum (second byte in buffer)
     ;; Only store the first byte of checksum
     (swap! byte-buffer assoc-in [1]
-           (bit-and (cards-checksum byte-buffer (count @byte-buffer))
+           (bit-and (codec/checksum (count @byte-buffer) @byte-buffer)
                     0xFF))
     ;; Store deck name
     (doseq [character-byte (get-bytes deck-name)]

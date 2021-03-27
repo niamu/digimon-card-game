@@ -2,7 +2,7 @@
   #?(:clj (:gen-class))
   (:require
    [dcg.codec.common :as codec]
-   [clojure.pprint :as pprint]
+   #?(:clj [clojure.pprint :as pprint])
    [clojure.string :as string]
    #?@(:cljs [[goog.crypt :as crypt]
               [goog.crypt.base64 :as b64]]))
@@ -71,8 +71,7 @@
         checksum (nth deck-bytes 1)
         string-length (nth deck-bytes 2)
         total-card-bytes (- (count deck-bytes) string-length)
-        computed-checksum (reduce + (->> (take total-card-bytes deck-bytes)
-                                         (drop codec/header-size)))
+        computed-checksum (codec/checksum total-card-bytes deck-bytes)
         _ (when-not (= codec/version (bit-shift-right version 4))
             (throw (#?(:clj Exception. :cljs js/Error.)
                     (str "Invalid version: "
@@ -124,10 +123,13 @@
                                              fstr (str "~A-~" pad ",'0d")
                                              card
                                              (cond-> {:card/id
-                                                      (pprint/cl-format nil
-                                                                        fstr
-                                                                        card-set
-                                                                        id)
+                                                      (str card-set "-"
+                                                           (loop [n (str id)]
+                                                             (if (< (count n)
+                                                                    pad)
+                                                               (recur (str "0"
+                                                                           n))
+                                                               n)))
                                                       :card/count card-count}
                                                (not (zero? parallel-id))
                                                (assoc :card/parallel-id
