@@ -94,7 +94,7 @@
 
 (defn- append-rest-to-buffer!
   [byte-buffer value already-written-bits]
-  (loop [v (bit-shift-right value already-written-bits)]
+  (loop [v (bit-shift-right value (dec already-written-bits))]
     (when (> v 0)
       (append-to-buffer! byte-buffer (bits-with-carry v 8))
       (recur (bit-shift-right v 7)))))
@@ -162,7 +162,7 @@
                                              (bit-shift-left parallel-id 3)
                                              (bits-with-carry id-offset 3)))
                   ;; rest of card id offset
-                  (append-rest-to-buffer! byte-buffer id-offset 2)
+                  (append-rest-to-buffer! byte-buffer id-offset 3)
                   (recur id (inc card-index))))))
           (recur (inc card-set-index)))))
     ;; Compute and store cards checksum (second byte in buffer)

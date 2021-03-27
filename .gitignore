@@ -6,7 +6,4 @@
 target/
 .DS_Store
 cljs-test-runner-out/
-resources/digimoncard.com
-resources/world.digimoncard.com
-resources/en
-resources/ja
+resources/

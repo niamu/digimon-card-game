@@ -14,7 +14,7 @@
   #?(:clj (-> b byte-array (String. "UTF8"))
      :cljs (-> b clj->js crypt/utf8ByteArrayToString)))
 
-(defn- continue?
+(defn- carry-bit?
   [current-byte bits]
   (not (zero? (bit-and current-byte (bit-shift-left 1 bits)))))
 
@@ -29,8 +29,8 @@
   [current-byte bits data current-byte-index index-end]
   (let [bits-in-a-byte 8]
     (if (or (zero? (dec bits))
-            (continue? current-byte (dec bits)))
-      (loop [out-bits (if (continue? current-byte (dec bits))
+            (carry-bit? current-byte (dec bits)))
+      (loop [out-bits (if (carry-bit? current-byte (dec bits))
                         (read-bits-from-byte current-byte (dec bits) 0 0)
                         0)
              delta-shift (dec bits)]
@@ -41,7 +41,7 @@
                                      (dec bits-in-a-byte)
                                      delta-shift
                                      out-bits)
-          (continue? (nth data (dec @current-byte-index)) (dec bits-in-a-byte))
+          (carry-bit? (nth data (dec @current-byte-index)) (dec bits-in-a-byte))
           (recur (+ delta-shift (dec bits-in-a-byte)))))
       (read-bits-from-byte current-byte (dec bits) 0 0))))
 
