@@ -1,4 +1,5 @@
 {:main                 dcg.json
+ :output-dir           "resources/public/js/out"
  :output-to            "resources/public/js/dcg.js"
  :optimizations        :advanced
  :pretty-print         false
