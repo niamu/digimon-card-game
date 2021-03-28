@@ -9,7 +9,7 @@ The encoder enforces some restrictions that also match the current game rules of
 - 1-4 `:card/count` for each unique `:card/id`
 - 0-7 `:card/parallel-id` (this id is the canonical parallel number in the image filename on digimoncard.com)
 - `:card/id`'s are expected to have a maximum of 4 alphanumeric characters followed by a 2-3 digit number separated by a hypen (if this pattern changes in the future a new deck codec version will be needed)
-- 63 character maximum `:deck/name`
+- 63 bytes maximum `:deck/name`
 
 ## Demo
 
@@ -157,7 +157,7 @@ The codec produces and consumes Base64URL strings as defined in [rfc4648&#167;5]
 **3rd byte**: `00011101`
 - Deck name string byte length
   - in this case "Starter Deck, Gaia Red [ST-1]" is 29 characters/bytes long
-  - **Note**: For UTF-8 characters that take up more than 1 byte (Japanese characters for example), it is important that character count and byte count are not conflated. Always use truncate bytes and not characters.
+  - **Note**: For UTF-8 characters that take up more than 1 byte (Japanese characters for example), it is important that character count and byte count are not conflated. Always truncate bytes and not characters.
 
 ### Decks
 
@@ -189,7 +189,7 @@ This is a loop that continues until all the cards within the card set have been 
 
 Before the deck string is written, the checksum can now be calculated and the last byte of the checksum stored at the 2nd byte location.
 
-After the deck contents have been stored the deck name (truncated to 63 characters) is stored as UTF-8 bytes to complete the byte buffer.
+After the deck contents have been stored the deck name (truncated to 63 bytes) is stored as UTF-8 bytes to complete the byte buffer.
 
 Lastly, the entire byte buffer is converted to Base64 and prefixed with `DCG` at the beginning of the string to indicate it is a Digimon Card Game deck code.
 
