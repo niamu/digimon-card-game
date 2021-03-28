@@ -150,10 +150,10 @@
 (defn- decode-deck-string
   [deck-code-str]
   (if (string/starts-with? deck-code-str codec/prefix)
-    (->> (codec/base64url (subs deck-code-str (count codec/prefix)))
-         #?(:clj (.decode (Base64/getDecoder))
-            :cljs (b64/decodeStringToByteArray))
-         (map #(bit-and % 0xFF)))
+    (as-> (codec/base64url (subs deck-code-str (count codec/prefix))) x
+      #?(:clj (.decode (Base64/getDecoder) ^String x)
+         :cljs (b64/decodeStringToByteArray x))
+      (map #(bit-and % 0xFF) x))
     (throw (#?(:clj Exception. :cljs js/Error.)
             "Deck codes must begin with \"DCG\""))))
 

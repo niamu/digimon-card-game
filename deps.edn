@@ -31,6 +31,7 @@
             :main-opts ["--report" "stderr"
                         "-m" "cambada.native-image"
                         "-O" "-report-unsupported-elements-at-runtime"
+                        "-O" "H:-UseServiceLoaderFeature"
                         "-m" "dcg.cli"]}
 
            :test-clj
