@@ -66,25 +66,25 @@ DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBi
 ```
 $ dcg --decode DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp
 
-{:deck/digi-eggs [{:card/id "BT2-001" :card/count 4}
-                  {:card/id "ST1-01" :card/count 1}],
- :deck/deck  [{:card/id "BT3-019" :card/count 4}
-              {:card/id "BT3-016" :card/count 3}
-              {:card/id "BT3-072" :card/count 3}
-              {:card/id "BT3-018" :card/count 2}
-              {:card/id "BT3-013" :card/count 4}
-              {:card/id "BT2-016" :card/count 4}
-              {:card/id "BT1-020" :card/count 2}
-              {:card/id "ST1-07" :card/count 1}
-              {:card/id "ST1-07" :card/parallel-id 1 :card/count 3}
-              {:card/id "ST1-06" :card/count 3}
-              {:card/id "BT1-019" :card/count 4}
-              {:card/id "BT3-008" :card/count 4}
-              {:card/id "ST1-03" :card/count 4}
-              {:card/id "ST1-02" :card/count 4}
-              {:card/id "BT1-009" :card/count 1}
-              {:card/id "BT1-085" :card/parallel-id 1 :card/count 2}
-              {:card/id "ST1-16" :card/parallel-id 1 :card/count 2}],
+{:deck/digi-eggs [{:card/id "BT2-001", :card/count 4}
+                  {:card/id "ST1-01", :card/count 1}],
+ :deck/deck [{:card/id "BT1-009", :card/count 1}
+             {:card/id "BT1-019", :card/count 4}
+             {:card/id "BT1-020", :card/count 2}
+             {:card/id "BT1-085", :card/count 2, :card/parallel-id 1}
+             {:card/id "BT2-016", :card/count 4}
+             {:card/id "BT3-008", :card/count 4}
+             {:card/id "BT3-013", :card/count 4}
+             {:card/id "BT3-016", :card/count 3}
+             {:card/id "BT3-018", :card/count 2}
+             {:card/id "BT3-019", :card/count 4}
+             {:card/id "BT3-072", :card/count 3}
+             {:card/id "ST1-02", :card/count 4}
+             {:card/id "ST1-03", :card/count 4}
+             {:card/id "ST1-06", :card/count 3}
+             {:card/id "ST1-07", :card/count 1}
+             {:card/id "ST1-07", :card/count 3, :card/parallel-id 1}
+             {:card/id "ST1-16", :card/count 2, :card/parallel-id 1}],
  :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"}
 ```
 
@@ -93,32 +93,34 @@ $ dcg --decode DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwY
 
 **Starter Deck, Gaia Red [ST-1]**
 
-`DCGAREdU1QxIEHBU1QxIE-CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ__`
+`DCGAREdU1QxIEHBU1QxIE_CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ`
 
 **Starter Deck, Cocytus Blue [ST-2]**
 
-`DCGARMhU1QyIEHBU1QyIE-CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0_`
+`DCGARMhU1QyIEHBU1QyIE_CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0`
 
 **Starter Deck, Heaven's Yellow [ST-3]**
 
-`DCGARUkU1QzIEHBU1QzIE-CwcFBwcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIEhlYXZlbidzIFllbGxvdyBbU1QtM10_`
+`DCGARUkU1QzIEHBU1QzIE_CwcFBwcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIEhlYXZlbidzIFllbGxvdyBbU1QtM10`
 
 **Starter Deck, Giga Green [ST-4]**
 
-`DCGARcfU1Q0IEHBU1Q0IE-CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIEdpZ2EgR3JlZW4gW1NULTRd`
+`DCGARcfU1Q0IEHBU1Q0IE_CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIEdpZ2EgR3JlZW4gW1NULTRd`
 
 **Starter Deck, Machine Black [ST-5]**
 
-`DCGARkiU1Q1IEHBU1Q1IE-CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIE1hY2hpbmUgQmxhY2sgW1NULTVd`
+`DCGARkiU1Q1IEHBU1Q1IE_CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIE1hY2hpbmUgQmxhY2sgW1NULTVd`
 
 **Starter Deck, Venomous Violet [ST-6]**
 
-`DCGARskU1Q2IEHBU1Q2IE-CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIFZlbm9tb3VzIFZpb2xldCBbU1QtNl0_`
+`DCGARskU1Q2IEHBU1Q2IE_CwcHBwcFBwcFBQUHBwUFTdGFydGVyIERlY2ssIFZlbm9tb3VzIFZpb2xldCBbU1QtNl0`
 
 
 ## Encoded Binary Structure
 
 The encoded binary structure of **Starter Deck, Gaia Red [ST-1]** is used here as an example. Both the `:deck/digi-eggs` and `:deck/deck` collections are sorted by `:card/id` before encoding begins.
+
+The codec produces and consumes Base64URL strings as defined in [rfc4648&#167;5](https://tools.ietf.org/html/rfc4648#section-5) and does not implement padding characters.
 
 ```
 {:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
@@ -153,14 +155,15 @@ The encoded binary structure of **Starter Deck, Gaia Red [ST-1]** is used here a
   - This can't be computed until after the deck contents have been encoded
 
 **3rd byte**: `00011101`
-- Deck name string length
-  - in this case "Starter Deck, Gaia Red [ST-1]" is 29 characters long
+- Deck name string byte length
+  - in this case "Starter Deck, Gaia Red [ST-1]" is 29 characters/bytes long
+  - **Note**: For UTF-8 characters that take up more than 1 byte (Japanese characters for example), it is important that character count and byte count are not conflated. Always use truncate bytes and not characters.
 
 ### Decks
 
 #### Card Set Header
 
-**Next 3 bytes (4,5,6,7)**: `01010011 01010100 00110001 00100000`
+**Next 4 bytes (4,5,6,7)**: `01010011 01010100 00110001 00100000`
 - The beginning of the deck storage. If the Digi-Egg card set item count is 0 then this starts the main deck storage
 - 4 ASCII characters which is the card set name that the cards which follow belong to, in this case `"ST1 "` with a space character that is trimmed by the decoder
 

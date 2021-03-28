@@ -10,7 +10,7 @@
   #?(:clj (:import
            [java.util Base64])))
 
-(def card-id-regex
+(def ^:private card-id-regex
   "1-4 alphanumeric characters followed by 2-3 digits separated by a hyphen"
   #"[A-Z|0-9]{1,4}\-[0-9]{2,3}")
 
@@ -33,14 +33,14 @@
       (= (count card-ids)
          (count (set card-ids))))))
 
-(defn card-count
+(defn- card-count
   [cards]
   (reduce (fn [accl {:keys [card/count]}]
             (+ accl count))
           0
           cards))
 
-(defn card-id-count-limit
+(defn- card-id-count-limit
   [cards]
   (->> cards
        (group-by (fn [{:card/keys [id]}] id))
@@ -71,7 +71,7 @@
 (s/def ::deck
   (s/keys :req [:deck/digi-eggs :deck/deck :deck/name]))
 
-(defn get-bytes
+(defn- get-bytes
   [^String s]
   #?(:clj (.getBytes s "UTF8")
      :cljs (crypt/stringToUtf8ByteArray s)))
@@ -114,10 +114,15 @@
                                          ;; Zero padding for number
                                          (count (second id-split))])))
                           (into [])))
-        deck-name (string/trim (apply str (take 63 name)))]
+        name (string/trim name) ; trim the deck name just in case
+        deck-name-bytes (get-bytes name) ; bytes of name for UTF-8 compatibility
+        deck-name (->> deck-name-bytes
+                       (take 63) ; sextet byte count max
+                       codec/bytes->string
+                       string/trim)]
     (append-to-buffer! byte-buffer version) ; version & digi-egg card group #
     (append-to-buffer! byte-buffer 0) ; Placeholder checksum byte
-    (append-to-buffer! byte-buffer (count deck-name)) ; Deck name length
+    (append-to-buffer! byte-buffer (count deck-name-bytes)) ; Deck name length
     ;; Store decks
     (doseq [d [(group-deck digi-eggs)
                (group-deck deck)]]
@@ -133,7 +138,7 @@
             ;; we may see ST10 in the future
             (doseq [c (->> (loop [card-set card-set]
                              (if (< (count card-set) 4)
-                               (recur (str " " card-set))
+                               (recur (str card-set " "))
                                card-set))
                            get-bytes
                            (map byte))]
@@ -179,10 +184,10 @@
   [byte-buffer]
   (if (empty? byte-buffer)
     (throw (#?(:clj Exception. :cljs js/Error.) "Empty byte buffer."))
-    (as-> #?(:clj (.encodeToString (Base64/getEncoder) (byte-array byte-buffer))
-             :cljs (b64/encodeByteArray (js/Uint8Array. byte-buffer))) x
-      (string/replace x #"/|=" {"/" "-" "=" "_"})
-      (str codec/prefix x))))
+    (->> #?(:clj (.encodeToString (Base64/getEncoder) (byte-array byte-buffer))
+            :cljs (b64/encodeByteArray (js/Uint8Array. byte-buffer)))
+         codec/base64url
+         (str codec/prefix))))
 
 (defn ^:export encode
   [deck]

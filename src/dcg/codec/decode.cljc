@@ -4,15 +4,9 @@
    [dcg.codec.common :as codec]
    #?(:clj [clojure.pprint :as pprint])
    [clojure.string :as string]
-   #?@(:cljs [[goog.crypt :as crypt]
-              [goog.crypt.base64 :as b64]]))
+   #?(:cljs [goog.crypt.base64 :as b64]))
   #?(:clj (:import
            [java.util Base64])))
-
-(defn byte-buffer->string
-  [b]
-  #?(:clj (-> b byte-array (String. "UTF8"))
-     :cljs (-> b clj->js crypt/utf8ByteArrayToString)))
 
 (defn- carry-bit?
   [current-byte bits]
@@ -99,7 +93,7 @@
                            card-set (-> (drop @byte-index deck-bytes)
                                         (as-> deck-bytes
                                             (take 4 deck-bytes))
-                                        byte-buffer->string
+                                        codec/bytes->string
                                         string/trim)
                            _ (swap! byte-index #(+ % 4))
                            ;; card set zero padding and count is 1 byte long
@@ -150,14 +144,13 @@
                   (-> (->> (drop (- (count deck-bytes) string-length)
                                  deck-bytes)
                            (take string-length))
-                      byte-buffer->string)
+                      codec/bytes->string)
                   "")}))
 
 (defn- decode-deck-string
   [deck-code-str]
   (if (string/starts-with? deck-code-str codec/prefix)
-    (->> (string/replace (subs deck-code-str (count codec/prefix))
-                         #"-|_" {"-" "/" "_" "="})
+    (->> (codec/base64url (subs deck-code-str (count codec/prefix)))
          #?(:clj (.decode (Base64/getDecoder))
             :cljs (b64/decodeStringToByteArray))
          (map #(bit-and % 0xFF)))
