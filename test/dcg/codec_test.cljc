@@ -1,5 +1,9 @@
 (ns dcg.codec-test
   (:require
+   [clojure.spec.alpha :as s]
+   [clojure.test.check :as tc]
+   [clojure.test.check.generators :as gen]
+   [clojure.test.check.properties :as prop]
    [dcg.codec.encode :as encode]
    [dcg.codec.decode :as decode]
    #?(:clj [clojure.test :as t]
@@ -51,31 +55,12 @@
          :name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"})
 
 (def digi-bros-deck-encoded
-  "DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp")
+  (str "DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1Qx"
+       "IEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1c"
+       "yd3doUjQp"))
 
 (def ja-deck
-  #:deck{:digi-eggs [#:card{:id "BT1-001", :count 2}
-                     #:card{:id "BT2-001", :count 3}],
-         :deck [#:card{:id "BT1-009", :count 4}
-                #:card{:id "BT1-019", :count 4}
-                #:card{:id "BT1-020", :count 2}
-                #:card{:id "BT1-025", :count 3}
-                #:card{:id "BT1-085", :count 3}
-                #:card{:id "BT2-009", :count 2}
-                #:card{:id "BT2-016", :count 4}
-                #:card{:id "BT2-018", :count 2}
-                #:card{:id "BT3-018", :count 3}
-                #:card{:id "P-009", :count 4}
-                #:card{:id "ST1-03", :count 4}
-                #:card{:id "ST1-06", :count 4}
-                #:card{:id "ST1-07", :count 4}
-                #:card{:id "ST1-09", :count 3}
-                #:card{:id "ST1-16", :count 4}],
-         :name "予算の赤いデッキ"})
-
-(def ja-deck-encoded
-  (str "DCGAl4YIEJUMYFBIEJUMoGBIEJUMYXFAsYCQYUBhA8gQlQyg0UCxwFCIEJUM4GGBCAgIFCB"
-       "xQIgU1QxRcPDwYLHAeS6iOeul-OBrui1pOOBhOODh-ODg-OCrQ"))
+  (assoc st1-deck :deck/name "予算の赤いデッキ"))
 
 (def invalid-deck
   {:deck/digi-eggs [{:card/id "ST1-01", :card/count 3}
@@ -101,14 +86,12 @@
 
 (t/deftest codec-round-trip
   (t/testing "Deck encode and decode round-trip"
-    (t/is (= digi-bros-deck
-             (-> digi-bros-deck
-                 encode/encode
-                 decode/decode)))
-    (t/is (= ja-deck
-             (-> ja-deck
-                 encode/encode
-                 decode/decode)))))
+    (t/are [deck] (= deck (-> deck
+                              encode/encode
+                              decode/decode))
+      st1-deck
+      digi-bros-deck
+      ja-deck)))
 
 (t/deftest stable-decoder
   (t/testing "Deck decoding of old strings is stable"
@@ -129,3 +112,61 @@
   (t/testing "Invalid deck throws an Exception/Error"
     (t/is (thrown? #?(:clj Exception :cljs js/Error)
                    (encode/encode invalid-deck)))))
+
+(t/deftest parallel-id-order
+  (t/testing ":card/parallel-id order does not affect encoder equality"
+    (t/are [deck1 deck2] (= (encode/encode deck1) (encode/encode deck2))
+      {:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
+       :deck/deck [{:card/id "ST1-02", :card/count 2}
+                   {:card/id "ST1-02", :card/count 2 :card/parallel-id 1}
+                   {:card/id "ST1-03", :card/count 4}
+                   {:card/id "ST1-04", :card/count 4}
+                   {:card/id "ST1-05", :card/count 4}
+                   {:card/id "ST1-06", :card/count 4}
+                   {:card/id "ST1-07", :card/count 2}
+                   {:card/id "ST1-08", :card/count 4}
+                   {:card/id "ST1-09", :card/count 4}
+                   {:card/id "ST1-10", :card/count 2}
+                   {:card/id "ST1-11", :card/count 2}
+                   {:card/id "ST1-12", :card/count 4}
+                   {:card/id "ST1-13", :card/count 4}
+                   {:card/id "ST1-14", :card/count 4}
+                   {:card/id "ST1-15", :card/count 2}
+                   {:card/id "ST1-16", :card/count 2}],
+       :deck/name "Starter Deck, Gaia Red [ST-1]"}
+      {:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
+       :deck/deck [{:card/id "ST1-02", :card/count 2 :card/parallel-id 1}
+                   {:card/id "ST1-02", :card/count 2}
+                   {:card/id "ST1-03", :card/count 4}
+                   {:card/id "ST1-04", :card/count 4}
+                   {:card/id "ST1-05", :card/count 4}
+                   {:card/id "ST1-06", :card/count 4}
+                   {:card/id "ST1-07", :card/count 2}
+                   {:card/id "ST1-08", :card/count 4}
+                   {:card/id "ST1-09", :card/count 4}
+                   {:card/id "ST1-10", :card/count 2}
+                   {:card/id "ST1-11", :card/count 2}
+                   {:card/id "ST1-12", :card/count 4}
+                   {:card/id "ST1-13", :card/count 4}
+                   {:card/id "ST1-14", :card/count 4}
+                   {:card/id "ST1-15", :card/count 2}
+                   {:card/id "ST1-16", :card/count 2}],
+       :deck/name "Starter Deck, Gaia Red [ST-1]"})))
+
+#?(:clj
+   (t/deftest generated-decks
+     (t/testing "Generated decks succeed round-trip of codec"
+       (loop [iteration 0]
+         (when (< iteration 100)
+           (if-let [deck (try (gen/generate (s/gen :dcg.codec.encode/deck))
+                              (catch Exception e nil))]
+             (do (t/is (= (-> deck
+                              encode/encode
+                              decode/decode
+                              (update :deck/digi-eggs set)
+                              (update :deck/deck set))
+                          (-> deck
+                              (update :deck/digi-eggs set)
+                              (update :deck/deck set))))
+                 (recur (inc iteration)))
+             (recur iteration)))))))

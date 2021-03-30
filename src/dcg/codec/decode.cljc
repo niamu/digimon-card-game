@@ -66,12 +66,12 @@
         string-length (nth deck-bytes 2)
         total-card-bytes (- (count deck-bytes) string-length)
         computed-checksum (codec/checksum total-card-bytes deck-bytes)
-        _ (when-not (= codec/version (bit-shift-right version 4))
+        _ (when-not (== codec/version (bit-shift-right version 4))
             (throw (#?(:clj Exception. :cljs js/Error.)
                     (str "Invalid version: "
                          codec/version " != "
                          (bit-shift-right version 4)))))
-        _ (when-not (= checksum (bit-and computed-checksum 0xFF))
+        _ (when-not (== checksum (bit-and computed-checksum 0xFF))
             (throw (#?(:clj Exception. :cljs js/Error.) "Invalid checksum.")))
         byte-index (atom 0)
         _ (reset! byte-index 3)

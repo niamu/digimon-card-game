@@ -4,6 +4,7 @@
    [dcg.codec.common :as codec]
    [#?(:clj clojure.edn :cljs cljs.reader) :as edn]
    [clojure.spec.alpha :as s]
+   [clojure.spec.gen.alpha :as gen]
    [clojure.string :as string]
    #?@(:cljs [[goog.crypt :as crypt]
               [goog.crypt.base64 :as b64]]))
@@ -14,14 +15,29 @@
   "1-4 alphanumeric characters followed by 2-3 digits separated by a hyphen"
   #"[A-Z|0-9]{1,4}\-[0-9]{2,3}")
 
+(s/def :card/number
+  (s/int-in 1 1000))
+
+(s/def :card/set
+  (s/with-gen string?
+    #(gen/fmap (fn [s]
+                 (string/upper-case (apply str s)))
+               (gen/bind (s/gen (s/int-in 1 5))
+                         (fn [size]
+                           (gen/vector (gen/char-alpha) size))))))
+
 (s/def :card/id
-  (s/and string? #(re-matches card-id-regex %)))
+  (s/with-gen #(re-matches card-id-regex %)
+    #(gen/fmap (fn [[s n]]
+                 (str s "-" (cond->> n
+                              (< (count (str n)) 2) (str "0"))))
+               (s/gen (s/cat :s :card/set :n :card/number)))))
 
 (s/def :card/count
-  (s/and number? #(<= 1 % 4)))
+  (s/int-in 1 5))
 
 (s/def :card/parallel-id
-  (s/and number? #(<= 0 % 7)))
+  (s/int-in 1 8))
 
 (s/def ::card
   (s/keys :req [:card/id :card/count]
@@ -30,8 +46,8 @@
 (s/def ::deck-is-unique?
   (fn [cards]
     (let [card-ids (map (juxt :card/id :card/parallel-id) cards)]
-      (= (count card-ids)
-         (count (set card-ids))))))
+      (== (count card-ids)
+          (count (set card-ids))))))
 
 (defn- card-count
   [cards]
@@ -63,7 +79,7 @@
   (s/and (s/coll-of ::card)
          ::deck-is-unique?
          card-id-count-limit
-         (fn [cards] (= (card-count cards) 50))))
+         (fn [cards] (== (card-count cards) 50))))
 
 (s/def :deck/name
   (s/and string? (fn [n] (<= 0 (count n) 63))))
@@ -103,10 +119,13 @@
   [{:deck/keys [digi-eggs deck name]}]
   (let [byte-buffer (atom [])
         version (bit-or (bit-shift-left codec/version 4)
-                        (bits-with-carry (count digi-eggs) 4))
+                        (bits-with-carry (-> (map :card/id digi-eggs)
+                                             set
+                                             count)
+                                         4))
         group-deck (fn [deck]
                      (->> deck
-                          (sort-by :card/id)
+                          (sort-by (juxt :card/id :card/parallel-id))
                           (group-by (fn [{:keys [card/id]}]
                                       (let [id-split (string/split id #"-")]
                                         [;; Card Set
@@ -128,11 +147,7 @@
                (group-deck deck)]]
       (loop [card-set-index 0]
         (when (< card-set-index (count d))
-          (let [[[card-set pad] cards] (nth d card-set-index)
-                card-set-count (reduce (fn [accl {:card/keys [count]}]
-                                         (+ accl count))
-                                       0
-                                       cards)]
+          (let [[[card-set pad] cards] (nth d card-set-index)]
             ;; Use 4 characters/bytes to store card sets.
             ;; At time of writing, 3 characters is max in released cards, but
             ;; we may see ST10 in the future

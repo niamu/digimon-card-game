@@ -22,7 +22,7 @@
 
 (defn base64url
   "https://tools.ietf.org/html/rfc4648#section-5"
-  [s]
+  [^String s] ; Base64 string
   (let [replace-map {"/" "_" "+" "-" "=" ""}
         replace-map (merge replace-map (set/map-invert replace-map))]
     (string/replace s #"/|\+|=|_|-" replace-map)))
