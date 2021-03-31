@@ -3,15 +3,106 @@
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
-   [clojure.pprint :as pprint]
    [clojure.string :as string]
    [clj-http.client :as client]
+   [datalevin.core :as d]
    [hickory.core :as hickory]
    [hickory.select :as select])
   (:import
-   [java.net URL]))
+   [java.awt Color]
+   [java.io PushbackReader]
+   [java.util UUID]
+   [javax.imageio ImageIO]))
 
 (set! *warn-on-reflection* true)
+
+(def schema
+  (reduce (fn [accl m]
+            (assoc accl
+                   (:db/ident m)
+                   (dissoc m :db/ident)))
+          {}
+          [;; hash of card/number, card/parallel-id, and card/language
+           {:db/ident :card/id
+            :db/valueType :db.type/uuid
+            :db/unique :db.unique/identity
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/number
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/language
+            :db/valueType :db.type/keyword
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/level
+            :db/valueType :db.type/long
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/inherited-effect
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/db
+            :db/valueType :db.type/long
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/parallel-id
+            :db/valueType :db.type/long
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/image
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/play-cost
+            :db/valueType :db.type/long
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/form
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/security-effect
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/effect
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/rarity
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/digivolve-conditions
+            :db/valueType :db.type/ref
+            :db/cardinality :db.cardinality/many}
+           {:db/ident :card/attribute
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/digimon-type
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/color
+            :db/valueType :db.type/keyword
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/name
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/release
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :card/type
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one}
+           ;; Digivolve ID is hash of card number and index
+           {:db/ident :digivolve/id
+            :db/valueType :db.type/uuid
+            :db/unique :db.unique/identity
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :digivolve/index
+            :db/valueType :db.type/long
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :digivolve/cost
+            :db/valueType :db.type/long
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :digivolve/level
+            :db/valueType :db.type/long
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :digivolve/color
+            :db/valueType :db.type/keyword
+            :db/cardinality :db.cardinality/one}]))
+
+(def conn (d/get-conn "resources/db" schema))
 
 (defn http-get*
   [url]
@@ -25,21 +116,29 @@
 (defonce http-get (memoize http-get*))
 
 (defn base-url
-  [& [{:keys [lang]}]]
-  (let [subdomain (get {"ja" nil
-                        "en" "world"}
-                       lang)]
-    (str "https://" (cond->> "digimoncard.com"
-                      subdomain (str subdomain ".")))))
+  [& [{:keys [subdomain]}]]
+  (str "https://" (cond->> "digimoncard.com"
+                    subdomain (str subdomain "."))))
+
+(def css-colors
+  "RGB values of each card color"
+  {:red [213 0 0]
+   :blue [24 159 237]
+   :yellow [240 172 9]
+   :green [0 189 151]
+   :white [153 153 153]
+   :black [0 0 0]
+   :purple [117 42 230]})
 
 (def colors
-  {:red     "#d50000"
-   :blue    "#189fed"
-   :yellow  "#f0ac09"
-   :green   "#00bd97"
-   :white   "#999999"
-   :black   "#000"
-   :purple  "#752ae6"})
+  "RGB values of each card's digivolve color conditions"
+  {:red [213 0 0]
+   :blue [24 159 237]
+   :yellow [240 172 9]
+   :green [0 104 61]
+   :white [153 153 153]
+   :black [66 66 66]
+   :purple [137 85 162]})
 
 (def rarities
   {"C"   "Common"
@@ -63,15 +162,6 @@
    "Security"
    "Main"])
 
-(def areas
-  ["Battle Area"
-   "Breeding Area"
-   "Deck Zone"
-   "Digi-Egg Deck Zone"
-   "Trash (Recycle Bin)"
-   "Memory Gauge"
-   "Security Stack"])
-
 (def states
   ["Suspend"
    "Suspended"
@@ -80,24 +170,6 @@
    "Digivolution Card"
    "Deleted"
    "Security Digimon"])
-
-(def phases
-  ["Unsuspend"
-   "Draw"
-   "Breeding"
-   "Main"])
-
-(def actions
-  ["Attack"
-   "Block"
-   "Battle"
-   "Playing"
-   "Hatching"
-   "Digivolution"
-   "Trash"
-   "Pass"
-   "Check"
-   "Move"])
 
 (def effects
   ["Blocker"
@@ -123,6 +195,7 @@
                                     (select/tag "li"))
                                    c)
                     (map (comp first :content)))
+        number (nth header 0)
         dl (fn [class-name]
              (select/select (select/descendant
                              (select/class class-name)
@@ -150,18 +223,58 @@
                                (get info-top "登場コスト"))
                            (re-find #"[0-9]+")
                            Integer/parseInt)
-        digivolve-cost (->> [(or (get info-top "Digivolve 1 Cost")
-                                 (get info-top "進化コスト1"))
-                             (or (get info-top "Digivolve 2 Cost")
-                                 (get info-top "進化コスト2"))]
-                            (remove (fn [s] (= s "-")))
-                            (remove nil?)
-                            (mapv (fn [c] {:cost c})))]
-    {:card/id (nth header 0)
+        digivolve-conditions
+        (->> [(or (get info-top "Digivolve Cost 1")
+                  (get info-top "Digivolve 1 Cost")
+                  (get info-top "進化コスト1"))
+              (or (get info-top "Digivolve Cost 2")
+                  (get info-top "Digivolve 2 Cost")
+                  (get info-top "進化コスト2"))]
+             (remove (fn [s] (= s "-")))
+             (remove nil?)
+             (map-indexed (fn [i c]
+                            (when (or (string/includes? c "from")
+                                      (string/includes? c "から"))
+                              (let [lang (if (string/includes? c "from")
+                                           :en
+                                           :ja)
+                                    [cost level]
+                                    (cond-> c
+                                      (= lang :en)
+                                      (string/split #"from")
+                                      (= lang :ja)
+                                      (as-> x
+                                          (-> (string/split x #"から")
+                                              reverse)))
+                                    level
+                                    (some-> level
+                                            string/lower-case
+                                            (string/replace #"lv\.?([0-9]+)"
+                                                            "$1")
+                                            string/trim
+                                            Long/parseLong)
+                                    cost (some-> cost
+                                                 string/trim
+                                                 Long/parseLong)]
+                                {:digivolve/id (-> (hash [number i])
+                                                   str
+                                                   (.getBytes)
+                                                   UUID/nameUUIDFromBytes)
+                                 :digivolve/index (inc i)
+                                 :digivolve/cost cost
+                                 :digivolve/level level
+                                 :digivolve/color color})))))
+        digivolve-conditions (->> (if (empty? digivolve-conditions)
+                                    nil
+                                    digivolve-conditions)
+                                  (remove nil?))
+        image (->> (select/select (select/descendant (select/tag "img")) c)
+                   first
+                   (#(-> (get-in % [:attrs :src])
+                         (string/replace #"^.." ""))))]
+    {:card/number number
      :card/rarity (nth header 1)
      :card/type (nth header 2)
-     :card/alternative? (or (contains? (set header) "Alternative Art")
-                            (contains? (set header) "パラレル"))
      :card/level (some->> (nth header 3 nil)
                           (re-find #"[0-9]+")
                           Integer/parseInt)
@@ -171,7 +284,7 @@
                                (or "Option"
                                    "オプション"))) 0
                        :else play-cost)
-     :card/digivolve-cost digivolve-cost
+     :card/digivolve-conditions digivolve-conditions
      :card/dp (some->> (get info-top "DP")
                        (re-find #"[0-9]+")
                        Integer/parseInt)
@@ -184,6 +297,7 @@
      :card/effect (or (get info-bottom "Effect")
                       (get info-bottom "効果"))
      :card/inherited-effect (or (get info-bottom "Digivoluve effect")
+                                (get info-bottom "Digivolve effect")
                                 (get info-bottom "進化元効果"))
      :card/security-effect (or (get info-bottom "Security effect")
                                (get info-bottom "セキュリティ効果"))
@@ -195,18 +309,22 @@
                       c)
                      first
                      ((comp first :content)))
-     :card/image (->> (select/select (select/descendant (select/tag "img"))
-                                     c)
-                      first
-                      (#(-> (get-in % [:attrs :src])
-                            (string/replace #"^.." ""))))}))
+     :card/image image}))
 
 (defn cardlist
   [url]
-  (let [response (http-get url)
-        article (->> (:body response)
-                     hickory/parse
-                     hickory/as-hickory
+  (let [page (->> (http-get url)
+                  :body
+                  hickory/parse
+                  hickory/as-hickory)
+        lang (->> page
+                  (select/select
+                   (select/descendant (select/tag "html")))
+                  first
+                  :attrs
+                  :lang
+                  keyword)
+        article (->> page
                      (select/select
                       (select/descendant (select/id "article")))
                      first)
@@ -225,31 +343,43 @@
                               (select/class "card_detail"))
                              article)]
     (reduce (fn [accl c]
-              (let [new-card (card c)
+              (let [nc (card c)
                     broken-keys (reduce (fn [broken-keys [k v]]
                                           (cond-> broken-keys
                                             (= v :error) (conj k)))
-                                        new-card)
-                    cards-by-id (group-by :card/id accl)
-                    new-card (->> (select-keys (get-in cards-by-id
-                                                       [(:card/id new-card)
-                                                        0])
-                                               broken-keys)
-                                  (merge new-card)
-                                  (reduce (fn [accl2 [k v]]
-                                            (assoc accl2
-                                                   k
-                                                   (condp = v
-                                                     "-" nil
-                                                     v)))
-                                          {}))]
+                                        nc)
+                    cards-by-id (group-by :card/number accl)
+                    nc (->> (select-keys (get-in cards-by-id
+                                                 [(:card/number nc)
+                                                  0])
+                                         broken-keys)
+                            (merge nc)
+                            (reduce (fn [accl2 [k v]]
+                                      (assoc accl2
+                                             k
+                                             (condp = v
+                                               "ー" nil
+                                               "－" nil
+                                               "-" nil
+                                               v)))
+                                    {}))
+                    parallel-id (some-> (re-find #"_P([0-9]+)" (:card/image nc))
+                                        second
+                                        Long/parseLong)]
                 (conj accl
-                      (-> new-card
-                          (assoc :card/release title)
-                          (update :card/image #(str (string/replace url
-                                                                    #"(\.com).*"
-                                                                    "$1")
-                                                    %))))))
+                      (-> nc
+                          (assoc :card/id (-> (hash [(:card/number nc)
+                                                     parallel-id
+                                                     lang])
+                                              str
+                                              (.getBytes)
+                                              UUID/nameUUIDFromBytes)
+                                 :card/parallel-id parallel-id
+                                 :card/lang lang
+                                 :card/release title)
+                          (update :card/image
+                                  #(str (string/replace url #"(\.com).*" "$1")
+                                        %))))))
             []
             cards)))
 
@@ -263,37 +393,91 @@
           (select/descendant (select/id "snaviListCol")
                              (select/tag "li")
                              (select/tag "a")))
-         (map #(str origin "/cardlist/" (get-in % [:attrs :href])))
+         (pmap #(str origin "/cardlist/" (get-in % [:attrs :href])))
          (mapcat cardlist))))
 
-(defn save-file
-  [uri]
-  (let [url (URL. uri)
-        fullpath (str (.getHost url) (.getPath url))
-        path (subs fullpath 0 (inc (string/last-index-of fullpath "/")))]
-    (when-not (.exists (io/file (str "resources/" path)))
-      (.mkdirs (io/file (str "resources/" path))))
-    (when-not (.exists (io/file (str "resources/" fullpath)))
-      (with-open [in (io/input-stream uri)
-                  out (io/output-stream (str "resources/" fullpath))]
-        (println (format "Downloading image: %s" uri))
-        (io/copy in out)))))
+(defn- color-diff
+  "Calculate the distance between two colors"
+  [[r1 g1 b1] [r2 g2 b2]]
+  (+ (Math/pow (- r1 r2) 2)
+     (Math/pow (- g1 g2) 2)
+     (Math/pow (- b1 b2) 2)))
+
+(defn digivolve-color
+  [[r g b]]
+  (->> (reduce (fn [accl c]
+                 (assoc accl
+                        (color-diff (second c)
+                                    [r g b])
+                        (first c)))
+               {}
+               colors)
+       (sort-by key)
+       (map val)
+       first))
+
+(defn digivolve-colors
+  [{:card/keys [digivolve-conditions image] :as card}]
+  (with-open [card-stream (io/input-stream (str "resources/images/" image))]
+    (let [card-image (ImageIO/read card-stream)
+          coords {0 [37 138]
+                  1 [37 185]}
+          color-pick (fn [[x y]]
+                       (let [c (Color. (.getRGB card-image x y))]
+                         [(.getRed c) (.getGreen c) (.getBlue c)]))]
+      (assoc card
+             :card/digivolve-conditions
+             (->> (map-indexed (fn [i d]
+                                 (assoc d
+                                        :digivolve/color
+                                        (-> (color-pick (get coords i))
+                                            digivolve-color)))
+                               digivolve-conditions)
+                  (into []))))))
+
+(defn save-card-image
+  [{:card/keys [number lang image] :as c}]
+  (let [filename (subs image (inc (string/last-index-of image "/")))
+        translated? (string/starts-with? image "https://en.digimoncard.com")
+        lang (if translated? :ja lang)
+        lang (name lang)]
+    (.mkdirs (io/file (str "resources/images/" lang)))
+    (when-not (.exists (io/file (str "resources/images/" lang "/" filename)))
+      (with-open [in (io/input-stream image)
+                  out (io/output-stream (str "resources/images/"
+                                             lang "/" filename))]
+        (println (format "Downloading image: %s" image))
+        (io/copy in out)))
+    (assoc c :card/image (str lang "/" filename))))
 
 (defn -main
   []
-  (doseq [lang ["ja" "en"]]
-    (->> (cardlists (base-url {:lang lang}))
-         (group-by (fn [{:keys [card/id]}]
-                     (-> id
-                         (string/split #"-")
-                         first)))
-         (map (fn [[card-set cards]]
-                (when-not (.exists (io/file (str "resources/" lang)))
-                  (.mkdirs (io/file (str "resources/" lang))))
-                (spit (str "resources/" lang "/" card-set ".edn") "")
-                (doseq [card cards]
-                  (spit (str "resources/" lang "/" card-set ".edn")
-                        (with-out-str (pprint/pprint card))
-                        :append true)
-                  (save-file (:card/image card)))))
-         doall)))
+  (let [cards (->> (mapcat (fn [subdomain]
+                             (cardlists (base-url {:subdomain subdomain})))
+                           [nil "en" "world"])
+                   (pmap (fn [c]
+                           (->> (save-card-image c)
+                                digivolve-colors
+                                (reduce (fn [caccl [k v]]
+                                          (if (nil? v)
+                                            caccl
+                                            (assoc caccl k v)))
+                                        {})))))
+        ;; We only store the Japanese digivolve costs as they are accurate
+        digivolve-conditions
+        (->> cards
+             (filter #(and (= :ja (:card/lang %))
+                           (nil? (:card/parallel-id %))
+                           (not (empty? (:card/digivolve-conditions %)))))
+             (mapcat :card/digivolve-conditions))
+        cards (pmap (fn [{:card/keys [number digivolve-conditions] :as c}]
+                      (cond-> c
+                        (empty? digivolve-conditions)
+                        (dissoc :card/digivolve-conditions)
+                        (not-empty digivolve-conditions)
+                        (assoc :card/digivolve-conditions
+                               (map (fn [{:digivolve/keys [id]}]
+                                      [:digivolve/id id])
+                                    digivolve-conditions))))
+                    cards)]
+    (d/transact! conn (concat digivolve-conditions cards))))

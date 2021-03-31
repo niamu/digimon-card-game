@@ -6,6 +6,7 @@
  :aliases {:dcg/ingest
            {:extra-paths ["dev"]
             :extra-deps {clj-http/clj-http {:mvn/version "3.10.2"}
+                         datalevin/datalevin {:mvn/version "0.4.28"}
                          hickory/hickory {:mvn/version "0.7.1"}}
             :main-opts ["-m" "dcg.ingest"]}
 
