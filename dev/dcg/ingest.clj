@@ -1,7 +1,7 @@
 (ns dcg.ingest
   (:gen-class)
+  (:refer-clojure :exclude [frequencies])
   (:require
-   [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.string :as string]
    [clj-http.client :as client]
@@ -10,7 +10,6 @@
    [hickory.select :as select])
   (:import
    [java.awt Color]
-   [java.io PushbackReader]
    [java.util UUID]
    [javax.imageio ImageIO]))
 
@@ -60,6 +59,18 @@
            {:db/ident :card/effect
             :db/valueType :db.type/string
             :db/cardinality :db.cardinality/one}
+           {:db/ident :card/keyword-effects
+            :db/valueType :db.type/ref
+            :db/cardinality :db.cardinality/many}
+           {:db/ident :card/timings
+            :db/valueType :db.type/ref
+            :db/cardinality :db.cardinality/many}
+           {:db/ident :card/frequencies
+            :db/valueType :db.type/ref
+            :db/cardinality :db.cardinality/many}
+           {:db/ident :card/mentions ;; Mentions of other `:card/id`s
+            :db/valueType :db.type/ref
+            :db/cardinality :db.cardinality/many}
            {:db/ident :card/rarity
             :db/valueType :db.type/string
             :db/cardinality :db.cardinality/one}
@@ -100,6 +111,30 @@
             :db/cardinality :db.cardinality/one}
            {:db/ident :digivolve/color
             :db/valueType :db.type/keyword
+            :db/cardinality :db.cardinality/one}
+           ;; Keyword Effects
+           {:db/ident :keyword-effect/id
+            :db/valueType :db.type/string
+            :db/unique :db.unique/identity
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :keyword-effect/lang
+            :db/valueType :db.type/keyword
+            :db/cardinality :db.cardinality/one}
+           ;; Timings
+           {:db/ident :timing/id
+            :db/valueType :db.type/string
+            :db/unique :db.unique/identity
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :timing/lang
+            :db/valueType :db.type/keyword
+            :db/cardinality :db.cardinality/one}
+           ;; Frequencies
+           {:db/ident :frequency/id
+            :db/valueType :db.type/string
+            :db/unique :db.unique/identity
+            :db/cardinality :db.cardinality/one}
+           {:db/ident :frequency/lang
+            :db/valueType :db.type/keyword
             :db/cardinality :db.cardinality/one}]))
 
 (def conn (d/get-conn "resources/db" schema))
@@ -114,6 +149,9 @@
                                          (:status response)))))))
 
 (defonce http-get (memoize http-get*))
+
+(def subdomains
+  [nil "en" "world"])
 
 (defn base-url
   [& [{:keys [subdomain]}]]
@@ -149,43 +187,96 @@
    "P"   "Promo"})
 
 (def timings
-  ["On Play"
-   "When Digivolving"
-   "When Attacking"
-   "End of Attack"
-   "On Deletion"
-   "Your Turn"
-   "All Turns"
-   "Opponent's Turn"
-   "Start of Your Turn"
-   "End of Your Turn"
-   "Security"
-   "Main"])
+  [{:timing/id "On Play"
+    :timing/lang :en}
+   {:timing/id "When Digivolving"
+    :timing/lang :en}
+   {:timing/id "When Attacking"
+    :timing/lang :en}
+   {:timing/id "End of Attack"
+    :timing/lang :en}
+   {:timing/id "On Deletion"
+    :timing/lang :en}
+   {:timing/id "Your Turn"
+    :timing/lang :en}
+   {:timing/id "All Turns"
+    :timing/lang :en}
+   {:timing/id "Opponent's Turn"
+    :timing/lang :en}
+   {:timing/id "Start of Your Turn"
+    :timing/lang :en}
+   {:timing/id "End of Your Turn"
+    :timing/lang :en}
+   {:timing/id "Security"
+    :timing/lang :en}
+   {:timing/id "Main"
+    :timing/lang :en}
+   {:timing/id "登場時"
+    :timing/lang :ja}
+   {:timing/id "進化時"
+    :timing/lang :ja}
+   {:timing/id "アタック時"
+    :timing/lang :ja}
+   {:timing/id "アタック終了時"
+    :timing/lang :ja}
+   {:timing/id "消滅時"
+    :timing/lang :ja}
+   {:timing/id "自分のターン"
+    :timing/lang :ja}
+   {:timing/id "お互いのターン"
+    :timing/lang :ja}
+   {:timing/id "相手のターン"
+    :timing/lang :ja}
+   {:timing/id "相手のターン終了時"
+    :timing/lang :ja}
+   {:timing/id "自分のターン開始時"
+    :timing/lang :ja}
+   {:timing/id "セキュリティ"
+    :timing/lang :ja}
+   {:timing/id "メイン"
+    :timing/lang :ja}])
 
-(def states
-  ["Suspend"
-   "Suspended"
-   "Unsuspend"
-   "Unsuspended"
-   "Digivolution Card"
-   "Deleted"
-   "Security Digimon"])
+(def frequencies
+  [{:frequency/id "Once Per Turn"
+    :frequency/lang :en}
+   {:frequency/id "Twice Per Turn"
+    :frequency/lang :en}
+   {:frequency/id "ターンに1回"
+    :frequency/lang :ja}
+   {:frequency/id "ターンに2回"
+    :frequency/lang :ja}])
 
-(def effects
-  ["Blocker"
-   "Security Attack"
-   "Recovery"
-   "Piercing"
-   "Draw"
-   "Jamming"
-   "Digisorption"
-   "Reboot"
-   "De-Digivolve"
-   "Retaliation"])
-
-(def frequency
-  ["Once Per Turn"
-   "Twice Per Turn"])
+(defn keyword-effects
+  [origin]
+  (let [page (->> (http-get (str origin "/cardlist/"))
+                  :body
+                  hickory/parse
+                  hickory/as-hickory)
+        lang (->> page
+                  (select/select
+                   (select/descendant (select/tag "html")))
+                  first
+                  :attrs
+                  :lang
+                  keyword)
+        effects (->> page
+                     (select/select
+                      (select/descendant (select/class "schItem")
+                                         (select/tag :select)))
+                     (map (comp #(mapcat :content %)
+                                :content))
+                     (filter (fn [kv]
+                               (some #(string/includes? % "1") kv)))
+                     first
+                     rest
+                     (map (fn [s]
+                            (string/trim (string/replace s #"[0-9]" ""))))
+                     set)]
+    (reduce (fn [accl i]
+              (conj accl {:keyword-effect/id i
+                          :keyword-effect/lang lang}))
+            []
+            effects)))
 
 (defn card
   [c]
@@ -363,9 +454,11 @@
                                                "-" nil
                                                v)))
                                     {}))
-                    parallel-id (some-> (re-find #"_P([0-9]+)" (:card/image nc))
-                                        second
-                                        Long/parseLong)]
+                    parallel-id (or (some-> (re-find #"_P([0-9]+)"
+                                                     (:card/image nc))
+                                            second
+                                            Long/parseLong)
+                                    0)]
                 (conj accl
                       (-> nc
                           (assoc :card/id (-> (hash [(:card/number nc)
@@ -450,24 +543,105 @@
         (io/copy in out)))
     (assoc c :card/image (str lang "/" filename))))
 
+(defn tag-card-mentions
+  [cards c]
+  (->> (filter (fn [{:keys [card/name]}]
+                 (string/includes? (->> c
+                                        ((comp string/join
+                                               (juxt :card/effect
+                                                     :card/security-effect
+                                                     :card/inherited-effect)))
+                                        string/join)
+                                   name))
+               cards)
+       (reduce (fn [accl {:keys [card/number card/lang]}]
+                 (conj accl
+                       ;; Always add the original card for mentions
+                       [:card/id (-> (hash [number 0 lang])
+                                     str
+                                     (.getBytes)
+                                     UUID/nameUUIDFromBytes)]))
+               [])
+       (assoc c :card/mentions)))
+
+(defn tag-card-timings
+  [timings c]
+  (->> (filter (fn [{:keys [timing/id]}]
+                 (string/includes? (->> c
+                                        ((comp string/join
+                                               (juxt :card/effect
+                                                     :card/security-effect
+                                                     :card/inherited-effect)))
+                                        string/join)
+                                   id))
+               timings)
+       set
+       (reduce (fn [accl {:keys [timing/id]}]
+                 (conj accl [:timing/id id]))
+               [])
+       (assoc c :card/timings)))
+
+(defn tag-card-keyword-effects
+  [effects c]
+  (->> (filter (fn [{:keys [keyword-effect/id]}]
+                 (string/includes? (->> c
+                                        ((comp string/join
+                                               (juxt :card/effect
+                                                     :card/security-effect
+                                                     :card/inherited-effect)))
+                                        string/join)
+                                   id))
+               effects)
+       set
+       (reduce (fn [accl {:keys [keyword-effect/id]}]
+                 (conj accl [:keyword-effect/id id]))
+               [])
+       (assoc c :card/keyword-effects)))
+
+(defn tag-card-frequencies
+  [frequencies c]
+  (->> (filter (fn [{:keys [frequency/id]}]
+                 (string/includes? (->> c
+                                        ((comp string/join
+                                               (juxt :card/effect
+                                                     :card/security-effect
+                                                     :card/inherited-effect)))
+                                        string/join)
+                                   id))
+               frequencies)
+       set
+       (reduce (fn [accl {:keys [frequency/id]}]
+                 (conj accl [:frequency/id id]))
+               [])
+       (assoc c :card/frequencies)))
+
 (defn -main
   []
-  (let [cards (->> (mapcat (fn [subdomain]
-                             (cardlists (base-url {:subdomain subdomain})))
-                           [nil "en" "world"])
+  (let [effects (mapcat (fn [subdomain]
+                          (keyword-effects (base-url {:subdomain subdomain})))
+                        subdomains)
+        cards (mapcat (fn [subdomain]
+                        (cardlists (base-url {:subdomain subdomain})))
+                      subdomains)
+        cards (->> cards
                    (pmap (fn [c]
                            (->> (save-card-image c)
                                 digivolve-colors
-                                (reduce (fn [caccl [k v]]
-                                          (if (nil? v)
-                                            caccl
-                                            (assoc caccl k v)))
+                                (tag-card-timings timings)
+                                (tag-card-keyword-effects effects)
+                                (tag-card-frequencies frequencies)
+                                (reduce (fn [accl [k v]]
+                                          (if (or (nil? v)
+                                                  (and (coll? v)
+                                                       (empty? v)))
+                                            accl
+                                            (assoc accl k v)))
                                         {})))))
         ;; We only store the Japanese digivolve costs as they are accurate
         digivolve-conditions
         (->> cards
              (filter #(and (= :ja (:card/lang %))
-                           (nil? (:card/parallel-id %))
+                           (zero? (:card/parallel-id %))
                            (not (empty? (:card/digivolve-conditions %)))))
              (mapcat :card/digivolve-conditions))
         cards (pmap (fn [{:card/keys [number digivolve-conditions] :as c}]
@@ -480,4 +654,9 @@
                                       [:digivolve/id id])
                                     digivolve-conditions))))
                     cards)]
-    (d/transact! conn (concat digivolve-conditions cards))))
+    (d/transact! conn (concat timings
+                              frequencies
+                              effects
+                              digivolve-conditions
+                              cards))
+    (d/transact! conn (map (fn [c] (tag-card-mentions cards c)) cards))))

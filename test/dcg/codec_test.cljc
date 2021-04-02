@@ -10,22 +10,22 @@
       :cljs [cljs.test :as t :include-macros true])))
 
 (def st1-deck
-  {:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
-   :deck/deck [{:card/id "ST1-02", :card/count 4}
-               {:card/id "ST1-03", :card/count 4}
-               {:card/id "ST1-04", :card/count 4}
-               {:card/id "ST1-05", :card/count 4}
-               {:card/id "ST1-06", :card/count 4}
-               {:card/id "ST1-07", :card/count 2}
-               {:card/id "ST1-08", :card/count 4}
-               {:card/id "ST1-09", :card/count 4}
-               {:card/id "ST1-10", :card/count 2}
-               {:card/id "ST1-11", :card/count 2}
-               {:card/id "ST1-12", :card/count 4}
-               {:card/id "ST1-13", :card/count 4}
-               {:card/id "ST1-14", :card/count 4}
-               {:card/id "ST1-15", :card/count 2}
-               {:card/id "ST1-16", :card/count 2}],
+  {:deck/digi-eggs [{:card/number "ST1-01", :card/count 4}],
+   :deck/deck [{:card/number "ST1-02", :card/count 4}
+               {:card/number "ST1-03", :card/count 4}
+               {:card/number "ST1-04", :card/count 4}
+               {:card/number "ST1-05", :card/count 4}
+               {:card/number "ST1-06", :card/count 4}
+               {:card/number "ST1-07", :card/count 2}
+               {:card/number "ST1-08", :card/count 4}
+               {:card/number "ST1-09", :card/count 4}
+               {:card/number "ST1-10", :card/count 2}
+               {:card/number "ST1-11", :card/count 2}
+               {:card/number "ST1-12", :card/count 4}
+               {:card/number "ST1-13", :card/count 4}
+               {:card/number "ST1-14", :card/count 4}
+               {:card/number "ST1-15", :card/count 2}
+               {:card/number "ST1-16", :card/count 2}],
    :deck/name "Starter Deck, Gaia Red [ST-1]"})
 
 (def st1-deck-encoded
@@ -33,55 +33,55 @@
        "IFtTVC0xXQ"))
 
 (def digi-bros-deck
-  #:deck{:digi-eggs [#:card{:id "BT2-001", :count 4}
-                     #:card{:id "ST1-01", :count 1}],
-         :deck [#:card{:id "BT1-009", :count 1}
-                #:card{:id "BT1-019", :count 4}
-                #:card{:id "BT1-020", :count 2}
-                #:card{:id "BT1-085", :count 2, :parallel-id 1}
-                #:card{:id "BT2-016", :count 4}
-                #:card{:id "BT3-008", :count 4}
-                #:card{:id "BT3-013", :count 4}
-                #:card{:id "BT3-016", :count 3}
-                #:card{:id "BT3-018", :count 2}
-                #:card{:id "BT3-019", :count 4}
-                #:card{:id "BT3-072", :count 3}
-                #:card{:id "ST1-02", :count 4}
-                #:card{:id "ST1-03", :count 4}
-                #:card{:id "ST1-06", :count 3}
-                #:card{:id "ST1-07", :count 1}
-                #:card{:id "ST1-07", :count 3, :parallel-id 1}
-                #:card{:id "ST1-16", :count 2, :parallel-id 1}],
-         :name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"})
+  {:deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
+                    {:card/number "ST1-01", :card/count 1}]
+   :deck/deck [{:card/number "BT1-009", :card/count 1}
+               {:card/number "BT1-019", :card/count 4}
+               {:card/number "BT1-020", :card/count 2}
+               {:card/number "BT1-085", :card/count 2, :card/parallel-id 1}
+               {:card/number "BT2-016", :card/count 4}
+               {:card/number "BT3-008", :card/count 4}
+               {:card/number "BT3-013", :card/count 4}
+               {:card/number "BT3-016", :card/count 3}
+               {:card/number "BT3-018", :card/count 2}
+               {:card/number "BT3-019", :card/count 4}
+               {:card/number "BT3-072", :card/count 3}
+               {:card/number "ST1-02", :card/count 4}
+               {:card/number "ST1-03", :card/count 4}
+               {:card/number "ST1-06", :card/count 3}
+               {:card/number "ST1-07", :card/count 1}
+               {:card/number "ST1-07", :card/count 3, :card/parallel-id 1}
+               {:card/number "ST1-16", :card/count 2}]
+   :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"})
 
 (def digi-bros-deck-encoded
-  (str "DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1Qx"
-       "IEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1c"
+  (str "DCGApQzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1Qx"
+       "IEbCwYMBiEUCRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1c"
        "yd3doUjQp"))
 
 (def ja-deck
   (assoc st1-deck :deck/name "予算の赤いデッキ"))
 
 (def invalid-deck
-  {:deck/digi-eggs [{:card/id "ST1-01", :card/count 3}
-                    {:card/id "ST1-01", :card/count 1}
-                    {:card/id "ST2-01", :card/count 1}],
-   :deck/deck [{:card/id "ST1-02", :card/count 0}
-               {:card/id "ST1-03", :card/count 4}
-               {:card/id "ST1-04", :card/count 4}
-               {:card/id "ST1-05", :card/count 4}
-               {:card/id "ST1-06", :card/count 4}
-               {:card/id "ST1-07", :card/count 2}
-               {:card/id "ST1-08", :card/count 4}
-               {:card/id "ST1-09", :card/count 4}
-               {:card/id "ST1-10", :card/count 2}
-               {:card/id "ST1-11", :card/count 2}
-               {:card/id "ST1-12", :card/count 4}
-               {:card/id "ST1-13", :card/count 4}
-               {:card/id "ST1-14", :card/count 4}
-               {:card/id "XXXXX-15", :card/count 2}
-               {:card/id "ST1-99999", :card/count 4}
-               {:card/id "ST1-16", :card/count 5}],
+  {:deck/digi-eggs [{:card/number "ST1-01", :card/count 3}
+                    {:card/number "ST1-01", :card/count 1}
+                    {:card/number "ST2-01", :card/count 1}],
+   :deck/deck [{:card/number "ST1-02", :card/count 0}
+               {:card/number "ST1-03", :card/count 4}
+               {:card/number "ST1-04", :card/count 4}
+               {:card/number "ST1-05", :card/count 4}
+               {:card/number "ST1-06", :card/count 4}
+               {:card/number "ST1-07", :card/count 2}
+               {:card/number "ST1-08", :card/count 4}
+               {:card/number "ST1-09", :card/count 4}
+               {:card/number "ST1-10", :card/count 2}
+               {:card/number "ST1-11", :card/count 2}
+               {:card/number "ST1-12", :card/count 4}
+               {:card/number "ST1-13", :card/count 4}
+               {:card/number "ST1-14", :card/count 4}
+               {:card/number "XXXXX-15", :card/count 2}
+               {:card/number "ST1-99999", :card/count 4}
+               {:card/number "ST1-16", :card/count 5}],
    :deck/name (apply str (repeat 64 "_"))})
 
 (t/deftest codec-round-trip
@@ -116,42 +116,52 @@
 (t/deftest parallel-id-order
   (t/testing ":card/parallel-id order does not affect encoder equality"
     (t/are [deck1 deck2] (= (encode/encode deck1) (encode/encode deck2))
-      {:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
-       :deck/deck [{:card/id "ST1-02", :card/count 2}
-                   {:card/id "ST1-02", :card/count 2 :card/parallel-id 1}
-                   {:card/id "ST1-03", :card/count 4}
-                   {:card/id "ST1-04", :card/count 4}
-                   {:card/id "ST1-05", :card/count 4}
-                   {:card/id "ST1-06", :card/count 4}
-                   {:card/id "ST1-07", :card/count 2}
-                   {:card/id "ST1-08", :card/count 4}
-                   {:card/id "ST1-09", :card/count 4}
-                   {:card/id "ST1-10", :card/count 2}
-                   {:card/id "ST1-11", :card/count 2}
-                   {:card/id "ST1-12", :card/count 4}
-                   {:card/id "ST1-13", :card/count 4}
-                   {:card/id "ST1-14", :card/count 4}
-                   {:card/id "ST1-15", :card/count 2}
-                   {:card/id "ST1-16", :card/count 2}],
+      {:deck/digi-eggs [{:card/number "ST1-01", :card/count 4}],
+       :deck/deck [{:card/number "ST1-02", :card/count 2}
+                   {:card/number "ST1-02", :card/count 2 :card/parallel-id 1}
+                   {:card/number "ST1-03", :card/count 4}
+                   {:card/number "ST1-04", :card/count 4}
+                   {:card/number "ST1-05", :card/count 4}
+                   {:card/number "ST1-06", :card/count 4}
+                   {:card/number "ST1-07", :card/count 2}
+                   {:card/number "ST1-08", :card/count 4}
+                   {:card/number "ST1-09", :card/count 4}
+                   {:card/number "ST1-10", :card/count 2}
+                   {:card/number "ST1-11", :card/count 2}
+                   {:card/number "ST1-12", :card/count 4}
+                   {:card/number "ST1-13", :card/count 4}
+                   {:card/number "ST1-14", :card/count 4}
+                   {:card/number "ST1-15", :card/count 2}
+                   {:card/number "ST1-16", :card/count 2}],
        :deck/name "Starter Deck, Gaia Red [ST-1]"}
-      {:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
-       :deck/deck [{:card/id "ST1-02", :card/count 2 :card/parallel-id 1}
-                   {:card/id "ST1-02", :card/count 2}
-                   {:card/id "ST1-03", :card/count 4}
-                   {:card/id "ST1-04", :card/count 4}
-                   {:card/id "ST1-05", :card/count 4}
-                   {:card/id "ST1-06", :card/count 4}
-                   {:card/id "ST1-07", :card/count 2}
-                   {:card/id "ST1-08", :card/count 4}
-                   {:card/id "ST1-09", :card/count 4}
-                   {:card/id "ST1-10", :card/count 2}
-                   {:card/id "ST1-11", :card/count 2}
-                   {:card/id "ST1-12", :card/count 4}
-                   {:card/id "ST1-13", :card/count 4}
-                   {:card/id "ST1-14", :card/count 4}
-                   {:card/id "ST1-15", :card/count 2}
-                   {:card/id "ST1-16", :card/count 2}],
+      {:deck/digi-eggs [{:card/number "ST1-01", :card/count 4}],
+       :deck/deck [{:card/number "ST1-02", :card/count 2 :card/parallel-id 1}
+                   {:card/number "ST1-02", :card/count 2}
+                   {:card/number "ST1-03", :card/count 4}
+                   {:card/number "ST1-04", :card/count 4}
+                   {:card/number "ST1-05", :card/count 4}
+                   {:card/number "ST1-06", :card/count 4}
+                   {:card/number "ST1-07", :card/count 2}
+                   {:card/number "ST1-08", :card/count 4}
+                   {:card/number "ST1-09", :card/count 4}
+                   {:card/number "ST1-10", :card/count 2}
+                   {:card/number "ST1-11", :card/count 2}
+                   {:card/number "ST1-12", :card/count 4}
+                   {:card/number "ST1-13", :card/count 4}
+                   {:card/number "ST1-14", :card/count 4}
+                   {:card/number "ST1-15", :card/count 2}
+                   {:card/number "ST1-16", :card/count 2}],
        :deck/name "Starter Deck, Gaia Red [ST-1]"})))
+
+(defn clean-deck
+  [cards]
+  ((comp set
+         #(map (fn [card]
+                 (cond-> card
+                   (zero? (:card/parallel-id card 0))
+                   (dissoc :card/parallel-id)))
+               %))
+   cards))
 
 #?(:clj
    (t/deftest generated-decks
@@ -163,10 +173,10 @@
              (do (t/is (= (-> deck
                               encode/encode
                               decode/decode
-                              (update :deck/digi-eggs set)
-                              (update :deck/deck set))
+                              (update :deck/digi-eggs clean-deck)
+                              (update :deck/deck clean-deck))
                           (-> deck
-                              (update :deck/digi-eggs set)
-                              (update :deck/deck set))))
+                              (update :deck/digi-eggs clean-deck)
+                              (update :deck/deck clean-deck))))
                  (recur (inc iteration)))
              (recur iteration)))))))

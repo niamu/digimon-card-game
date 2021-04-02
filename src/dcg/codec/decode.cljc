@@ -40,7 +40,7 @@
       (read-bits-from-byte current-byte (dec bits) 0 0))))
 
 (defn- read-serialized-card
-  [deck-bytes byte-index index-end prev-card-id]
+  [deck-bytes byte-index index-end prev-card-number]
   (when (> @byte-index index-end)
     (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
   (let [header (nth deck-bytes @byte-index)]
@@ -51,8 +51,8 @@
      (-> header
          (bit-shift-right 3)
          (bit-and 0x07))
-     ;; card id offset + previous card id
-     (+ prev-card-id
+     ;; card number offset + previous card number
+     (+ prev-card-number
         (read-var-encoded-uint32 header
                                  3 ; bits
                                  deck-bytes
@@ -106,31 +106,32 @@
                            _ (swap! byte-index inc)]
                        (recur (->> (loop [cards []
                                           card-index 0
-                                          prev-card-id 0]
+                                          prev-card-number 0]
                                      (if (< card-index card-set-count)
-                                       (let [[card-count parallel-id id]
+                                       (let [[card-count parallel-id number]
                                              (apply read-serialized-card
                                                     [deck-bytes
                                                      byte-index
                                                      total-card-bytes
-                                                     prev-card-id])
+                                                     prev-card-number])
                                              fstr (str "~A-~" pad ",'0d")
                                              card
-                                             (cond-> {:card/id
-                                                      (str card-set "-"
-                                                           (loop [n (str id)]
-                                                             (if (< (count n)
-                                                                    pad)
-                                                               (recur (str "0"
-                                                                           n))
-                                                               n)))
-                                                      :card/count card-count}
+                                             (cond->
+                                                 {:card/number
+                                                  (str card-set "-"
+                                                       (loop [n (str number)]
+                                                         (if (< (count n)
+                                                                pad)
+                                                           (recur (str "0"
+                                                                       n))
+                                                           n)))
+                                                  :card/count card-count}
                                                (not (zero? parallel-id))
                                                (assoc :card/parallel-id
                                                       parallel-id))]
                                          (recur (conj cards card)
                                                 (inc card-index)
-                                                id))
+                                                number))
                                        cards))
                                    (concat deck)
                                    (into []))
