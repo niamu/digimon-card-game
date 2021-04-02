@@ -11,11 +11,11 @@
   #?(:clj (:import
            [java.util Base64])))
 
-(def ^:private card-id-regex
+(def ^:private card-number-regex
   "1-4 alphanumeric characters followed by 2-3 digits separated by a hyphen"
   #"[A-Z|0-9]{1,4}\-[0-9]{2,3}")
 
-(s/def :card/number
+(s/def :card/number-int
   (s/int-in 1 1000))
 
 (s/def :card/set
@@ -26,26 +26,26 @@
                          (fn [size]
                            (gen/vector (gen/char-alpha) size))))))
 
-(s/def :card/id
-  (s/with-gen #(re-matches card-id-regex %)
+(s/def :card/number
+  (s/with-gen #(re-matches card-number-regex %)
     #(gen/fmap (fn [[s n]]
                  (str s "-" (cond->> n
                               (< (count (str n)) 2) (str "0"))))
-               (s/gen (s/cat :s :card/set :n :card/number)))))
+               (s/gen (s/cat :s :card/set :n :card/number-int)))))
 
 (s/def :card/count
   (s/int-in 1 5))
 
 (s/def :card/parallel-id
-  (s/int-in 1 8))
+  (s/int-in 0 8))
 
 (s/def ::card
-  (s/keys :req [:card/id :card/count]
+  (s/keys :req [:card/number :card/count]
           :opt [:card/parallel-id]))
 
 (s/def ::deck-is-unique?
   (fn [cards]
-    (let [card-ids (map (juxt :card/id :card/parallel-id) cards)]
+    (let [card-ids (map (juxt :card/number :card/parallel-id) cards)]
       (== (count card-ids)
           (count (set card-ids))))))
 
@@ -59,14 +59,14 @@
 (defn- card-id-count-limit
   [cards]
   (->> cards
-       (group-by (fn [{:card/keys [id]}] id))
-       (reduce (fn [accl [id cards]]
-                 (conj accl [id (reduce (fn [accl {:card/keys [count]}]
-                                          (+ accl count))
-                                        0
-                                        cards)]))
+       (group-by (fn [{:card/keys [number]}] number))
+       (reduce (fn [accl [number cards]]
+                 (conj accl [number (reduce (fn [accl {:card/keys [count]}]
+                                              (+ accl count))
+                                            0
+                                            cards)]))
                {})
-       (every? (fn [[id card-count]]
+       (every? (fn [[number card-count]]
                  (<= card-count 4)))))
 
 (s/def :deck/digi-eggs
@@ -119,19 +119,20 @@
   [{:deck/keys [digi-eggs deck name]}]
   (let [byte-buffer (atom [])
         version (bit-or (bit-shift-left codec/version 4)
-                        (bits-with-carry (-> (map :card/id digi-eggs)
+                        (bits-with-carry (-> (map :card/number digi-eggs)
                                              set
                                              count)
                                          4))
         group-deck (fn [deck]
                      (->> deck
-                          (sort-by (juxt :card/id :card/parallel-id))
-                          (group-by (fn [{:keys [card/id]}]
-                                      (let [id-split (string/split id #"-")]
+                          (sort-by (juxt :card/number :card/parallel-id))
+                          (group-by (fn [{:keys [card/number]}]
+                                      (let [[card-set card-number-int]
+                                            (string/split number #"-")]
                                         [;; Card Set
-                                         (first id-split)
+                                         card-set
                                          ;; Zero padding for number
-                                         (count (second id-split))])))
+                                         (count card-number-int)])))
                           (into [])))
         name (string/trim name) ; trim the deck name just in case
         deck-name-bytes (get-bytes name) ; bytes of name for UTF-8 compatibility
@@ -163,27 +164,27 @@
             ;; 6 bits for count of cards in a card set
             (append-to-buffer! byte-buffer (bit-or (bit-shift-left (dec pad) 6)
                                                    (count cards)))
-            (loop [prev-card-id 0
+            (loop [prev-card-number 0
                    card-index 0]
               (when (< card-index (count cards))
-                (let [{:card/keys [id parallel-id count]
+                (let [{:card/keys [number parallel-id count]
                        :or {parallel-id 0}} (nth cards card-index)
-                      id (-> id
-                             (string/split #"-")
-                             second
-                             #?(:clj (Integer/parseInt)
-                                :cljs (js/parseInt)))
-                      id-offset (- id prev-card-id)]
+                      number (-> number
+                                 (string/split #"-")
+                                 second
+                                 #?(:clj (Integer/parseInt)
+                                    :cljs (js/parseInt)))
+                      number-offset (- number prev-card-number)]
                   ;; 2 bits for card count (1-4)
                   ;; 3 bits for parallel id (0-7) - BT5-086 has 4 at the moment
-                  ;; 3 bits for start of card id offset
+                  ;; 3 bits for start of card number offset
                   (append-to-buffer! byte-buffer
                                      (bit-or (bit-shift-left (dec count) 6)
                                              (bit-shift-left parallel-id 3)
-                                             (bits-with-carry id-offset 3)))
-                  ;; rest of card id offset
-                  (append-rest-to-buffer! byte-buffer id-offset 3)
-                  (recur id (inc card-index))))))
+                                             (bits-with-carry number-offset 3)))
+                  ;; rest of card number offset
+                  (append-rest-to-buffer! byte-buffer number-offset 3)
+                  (recur number (inc card-index))))))
           (recur (inc card-set-index)))))
     ;; Compute and store cards checksum (second byte in buffer)
     ;; Only store the first byte of checksum

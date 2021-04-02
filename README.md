@@ -6,9 +6,9 @@ The encoder enforces some restrictions that also match the current game rules of
 
 - 0-5 `:deck/digi-eggs` (after summing the `:card/count` values of each card)
 - 50 total `:deck/deck` cards (after summing the `:card/count` values of each card)
-- 1-4 `:card/count` for each unique `:card/id`
+- 1-4 `:card/count` for each unique `:card/number`
 - 0-7 `:card/parallel-id` (this id is the canonical parallel number in the image filename on digimoncard.com)
-- `:card/id`'s are expected to have a maximum of 4 alphanumeric characters followed by a 2-3 digit number separated by a hypen (if this pattern changes in the future a new deck codec version will be needed)
+- `:card/number`'s are expected to have a maximum of 4 alphanumeric characters followed by a 2-3 digit number separated by a hypen (if this pattern changes in the future a new deck codec version will be needed)
 - 63 bytes maximum `:deck/name`
 
 ## Demo
@@ -36,55 +36,55 @@ Options:
 ### Encode
 
 ```
-$ echo  "{:deck/digi-eggs [{:card/id \"BT2-001\" :card/count 4}
-                  {:card/id \"ST1-01\" :card/count 1}],
- :deck/deck  [{:card/id \"BT3-019\" :card/count 4}
-              {:card/id \"BT3-016\" :card/count 3}
-              {:card/id \"BT3-072\" :card/count 3}
-              {:card/id \"BT3-018\" :card/count 2}
-              {:card/id \"BT3-013\" :card/count 4}
-              {:card/id \"BT2-016\" :card/count 4}
-              {:card/id \"BT1-020\" :card/count 2}
-              {:card/id \"ST1-07\" :card/count 1}
-              {:card/id \"ST1-07\" :card/parallel-id 1 :card/count 3}
-              {:card/id \"ST1-06\" :card/count 3}
-              {:card/id \"BT1-019\" :card/count 4}
-              {:card/id \"BT3-008\" :card/count 4}
-              {:card/id \"ST1-03\" :card/count 4}
-              {:card/id \"ST1-02\" :card/count 4}
-              {:card/id \"BT1-009\" :card/count 1}
-              {:card/id \"BT1-085\" :card/parallel-id 1 :card/count 2}
-              {:card/id \"ST1-16\" :card/parallel-id 1 :card/count 2}],
+$ echo  "{:deck/digi-eggs [{:card/number \"BT2-001\" :card/count 4}
+                  {:card/number \"ST1-01\" :card/count 1}],
+ :deck/deck  [{:card/number \"BT3-019\" :card/count 4}
+              {:card/number \"BT3-016\" :card/count 3}
+              {:card/number \"BT3-072\" :card/count 3}
+              {:card/number \"BT3-018\" :card/count 2}
+              {:card/number \"BT3-013\" :card/count 4}
+              {:card/number \"BT2-016\" :card/count 4}
+              {:card/number \"BT1-020\" :card/count 2}
+              {:card/number \"ST1-07\" :card/count 1}
+              {:card/number \"ST1-07\" :card/parallel-id 1 :card/count 3}
+              {:card/number \"ST1-06\" :card/count 3}
+              {:card/number \"BT1-019\" :card/count 4}
+              {:card/number \"BT3-008\" :card/count 4}
+              {:card/number \"ST1-03\" :card/count 4}
+              {:card/number \"ST1-02\" :card/count 4}
+              {:card/number \"BT1-009\" :card/count 1}
+              {:card/number \"BT1-085\" :card/parallel-id 1 :card/count 2}
+              {:card/number \"ST1-16\" :card/count 2}],
  :deck/name \"Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)\"}" | dcg --encode
 
-DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp
+DCGApQzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiEUCRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp
 ```
 
 
 ### Decode
 
 ```
-$ dcg --decode DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiE0CRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp
+$ dcg --decode DCGApQzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiEUCRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp
 
-{:deck/digi-eggs [{:card/id "BT2-001", :card/count 4}
-                  {:card/id "ST1-01", :card/count 1}],
- :deck/deck [{:card/id "BT1-009", :card/count 1}
-             {:card/id "BT1-019", :card/count 4}
-             {:card/id "BT1-020", :card/count 2}
-             {:card/id "BT1-085", :card/count 2, :card/parallel-id 1}
-             {:card/id "BT2-016", :card/count 4}
-             {:card/id "BT3-008", :card/count 4}
-             {:card/id "BT3-013", :card/count 4}
-             {:card/id "BT3-016", :card/count 3}
-             {:card/id "BT3-018", :card/count 2}
-             {:card/id "BT3-019", :card/count 4}
-             {:card/id "BT3-072", :card/count 3}
-             {:card/id "ST1-02", :card/count 4}
-             {:card/id "ST1-03", :card/count 4}
-             {:card/id "ST1-06", :card/count 3}
-             {:card/id "ST1-07", :card/count 1}
-             {:card/id "ST1-07", :card/count 3, :card/parallel-id 1}
-             {:card/id "ST1-16", :card/count 2, :card/parallel-id 1}],
+{:deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
+                  {:card/number "ST1-01", :card/count 1}],
+ :deck/deck [{:card/number "BT1-009", :card/count 1}
+             {:card/number "BT1-019", :card/count 4}
+             {:card/number "BT1-020", :card/count 2}
+             {:card/number "BT1-085", :card/count 2, :card/parallel-id 1}
+             {:card/number "BT2-016", :card/count 4}
+             {:card/number "BT3-008", :card/count 4}
+             {:card/number "BT3-013", :card/count 4}
+             {:card/number "BT3-016", :card/count 3}
+             {:card/number "BT3-018", :card/count 2}
+             {:card/number "BT3-019", :card/count 4}
+             {:card/number "BT3-072", :card/count 3}
+             {:card/number "ST1-02", :card/count 4}
+             {:card/number "ST1-03", :card/count 4}
+             {:card/number "ST1-06", :card/count 3}
+             {:card/number "ST1-07", :card/count 1}
+             {:card/number "ST1-07", :card/count 3, :card/parallel-id 1}
+             {:card/number "ST1-16", :card/count 2}],
  :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"}
 ```
 
@@ -118,27 +118,27 @@ $ dcg --decode DCGApwzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwY
 
 ## Encoded Binary Structure
 
-The encoded binary structure of **Starter Deck, Gaia Red [ST-1]** is used here as an example. Both the `:deck/digi-eggs` and `:deck/deck` collections are sorted by `:card/id` before encoding begins.
+The encoded binary structure of **Starter Deck, Gaia Red [ST-1]** is used here as an example. Both the `:deck/digi-eggs` and `:deck/deck` collections are sorted by `:card/number` before encoding begins.
 
 The codec produces and consumes Base64URL strings as defined in [rfc4648&#167;5](https://tools.ietf.org/html/rfc4648#section-5) and does not implement padding characters.
 
 ```
-{:deck/digi-eggs [{:card/id "ST1-01", :card/count 4}],
- :deck/deck [{:card/id "ST1-02", :card/count 4}
-             {:card/id "ST1-03", :card/count 4}
-             {:card/id "ST1-04", :card/count 4}
-             {:card/id "ST1-05", :card/count 4}
-             {:card/id "ST1-06", :card/count 4}
-             {:card/id "ST1-07", :card/count 2}
-             {:card/id "ST1-08", :card/count 4}
-             {:card/id "ST1-09", :card/count 4}
-             {:card/id "ST1-10", :card/count 2}
-             {:card/id "ST1-11", :card/count 2}
-             {:card/id "ST1-12", :card/count 4}
-             {:card/id "ST1-13", :card/count 4}
-             {:card/id "ST1-14", :card/count 4}
-             {:card/id "ST1-15", :card/count 2}
-             {:card/id "ST1-16", :card/count 2}],
+{:deck/digi-eggs [{:card/number "ST1-01", :card/count 4}],
+ :deck/deck [{:card/number "ST1-02", :card/count 4}
+             {:card/number "ST1-03", :card/count 4}
+             {:card/number "ST1-04", :card/count 4}
+             {:card/number "ST1-05", :card/count 4}
+             {:card/number "ST1-06", :card/count 4}
+             {:card/number "ST1-07", :card/count 2}
+             {:card/number "ST1-08", :card/count 4}
+             {:card/number "ST1-09", :card/count 4}
+             {:card/number "ST1-10", :card/count 2}
+             {:card/number "ST1-11", :card/count 2}
+             {:card/number "ST1-12", :card/count 4}
+             {:card/number "ST1-13", :card/count 4}
+             {:card/number "ST1-14", :card/count 4}
+             {:card/number "ST1-15", :card/count 2}
+             {:card/number "ST1-16", :card/count 2}],
  :deck/name "Starter Deck, Gaia Red [ST-1]"}
  ```
 
