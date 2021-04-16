@@ -1,8 +1,6 @@
 (ns dcg.codec.decode
-  #?(:clj (:gen-class))
   (:require
    [dcg.codec.common :as codec]
-   #?(:clj [clojure.pprint :as pprint])
    [clojure.string :as string]
    #?(:cljs [goog.crypt.base64 :as b64]))
   #?(:clj (:import
@@ -80,67 +78,53 @@
                                                     deck-bytes
                                                     byte-index
                                                     total-card-bytes)
-        [digi-eggs main-deck]
-        (reduce
-         (fn [accl deck-type]
-           (conj accl
-                 (loop [deck []
-                        card-set-index 0]
-                   (if (condp = deck-type
-                         :digi-egg (< card-set-index digi-egg-set-count)
-                         (< @byte-index total-card-bytes))
-                     (let [;; card set is 4 characters/bytes
-                           card-set (-> (drop @byte-index deck-bytes)
-                                        (as-> deck-bytes
-                                            (take 4 deck-bytes))
-                                        codec/bytes->string
-                                        string/trim)
-                           _ (swap! byte-index #(+ % 4))
-                           ;; card set zero padding and count is 1 byte long
-                           card-set-pad-and-count (nth deck-bytes @byte-index)
-                           pad (-> card-set-pad-and-count
-                                   (bit-shift-right 6)
-                                   inc)
-                           card-set-count (-> card-set-pad-and-count
-                                              (bit-and 0x3F))
-                           _ (swap! byte-index inc)]
-                       (recur (->> (loop [cards []
-                                          card-index 0
-                                          prev-card-number 0]
-                                     (if (< card-index card-set-count)
-                                       (let [[card-count parallel-id number]
-                                             (apply read-serialized-card
-                                                    [deck-bytes
-                                                     byte-index
-                                                     total-card-bytes
-                                                     prev-card-number])
-                                             fstr (str "~A-~" pad ",'0d")
-                                             card
-                                             (cond->
-                                                 {:card/number
+        deck
+        (loop [deck []]
+          (if (< @byte-index total-card-bytes)
+            (let [;; card set is 4 characters/bytes
+                  card-set (-> (drop @byte-index deck-bytes)
+                               (as-> deck-bytes
+                                   (take 4 deck-bytes))
+                               codec/bytes->string
+                               string/trim)
+                  _ (swap! byte-index #(+ % 4))
+                  ;; card set zero padding and count is 1 byte long
+                  card-set-pad-and-count (nth deck-bytes @byte-index)
+                  pad (-> card-set-pad-and-count
+                          (bit-shift-right 6)
+                          inc)
+                  card-set-count (-> card-set-pad-and-count
+                                     (bit-and 0x3F))
+                  _ (swap! byte-index inc)]
+              (recur (->> (loop [cards []
+                                 card-index 0
+                                 prev-card-number 0]
+                            (if (< card-index card-set-count)
+                              (let [[card-count parallel-id number]
+                                    (read-serialized-card deck-bytes
+                                                          byte-index
+                                                          total-card-bytes
+                                                          prev-card-number)
+                                    fstr (str "~A-~" pad ",'0d")
+                                    card (cond-> {:card/number
                                                   (str card-set "-"
                                                        (loop [n (str number)]
-                                                         (if (< (count n)
-                                                                pad)
-                                                           (recur (str "0"
-                                                                       n))
+                                                         (if (< (count n) pad)
+                                                           (recur (str "0" n))
                                                            n)))
                                                   :card/count card-count}
-                                               (not (zero? parallel-id))
-                                               (assoc :card/parallel-id
-                                                      parallel-id))]
-                                         (recur (conj cards card)
-                                                (inc card-index)
-                                                number))
-                                       cards))
-                                   (concat deck)
-                                   (into []))
-                              (inc card-set-index)))
-                     deck))))
-         []
-         [:digi-egg :deck])]
-    {:deck/digi-eggs digi-eggs
-     :deck/deck main-deck
+                                           (not (zero? parallel-id))
+                                           (assoc :card/parallel-id
+                                                  parallel-id))]
+                                (recur (conj cards card)
+                                       (inc card-index)
+                                       number))
+                              cards))
+                          (concat deck)
+                          (into []))))
+            deck))]
+    {:deck/digi-eggs (into [] (take digi-egg-set-count deck))
+     :deck/deck (into [] (drop digi-egg-set-count deck))
      :deck/name (if (< @byte-index (count deck-bytes))
                   (-> (->> (drop (- (count deck-bytes) string-length)
                                  deck-bytes)
@@ -160,8 +144,7 @@
 
 (defn ^:export decode
   [deck-code-str]
-  (-> deck-code-str
-      decode-deck-string
+  (-> (decode-deck-string deck-code-str)
       parse-deck))
 
 #?(:clj
@@ -169,4 +152,5 @@
      [& [deck-code-str]]
      (-> (or deck-code-str (string/trim (slurp *in*)))
          decode
-         pprint/pprint)))
+         pr-str
+         println)))

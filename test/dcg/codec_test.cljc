@@ -168,7 +168,7 @@
      (t/testing "Generated decks succeed round-trip of codec"
        (loop [iteration 0]
          (when (< iteration 100)
-           (if-let [deck (try (gen/generate (s/gen :dcg.codec.encode/deck))
+           (if-let [deck (try (gen/generate (s/gen :dcg/deck))
                               (catch Exception e nil))]
              (do (t/is (= (-> deck
                               encode/encode

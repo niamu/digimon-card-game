@@ -1,91 +1,14 @@
 (ns dcg.codec.encode
-  #?(:clj (:gen-class))
   (:require
+   [dcg.codec.spec]
    [dcg.codec.common :as codec]
    [#?(:clj clojure.edn :cljs cljs.reader) :as edn]
    [clojure.spec.alpha :as s]
-   [clojure.spec.gen.alpha :as gen]
    [clojure.string :as string]
    #?@(:cljs [[goog.crypt :as crypt]
               [goog.crypt.base64 :as b64]]))
   #?(:clj (:import
            [java.util Base64])))
-
-(def ^:private card-number-regex
-  "1-4 alphanumeric characters followed by 2-3 digits separated by a hyphen"
-  #"[A-Z|0-9]{1,4}\-[0-9]{2,3}")
-
-(s/def :card/number-int
-  (s/int-in 1 1000))
-
-(s/def :card/set
-  (s/with-gen string?
-    #(gen/fmap (fn [s]
-                 (string/upper-case (apply str s)))
-               (gen/bind (s/gen (s/int-in 1 5))
-                         (fn [size]
-                           (gen/vector (gen/char-alpha) size))))))
-
-(s/def :card/number
-  (s/with-gen #(re-matches card-number-regex %)
-    #(gen/fmap (fn [[s n]]
-                 (str s "-" (cond->> n
-                              (< (count (str n)) 2) (str "0"))))
-               (s/gen (s/cat :s :card/set :n :card/number-int)))))
-
-(s/def :card/count
-  (s/int-in 1 5))
-
-(s/def :card/parallel-id
-  (s/int-in 0 8))
-
-(s/def ::card
-  (s/keys :req [:card/number :card/count]
-          :opt [:card/parallel-id]))
-
-(s/def ::deck-is-unique?
-  (fn [cards]
-    (let [card-ids (map (juxt :card/number :card/parallel-id) cards)]
-      (== (count card-ids)
-          (count (set card-ids))))))
-
-(defn- card-count
-  [cards]
-  (reduce (fn [accl {:keys [card/count]}]
-            (+ accl count))
-          0
-          cards))
-
-(defn- card-id-count-limit
-  [cards]
-  (->> cards
-       (group-by (fn [{:card/keys [number]}] number))
-       (reduce (fn [accl [number cards]]
-                 (conj accl [number (reduce (fn [accl {:card/keys [count]}]
-                                              (+ accl count))
-                                            0
-                                            cards)]))
-               {})
-       (every? (fn [[number card-count]]
-                 (<= card-count 4)))))
-
-(s/def :deck/digi-eggs
-  (s/and (s/coll-of ::card)
-         ::deck-is-unique?
-         card-id-count-limit
-         (fn [cards] (<= 0 (card-count cards) 5))))
-
-(s/def :deck/deck
-  (s/and (s/coll-of ::card)
-         ::deck-is-unique?
-         card-id-count-limit
-         (fn [cards] (== (card-count cards) 50))))
-
-(s/def :deck/name
-  (s/and string? (fn [n] (<= 0 (count n) 63))))
-
-(s/def ::deck
-  (s/keys :req [:deck/digi-eggs :deck/deck :deck/name]))
 
 (defn- get-bytes
   [^String s]
@@ -207,14 +130,14 @@
 
 (defn ^:export encode
   [deck]
-  (if (s/valid? ::deck deck)
+  (if (s/valid? :dcg/deck deck)
     (-> deck
         encode-bytes
         encode-bytes->string)
     (throw (#?(:clj Exception. :cljs js/Error.)
             (->> ["Deck provided for encoding is invalid!"
                   ""
-                  (s/explain-str ::deck deck)]
+                  (s/explain-str :dcg/deck deck)]
                  (string/join \newline))))))
 
 #?(:clj
