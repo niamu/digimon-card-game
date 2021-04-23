@@ -72,15 +72,28 @@
       (loop [card-set-index 0]
         (when (< card-set-index (count d))
           (let [[[card-set pad] cards] (nth d card-set-index)]
-            ;; Use 4 characters/bytes to store card sets.
-            ;; At time of writing, 3 characters is max in released cards, but
-            ;; we may see ST10 in the future
-            (doseq [c (->> (loop [card-set card-set]
-                             (if (< (count card-set) 4)
-                               (recur (str card-set " "))
-                               card-set))
-                           get-bytes
-                           (map byte))]
+            (doseq [c (condp = codec/version
+                        ;; Use 4 characters/bytes to store card sets.
+                        ;; At time of writing, 3 characters is max in released
+                        ;; cards, but we may see ST10 in the future
+                        0 (->> (loop [card-set card-set]
+                                 (if (< (count card-set) 4)
+                                   (recur (str card-set " "))
+                                   card-set))
+                               get-bytes
+                               (map byte))
+                        ;; Encode each character of card-set in Base36.
+                        ;; Use 8th bit as continue bit. If 0, reached end.
+                        1 (reduce (fn [accl c]
+                                    (conj accl
+                                          (cond-> (-> (string/upper-case c)
+                                                      first
+                                                      codec/char->base36)
+                                            (not= (count accl)
+                                                  (dec (count card-set)))
+                                            (bit-or 0x80))))
+                                  []
+                                  card-set))]
               (append-to-buffer! byte-buffer c))
             ;; 2 bits for card number zero padding
             ;; (zero padding stored as 0 indexed)
@@ -98,15 +111,27 @@
                                  #?(:clj (Integer/parseInt)
                                     :cljs (js/parseInt)))
                       number-offset (- number prev-card-number)]
-                  ;; 2 bits for card count (1-4)
-                  ;; 3 bits for parallel id (0-7) - BT5-086 has 4 at the moment
-                  ;; 3 bits for start of card number offset
-                  (append-to-buffer! byte-buffer
-                                     (bit-or (bit-shift-left (dec count) 6)
-                                             (bit-shift-left parallel-id 3)
-                                             (bits-with-carry number-offset 3)))
-                  ;; rest of card number offset
-                  (append-rest-to-buffer! byte-buffer number-offset 3)
+                  (condp = codec/version
+                    ;; 2 bits for card count (1-4)
+                    ;; 3 bits for parallel id (0-7)
+                    ;; 3 bits for start of card number offset
+                    0 (do (append-to-buffer!
+                           byte-buffer
+                           (bit-or (bit-shift-left (dec count) 6)
+                                   (bit-shift-left parallel-id 3)
+                                   (bits-with-carry number-offset 3)))
+                          ;; rest of card number offset
+                          (append-rest-to-buffer! byte-buffer number-offset 3))
+                    ;; 1 byte for card count (1-50 with BT6-085)
+                    ;; 3 bits for parallel id (0-7)
+                    ;; 5 bits for start of card number offset
+                    1 (do (append-to-buffer! byte-buffer (dec count))
+                          (append-to-buffer!
+                           byte-buffer
+                           (bit-or (bit-shift-left parallel-id 5)
+                                   (bits-with-carry number-offset 5)))
+                          ;; rest of card number offset
+                          (append-rest-to-buffer! byte-buffer number-offset 5)))
                   (recur number (inc card-index))))))
           (recur (inc card-set-index)))))
     ;; Compute and store cards checksum (second byte in buffer)

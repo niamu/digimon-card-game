@@ -72,7 +72,6 @@
 (s/def :deck/deck
   (s/and (s/coll-of :dcg/card)
          :dcg/deck-is-unique?
-         :dcg/card-number-limit
          (fn [cards] (== (card-count cards) 50))))
 
 (s/def :deck/name

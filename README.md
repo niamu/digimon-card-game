@@ -163,11 +163,12 @@ The codec produces and consumes Base64URL strings as defined in [rfc4648&#167;5]
 
 #### Card Set Header
 
-**Next 4 bytes (4,5,6,7)**: `01010011 01010100 00110001 00100000`
+**Next 3 bytes (4,5,6)**: `10011100 10011101 00000001`
 - The beginning of the deck storage. If the Digi-Egg card set item count is 0 then this starts the main deck storage
-- 4 ASCII characters which is the card set name that the cards which follow belong to, in this case `"ST1 "` with a space character that is trimmed by the decoder
+- Base36 characters which is the card set name that the cards which follow belong to, in this case `"ST1"` that encodes to [28, 29, 1]
+- 8th bit is continue bit. If bit is 0, the end of the string has been reached
 
-**8th byte**: `01000001`
+**7th byte**: `01000001`
 - Card number zero padding/leading zeroes (2 bits) stored as zero-based and the count of the card items in the card set (6 bits)
   - Card zero padding: `01`
   - Card set item count: `000001`
@@ -176,14 +177,16 @@ The codec produces and consumes Base64URL strings as defined in [rfc4648&#167;5]
 
 This is a loop that continues until all the cards within the card set have been written. After which either a new card set is started or the end of the deck has been encoded.
 
-**9th byte**: `11000001`
-- Card count (2 bits zero-based counting): `11`
+**8th byte**: `00000011`
+- Card count (8 bits zero-based counting): `11`
+
+**9th byte**: `00000001`
 - Parallel ID (3 bits) for the card: `000`
   - If the card is the original and not an alternate art the value is zero. Otherwise the canonical number is the one used in the image filename. [BT5-086_P3.png](https://digimoncard.com/images/cardlist/card/BT5-086_P3.png) has a parallel ID of 3
-- Card number offset (remaining 3 bits of the first byte): `001`
+- Card number offset (remaining 5 bits of the first byte): `00001`
   - The Digi-Egg card in this example belongs to the "ST1" card set and has the number "01"
   - An offset of the number is stored which is equal to the current card number being stored (1 in this example) subtracted by the previous card number stored in the card set (starting at 0) where this is the first card of the set
-  -  If the number cannot be contained in the remaining 3 bits it is continue to the next byte using the first bit as a carry bit. If the carry bit is 0 that means the number is concluded in that byte. If the carry bit is 1 that means the number spans to the next byte using the remaining 7 bits for the number)
+  -  If the number cannot be contained in the remaining 5 bits it is continue to the next byte using the first bit as a carry bit. If the carry bit is 0 that means the number is concluded in that byte. If the carry bit is 1 that means the number spans to the next byte using the remaining 7 bits for the number)
 
 ### Deck Name
 

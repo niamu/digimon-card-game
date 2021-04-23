@@ -54,11 +54,6 @@
                {:card/number "ST1-16", :card/count 2}]
    :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"})
 
-(def digi-bros-deck-encoded
-  (str "DCGApQzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1Qx"
-       "IEbCwYMBiEUCRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1c"
-       "yd3doUjQp"))
-
 (def ja-deck
   (assoc st1-deck :deck/name "予算の赤いデッキ"))
 
@@ -95,11 +90,22 @@
 
 (t/deftest stable-decoder
   (t/testing "Deck decoding of old strings is stable"
-    (t/is (= digi-bros-deck (decode/decode digi-bros-deck-encoded)))))
+    (t/is (= st1-deck (decode/decode st1-deck-encoded)))))
 
-(t/deftest stable-encoder
+(t/deftest stable-encoder-v0
   (t/testing "Deck encoding of old deck is stable"
-    (t/is (= (encode/encode digi-bros-deck) digi-bros-deck-encoded))))
+    (t/is (= (with-redefs [dcg.codec.common/version 0]
+               (encode/encode digi-bros-deck))
+             (str "DCGApQzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFA"
+                  "YNCwYUNU1QxIEbCwYMBiEUCRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZ"
+                  "CAoeW91dHUuYmUvbzBLb1cyd3doUjQp")))))
+
+(t/deftest stable-encoder-v1
+  (t/testing "Deck encoding of old deck is stable"
+    (t/is (= (encode/encode digi-bros-deck)
+             (str "DCGEoozi50CgQMBnJ0BQQABi50BhAAJAwoBAQExBIudAoEDEAGLnQOGAwgDB"
+                  "QIDAQIDAQIVA5ydAUYDAgMBAgMAAQIgAQlEaWdpIEJyb3M6IFJhZ25hbG9hc"
+                  "mRtb24gUmVkICh5b3V0dS5iZS9vMEtvVzJ3d2hSNCk")))))
 
 ;; st1-deck return 58 bytes before Base64 encoding which requires 2 bytes
 ;; of padding to be appended. This test checks that decoding works when

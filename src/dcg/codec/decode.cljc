@@ -37,13 +37,13 @@
           (recur (+ delta-shift (dec bits-in-a-byte)))))
       (read-bits-from-byte current-byte (dec bits) 0 0))))
 
-(defn- read-serialized-card
+(defn- serialized-card-v0
   [deck-bytes byte-index index-end prev-card-number]
   (when (> @byte-index index-end)
     (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
   (let [header (nth deck-bytes @byte-index)]
     (swap! byte-index inc)
-    [ ;; 2 bits for card count (1-4)
+    [;; 2 bits for card count (1-4)
      (inc (bit-shift-right header 6))
      ;; 3 bits for card parallel-id (0-7)
      (-> header
@@ -57,23 +57,45 @@
                                  byte-index
                                  index-end))]))
 
+(defn- serialized-card-v1
+  [deck-bytes byte-index index-end prev-card-number]
+  (when (> @byte-index index-end)
+    (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
+  (let [card-count (nth deck-bytes @byte-index)
+        _ (swap! byte-index inc)
+        header (nth deck-bytes @byte-index)
+        _ (swap! byte-index inc)]
+    [;; 1 byte for card count
+     (inc card-count)
+     ;; 3 bits for card parallel-id (0-7)
+     (-> header
+         (bit-shift-right 5))
+     ;; card number offset + previous card number
+     (+ prev-card-number
+        (read-var-encoded-uint32 header
+                                 5 ; bits
+                                 deck-bytes
+                                 byte-index
+                                 index-end))]))
+
 (defn- parse-deck
   [deck-bytes]
-  (let [version (nth deck-bytes 0)
+  (let [version-and-digi-egg-count (nth deck-bytes 0)
+        version (bit-shift-right version-and-digi-egg-count 4)
         checksum (nth deck-bytes 1)
         string-length (nth deck-bytes 2)
         total-card-bytes (- (count deck-bytes) string-length)
         computed-checksum (codec/checksum total-card-bytes deck-bytes)
-        _ (when-not (== codec/version (bit-shift-right version 4))
+        _ (when-not (>= codec/version version)
             (throw (#?(:clj Exception. :cljs js/Error.)
                     (str "Invalid version: "
-                         codec/version " != "
+                         codec/version " !>= "
                          (bit-shift-right version 4)))))
         _ (when-not (== checksum (bit-and computed-checksum 0xFF))
             (throw (#?(:clj Exception. :cljs js/Error.) "Invalid checksum.")))
         byte-index (atom 0)
         _ (reset! byte-index 3)
-        digi-egg-set-count (read-var-encoded-uint32 version
+        digi-egg-set-count (read-var-encoded-uint32 version-and-digi-egg-count
                                                     4 ; bits
                                                     deck-bytes
                                                     byte-index
@@ -82,12 +104,26 @@
         (loop [deck []]
           (if (< @byte-index total-card-bytes)
             (let [;; card set is 4 characters/bytes
-                  card-set (-> (drop @byte-index deck-bytes)
-                               (as-> deck-bytes
-                                   (take 4 deck-bytes))
-                               codec/bytes->string
-                               string/trim)
-                  _ (swap! byte-index #(+ % 4))
+                  card-set (condp = version
+                             0 (let [result (-> (drop @byte-index deck-bytes)
+                                                (as-> deck-bytes
+                                                    (take 4 deck-bytes))
+                                                codec/bytes->string
+                                                string/trim)]
+                                 (swap! byte-index #(+ % 4))
+                                 result)
+                             1 (loop [cs ""]
+                                 (let [cb (nth deck-bytes @byte-index)]
+                                   (if-not (zero? (bit-shift-right cb 7))
+                                     (do (swap! byte-index inc)
+                                         (recur (->> (get codec/base36->char
+                                                          (bit-and 0x3F cb))
+                                                     (str cs))))
+                                     (let [result (str cs
+                                                       (get codec/base36->char
+                                                            (bit-and 0x3F cb)))]
+                                       (swap! byte-index inc)
+                                       result)))))
                   ;; card set zero padding and count is 1 byte long
                   card-set-pad-and-count (nth deck-bytes @byte-index)
                   pad (-> card-set-pad-and-count
@@ -101,10 +137,15 @@
                                  prev-card-number 0]
                             (if (< card-index card-set-count)
                               (let [[card-count parallel-id number]
-                                    (read-serialized-card deck-bytes
-                                                          byte-index
-                                                          total-card-bytes
-                                                          prev-card-number)
+                                    (condp = version
+                                      0 (serialized-card-v0 deck-bytes
+                                                            byte-index
+                                                            total-card-bytes
+                                                            prev-card-number)
+                                      1 (serialized-card-v1 deck-bytes
+                                                            byte-index
+                                                            total-card-bytes
+                                                            prev-card-number))
                                     fstr (str "~A-~" pad ",'0d")
                                     card (cond-> {:card/number
                                                   (str card-set "-"
