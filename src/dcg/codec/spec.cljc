@@ -28,7 +28,7 @@
                (s/gen (s/cat :s :card/set :n :card/number-int)))))
 
 (s/def :card/count
-  (s/int-in 1 5))
+  (s/int-in 1 51))
 
 (s/def :card/parallel-id
   (s/int-in 0 8))
@@ -54,7 +54,7 @@
                                               cards)]))
                  {})
          (every? (fn [[number card-count]]
-                   (<= card-count 4))))))
+                   (<= card-count 50))))))
 
 (defn- card-count
   [cards]
