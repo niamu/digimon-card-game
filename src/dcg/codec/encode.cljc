@@ -155,15 +155,16 @@
 
 (defn ^:export encode
   [deck]
-  (if (s/valid? :dcg/deck deck)
-    (-> deck
-        encode-bytes
-        encode-bytes->string)
-    (throw (#?(:clj Exception. :cljs js/Error.)
-            (->> ["Deck provided for encoding is invalid!"
-                  ""
-                  (s/explain-str :dcg/deck deck)]
-                 (string/join \newline))))))
+  (let [deck (update deck :deck/name str)]
+    (if (s/valid? :dcg/deck deck)
+      (-> deck
+          encode-bytes
+          encode-bytes->string)
+      (throw (#?(:clj Exception. :cljs js/Error.)
+              (->> ["Deck provided for encoding is invalid!"
+                    ""
+                    (s/explain-str :dcg/deck deck)]
+                   (string/join \newline)))))))
 
 #?(:clj
    (defn -main
