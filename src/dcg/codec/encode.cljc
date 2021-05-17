@@ -10,6 +10,8 @@
   #?(:clj (:import
            [java.util Base64])))
 
+(def ^:dynamic bypass-validation? false)
+
 (defn- get-bytes
   [^String s]
   #?(:clj (.getBytes s "UTF8")
@@ -156,7 +158,7 @@
 (defn ^:export encode
   [deck]
   (let [deck (update deck :deck/name str)]
-    (if (s/valid? :dcg/deck deck)
+    (if (or bypass-validation? (s/valid? :dcg/deck deck))
       (-> deck
           encode-bytes
           encode-bytes->string)
