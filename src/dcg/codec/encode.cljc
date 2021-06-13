@@ -44,10 +44,7 @@
   [{:deck/keys [digi-eggs deck name]}]
   (let [byte-buffer (atom [])
         version (bit-or (bit-shift-left codec/version 4)
-                        (bits-with-carry (-> (map :card/number digi-eggs)
-                                             set
-                                             count)
-                                         4))
+                        (bit-and (count digi-eggs) 0x0F))
         group-deck (fn [deck]
                      (->> deck
                           (sort-by (juxt :card/number :card/parallel-id))

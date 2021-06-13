@@ -28,7 +28,7 @@
                (s/gen (s/cat :s :card/set :n :card/number-int)))))
 
 (s/def :card/count
-  (s/int-in 1 51))
+  (s/int-in 1 256))
 
 (s/def :card/parallel-id
   (s/int-in 0 8))
@@ -48,31 +48,26 @@
     (->> cards
          (group-by (fn [{:card/keys [number]}] number))
          (reduce (fn [accl [number cards]]
-                   (conj accl [number (reduce (fn [accl {:card/keys [count]}]
-                                                (+ accl count))
-                                              0
-                                              cards)]))
+                   (assoc-in accl
+                             [number]
+                             (reduce (fn [accl {:card/keys [count]}]
+                                       (+ accl count))
+                                     0
+                                     cards)))
                  {})
-         (every? (fn [[number card-count]]
-                   (<= card-count 50))))))
-
-(defn- card-count
-  [cards]
-  (reduce (fn [accl {:keys [card/count]}]
-            (+ accl count))
-          0
-          cards))
+         (every? (fn [[_ card-count]]
+                   (<= card-count 255))))))
 
 (s/def :deck/digi-eggs
   (s/and (s/coll-of :dcg/card)
          :dcg/deck-is-unique?
          :dcg/card-number-limit
-         (fn [cards] (<= 0 (card-count cards) 5))))
+         (fn [cards] (<= (count cards) 15))))
 
 (s/def :deck/deck
   (s/and (s/coll-of :dcg/card)
          :dcg/deck-is-unique?
-         (fn [cards] (== (card-count cards) 50))))
+         :dcg/card-number-limit))
 
 (s/def :deck/name
   (s/and string? (fn [n] (<= 0 (count n) 63))))

@@ -27,7 +27,10 @@
                         0)
              delta-shift (dec bits)]
         (when (> @current-byte-index index-end)
-          (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
+          (throw (#?(:clj Exception. :cljs js/Error.)
+                  (str "End of block."
+                       " "
+                       @current-byte-index " greater than " index-end))))
         (swap! current-byte-index inc)
         (cond-> (read-bits-from-byte (nth data (dec @current-byte-index))
                                      (dec bits-in-a-byte)
@@ -40,7 +43,10 @@
 (defn- serialized-card-v0
   [deck-bytes byte-index index-end prev-card-number]
   (when (> @byte-index index-end)
-    (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
+    (throw (#?(:clj Exception. :cljs js/Error.)
+            (str "End of block."
+                 " "
+                 @byte-index " greater than " index-end))))
   (let [header (nth deck-bytes @byte-index)]
     (swap! byte-index inc)
     [;; 2 bits for card count (1-4)
@@ -60,7 +66,10 @@
 (defn- serialized-card-v1
   [deck-bytes byte-index index-end prev-card-number]
   (when (> @byte-index index-end)
-    (throw (#?(:clj Exception. :cljs js/Error.) "End of block.")))
+    (throw (#?(:clj Exception. :cljs js/Error.)
+            (str "End of block."
+                 " "
+                 @byte-index " greater than " index-end))))
   (let [card-count (nth deck-bytes @byte-index)
         _ (swap! byte-index inc)
         header (nth deck-bytes @byte-index)
@@ -95,11 +104,7 @@
             (throw (#?(:clj Exception. :cljs js/Error.) "Invalid checksum.")))
         byte-index (atom 0)
         _ (reset! byte-index 3)
-        digi-egg-set-count (read-var-encoded-uint32 version-and-digi-egg-count
-                                                    4 ; bits
-                                                    deck-bytes
-                                                    byte-index
-                                                    total-card-bytes)
+        digi-egg-set-count (bit-and version-and-digi-egg-count 0x0F)
         deck
         (loop [deck []]
           (if (< @byte-index total-card-bytes)
