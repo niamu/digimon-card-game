@@ -72,5 +72,13 @@
 (s/def :deck/name
   (s/and string? (fn [n] (<= 0 (count n) 63))))
 
+(s/def :deck/sideboard
+  (s/and (s/coll-of :dcg/card)
+         :dcg/deck-is-unique?
+         :dcg/card-number-limit))
+
 (s/def :dcg/deck
-  (s/keys :req [:deck/digi-eggs :deck/deck :deck/name]))
+  (s/keys :req [:deck/digi-eggs
+                :deck/deck
+                :deck/name]
+          :opt [:deck/sideboard]))

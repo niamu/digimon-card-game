@@ -10,8 +10,6 @@
   #?(:clj (:import
            [java.util Base64])))
 
-(def ^:dynamic bypass-validation? false)
-
 (defn- get-bytes
   [^String s]
   #?(:clj (.getBytes s "UTF8")
@@ -41,10 +39,11 @@
       (recur (bit-shift-right v 7)))))
 
 (defn- encode-bytes
-  [{:deck/keys [digi-eggs deck name]}]
+  [{:deck/keys [digi-eggs deck sideboard name] :as d}]
   (let [byte-buffer (atom [])
         version (bit-or (bit-shift-left codec/version 4)
                         (bit-and (count digi-eggs) 0x0F))
+        checksum-byte-index (atom 0)
         group-deck (fn [deck]
                      (->> deck
                           (sort-by (juxt :card/number :card/parallel-id))
@@ -64,10 +63,15 @@
                        string/trim)]
     (append-to-buffer! byte-buffer version) ; version & digi-egg card group #
     (append-to-buffer! byte-buffer 0) ; Placeholder checksum byte
+    (reset! checksum-byte-index (dec (count @byte-buffer)))
     (append-to-buffer! byte-buffer (count deck-name-bytes)) ; Deck name length
+    (when (>= codec/version 2)
+      ;; sideboard count
+      (append-to-buffer! byte-buffer (count (group-deck sideboard))))
     ;; Store decks
     (doseq [d [(group-deck digi-eggs)
-               (group-deck deck)]]
+               (group-deck deck)
+               (group-deck sideboard)]]
       (loop [card-set-index 0]
         (when (< card-set-index (count d))
           (let [[[card-set pad] cards] (nth d card-set-index)]
@@ -83,16 +87,16 @@
                                (map byte))
                         ;; Encode each character of card-set in Base36.
                         ;; Use 8th bit as continue bit. If 0, reached end.
-                        1 (reduce (fn [accl c]
-                                    (conj accl
-                                          (cond-> (-> (string/upper-case c)
-                                                      first
-                                                      codec/char->base36)
-                                            (not= (count accl)
-                                                  (dec (count card-set)))
-                                            (bit-or 0x80))))
-                                  []
-                                  card-set))]
+                        (reduce (fn [accl c]
+                                  (conj accl
+                                        (cond-> (-> (string/upper-case c)
+                                                    first
+                                                    codec/char->base36)
+                                          (not= (count accl)
+                                                (dec (count card-set)))
+                                          (bit-or 0x80))))
+                                []
+                                card-set))]
               (append-to-buffer! byte-buffer c))
             ;; 2 bits for card number zero padding
             ;; (zero padding stored as 0 indexed)
@@ -124,18 +128,18 @@
                     ;; 1 byte for card count (1-50 with BT6-085)
                     ;; 3 bits for parallel id (0-7)
                     ;; 5 bits for start of card number offset
-                    1 (do (append-to-buffer! byte-buffer (dec count))
-                          (append-to-buffer!
-                           byte-buffer
-                           (bit-or (bit-shift-left parallel-id 5)
-                                   (bits-with-carry number-offset 5)))
-                          ;; rest of card number offset
-                          (append-rest-to-buffer! byte-buffer number-offset 5)))
+                    (do (append-to-buffer! byte-buffer (dec count))
+                        (append-to-buffer!
+                         byte-buffer
+                         (bit-or (bit-shift-left parallel-id 5)
+                                 (bits-with-carry number-offset 5)))
+                        ;; rest of card number offset
+                        (append-rest-to-buffer! byte-buffer number-offset 5)))
                   (recur number (inc card-index))))))
           (recur (inc card-set-index)))))
     ;; Compute and store cards checksum (second byte in buffer)
     ;; Only store the first byte of checksum
-    (swap! byte-buffer assoc-in [1]
+    (swap! byte-buffer assoc-in [@checksum-byte-index]
            (bit-and (codec/checksum (count @byte-buffer) @byte-buffer)
                     0xFF))
     ;; Store deck name
@@ -155,7 +159,7 @@
 (defn ^:export encode
   [deck]
   (let [deck (update deck :deck/name str)]
-    (if (or bypass-validation? (s/valid? :dcg/deck deck))
+    (if (s/valid? :dcg/deck deck)
       (-> deck
           encode-bytes
           encode-bytes->string)

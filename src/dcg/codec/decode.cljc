@@ -77,8 +77,7 @@
     [;; 1 byte for card count
      (inc card-count)
      ;; 3 bits for card parallel-id (0-7)
-     (-> header
-         (bit-shift-right 5))
+     (bit-shift-right header 5)
      ;; card number offset + previous card number
      (+ prev-card-number
         (read-var-encoded-uint32 header
@@ -89,10 +88,20 @@
 
 (defn- parse-deck
   [deck-bytes]
-  (let [version-and-digi-egg-count (nth deck-bytes 0)
+  (let [byte-index (atom 0)
+        version-and-digi-egg-count (nth deck-bytes @byte-index)
         version (bit-shift-right version-and-digi-egg-count 4)
-        checksum (nth deck-bytes 1)
-        string-length (nth deck-bytes 2)
+        digi-egg-set-count (bit-and version-and-digi-egg-count 0x0F)
+        _ (swap! byte-index inc)
+        checksum (nth deck-bytes @byte-index)
+        _ (swap! byte-index inc)
+        string-length (nth deck-bytes @byte-index)
+        _ (swap! byte-index inc)
+        sideboard-count (if (>= version 2)
+                          (nth deck-bytes @byte-index)
+                          0)
+        _ (when (>= version 2)
+            (swap! byte-index inc))
         total-card-bytes (- (count deck-bytes) string-length)
         computed-checksum (codec/checksum total-card-bytes deck-bytes)
         _ (when-not (>= codec/version version)
@@ -101,10 +110,9 @@
                          codec/version " !>= "
                          (bit-shift-right version 4)))))
         _ (when-not (== checksum (bit-and computed-checksum 0xFF))
-            (throw (#?(:clj Exception. :cljs js/Error.) "Invalid checksum.")))
-        byte-index (atom 0)
-        _ (reset! byte-index 3)
-        digi-egg-set-count (bit-and version-and-digi-egg-count 0x0F)
+            (throw (#?(:clj Exception. :cljs js/Error.)
+                    (str "Invalid checksum: "
+                         checksum " != " (bit-and computed-checksum 0xFF)))))
         deck
         (loop [deck []]
           (if (< @byte-index total-card-bytes)
@@ -117,18 +125,18 @@
                                                 string/trim)]
                                  (swap! byte-index #(+ % 4))
                                  result)
-                             1 (loop [cs ""]
-                                 (let [cb (nth deck-bytes @byte-index)]
-                                   (if-not (zero? (bit-shift-right cb 7))
-                                     (do (swap! byte-index inc)
-                                         (recur (->> (get codec/base36->char
-                                                          (bit-and 0x3F cb))
-                                                     (str cs))))
-                                     (let [result (str cs
-                                                       (get codec/base36->char
-                                                            (bit-and 0x3F cb)))]
-                                       (swap! byte-index inc)
-                                       result)))))
+                             (loop [cs ""]
+                               (let [cb (nth deck-bytes @byte-index)]
+                                 (if-not (zero? (bit-shift-right cb 7))
+                                   (do (swap! byte-index inc)
+                                       (recur (->> (get codec/base36->char
+                                                        (bit-and 0x3F cb))
+                                                   (str cs))))
+                                   (let [result (str cs
+                                                     (get codec/base36->char
+                                                          (bit-and 0x3F cb)))]
+                                     (swap! byte-index inc)
+                                     result)))))
                   ;; card set zero padding and count is 1 byte long
                   card-set-pad-and-count (nth deck-bytes @byte-index)
                   pad (-> card-set-pad-and-count
@@ -147,10 +155,10 @@
                                                             byte-index
                                                             total-card-bytes
                                                             prev-card-number)
-                                      1 (serialized-card-v1 deck-bytes
-                                                            byte-index
-                                                            total-card-bytes
-                                                            prev-card-number))
+                                      (serialized-card-v1 deck-bytes
+                                                          byte-index
+                                                          total-card-bytes
+                                                          prev-card-number))
                                     fstr (str "~A-~" pad ",'0d")
                                     card (cond-> {:card/number
                                                   (str card-set "-"
@@ -168,15 +176,22 @@
                               cards))
                           (concat deck)
                           (into []))))
-            deck))]
-    {:deck/digi-eggs (into [] (take digi-egg-set-count deck))
-     :deck/deck (into [] (drop digi-egg-set-count deck))
-     :deck/name (if (< @byte-index (count deck-bytes))
-                  (-> (->> (drop (- (count deck-bytes) string-length)
-                                 deck-bytes)
-                           (take string-length))
-                      codec/bytes->string)
-                  "")}))
+            deck))
+        sideboard (into [] (take-last sideboard-count deck))]
+    (cond-> {:deck/digi-eggs (into [] (take digi-egg-set-count deck))
+             :deck/deck (->> deck
+                             (drop digi-egg-set-count)
+                             (drop-last sideboard-count)
+                             (into []))
+             :deck/name (if (< @byte-index (count deck-bytes))
+                          (-> (->> (drop (- (count deck-bytes) string-length)
+                                         deck-bytes)
+                                   (take string-length))
+                              codec/bytes->string)
+                          "")}
+      (and (>= version 2)
+           (not (empty? sideboard)))
+      (assoc :deck/sideboard sideboard))))
 
 (defn- decode-deck-string
   [deck-code-str]
