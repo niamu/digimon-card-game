@@ -67,7 +67,7 @@
     (append-to-buffer! byte-buffer (count deck-name-bytes)) ; Deck name length
     (when (>= codec/version 2)
       ;; sideboard count
-      (append-to-buffer! byte-buffer (count (group-deck sideboard))))
+      (append-to-buffer! byte-buffer (count sideboard)))
     ;; Store decks
     (doseq [d [(group-deck digi-eggs)
                (group-deck deck)
@@ -100,9 +100,16 @@
               (append-to-buffer! byte-buffer c))
             ;; 2 bits for card number zero padding
             ;; (zero padding stored as 0 indexed)
-            ;; 6 bits for count of cards in a card set
-            (append-to-buffer! byte-buffer (bit-or (bit-shift-left (dec pad) 6)
-                                                   (count cards)))
+            ;; 6 bits for initial count offset of cards in a card group
+            (condp = codec/version
+              2
+              (do (append-to-buffer! byte-buffer
+                                     (bit-or (bit-shift-left (dec pad) 6)
+                                             (bits-with-carry (count cards) 6)))
+                  (append-rest-to-buffer! byte-buffer (count cards) 6))
+              (append-to-buffer! byte-buffer
+                                 (bit-or (bit-shift-left (dec pad) 6)
+                                         (count cards))))
             (loop [prev-card-number 0
                    card-index 0]
               (when (< card-index (count cards))

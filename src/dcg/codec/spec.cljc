@@ -43,39 +43,21 @@
       (== (count card-ids)
           (count (set card-ids))))))
 
-(s/def :dcg/card-number-limit
-  (fn [cards]
-    (->> cards
-         (group-by (fn [{:card/keys [number]}] number))
-         (reduce (fn [accl [number cards]]
-                   (assoc-in accl
-                             [number]
-                             (reduce (fn [accl {:card/keys [count]}]
-                                       (+ accl count))
-                                     0
-                                     cards)))
-                 {})
-         (every? (fn [[_ card-count]]
-                   (<= card-count 255))))))
-
 (s/def :deck/digi-eggs
   (s/and (s/coll-of :dcg/card)
          :dcg/deck-is-unique?
-         :dcg/card-number-limit
          (fn [cards] (<= (count cards) 15))))
 
 (s/def :deck/deck
   (s/and (s/coll-of :dcg/card)
-         :dcg/deck-is-unique?
-         :dcg/card-number-limit))
+         :dcg/deck-is-unique?))
 
 (s/def :deck/name
   (s/and string? (fn [n] (<= 0 (count n) 63))))
 
 (s/def :deck/sideboard
   (s/and (s/coll-of :dcg/card)
-         :dcg/deck-is-unique?
-         :dcg/card-number-limit))
+         :dcg/deck-is-unique?))
 
 (s/def :dcg/deck
   (s/keys :req [:deck/digi-eggs

@@ -139,12 +139,18 @@
                                      result)))))
                   ;; card set zero padding and count is 1 byte long
                   card-set-pad-and-count (nth deck-bytes @byte-index)
+                  _ (swap! byte-index inc)
                   pad (-> card-set-pad-and-count
                           (bit-shift-right 6)
                           inc)
-                  card-set-count (-> card-set-pad-and-count
-                                     (bit-and 0x3F))
-                  _ (swap! byte-index inc)]
+                  card-set-count
+                  (condp = version
+                    2 (read-var-encoded-uint32 card-set-pad-and-count
+                                               6
+                                               deck-bytes
+                                               byte-index
+                                               total-card-bytes)
+                    (bit-and card-set-pad-and-count 0x3F))]
               (recur (->> (loop [cards []
                                  card-index 0
                                  prev-card-number 0]
@@ -159,7 +165,6 @@
                                                           byte-index
                                                           total-card-bytes
                                                           prev-card-number))
-                                    fstr (str "~A-~" pad ",'0d")
                                     card (cond-> {:card/number
                                                   (str card-set "-"
                                                        (loop [n (str number)]

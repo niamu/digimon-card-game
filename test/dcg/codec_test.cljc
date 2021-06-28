@@ -143,7 +143,7 @@
   (t/testing "Deck encoding of v2 deck is stable"
     (t/is (= (with-redefs [dcg.codec.common/version 2]
                (encode/encode deck-with-sideboard))
-             (str "DCGIjszAoudAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+             (str "DCGIkAzB4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
                   "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCURpZ2kgQnJvczogUmFnb"
                   "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ")))))
 
