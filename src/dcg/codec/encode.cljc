@@ -1,19 +1,13 @@
 (ns dcg.codec.encode
   (:require
-   [dcg.codec.spec]
+   [dcg.codec.spec :as spec]
    [dcg.codec.common :as codec]
    [#?(:clj clojure.edn :cljs cljs.reader) :as edn]
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
-   #?@(:cljs [[goog.crypt :as crypt]
-              [goog.crypt.base64 :as b64]]))
+   #?(:cljs [goog.crypt.base64 :as b64]))
   #?(:clj (:import
            [java.util Base64])))
-
-(defn- get-bytes
-  [^String s]
-  #?(:clj (.getBytes s "UTF8")
-     :cljs (crypt/stringToUtf8ByteArray s)))
 
 (defn- bits-with-carry
   "`bits` from `value` is actually 1 less than requested
@@ -39,10 +33,14 @@
       (recur (bit-shift-right v 7)))))
 
 (defn- encode-bytes
-  [{:deck/keys [digi-eggs deck sideboard name] :as d}]
+  [{:deck/keys [language digi-eggs deck sideboard name] :as d}]
   (let [byte-buffer (atom [])
-        version (bit-or (bit-shift-left codec/version 4)
-                        (bit-and (count digi-eggs) 0x0F))
+        version (if (>= codec/version 3)
+                  (bit-or (bit-shift-left codec/version 4)
+                          (bit-shift-left (if (= language :ja) 0 1) 3)
+                          (bit-and (count digi-eggs) 0x07))
+                  (bit-or (bit-shift-left codec/version 4)
+                          (bit-and (count digi-eggs) 0x0F)))
         checksum-byte-index (atom 0)
         group-deck (fn [deck]
                      (->> deck
@@ -56,7 +54,7 @@
                                          (count card-number-int)])))
                           (into [])))
         name (string/trim name) ; trim the deck name just in case
-        deck-name-bytes (get-bytes name) ; bytes of name for UTF-8 compatibility
+        deck-name-bytes (spec/get-bytes name) ; byte # for UTF-8 compatibility
         deck-name (->> deck-name-bytes
                        (take 63) ; sextet byte count max
                        codec/bytes->string
@@ -75,7 +73,7 @@
       (loop [card-set-index 0]
         (when (< card-set-index (count d))
           (let [[[card-set pad] cards] (nth d card-set-index)]
-            (doseq [c (condp = codec/version
+            (doseq [c (case codec/version
                         ;; Use 4 characters/bytes to store card sets.
                         ;; At time of writing, 3 characters is max in released
                         ;; cards, but we may see ST10 in the future
@@ -83,7 +81,7 @@
                                  (if (< (count card-set) 4)
                                    (recur (str card-set " "))
                                    card-set))
-                               get-bytes
+                               spec/get-bytes
                                (map byte))
                         ;; Encode each character of card-set in Base36.
                         ;; Use 8th bit as continue bit. If 0, reached end.
@@ -101,7 +99,7 @@
             ;; 2 bits for card number zero padding
             ;; (zero padding stored as 0 indexed)
             ;; 6 bits for initial count offset of cards in a card group
-            (condp = codec/version
+            (case codec/version
               2
               (do (append-to-buffer! byte-buffer
                                      (bit-or (bit-shift-left (dec pad) 6)
@@ -121,7 +119,7 @@
                                  #?(:clj (Integer/parseInt)
                                     :cljs (js/parseInt)))
                       number-offset (- number prev-card-number)]
-                  (condp = codec/version
+                  (case codec/version
                     ;; 2 bits for card count (1-4)
                     ;; 3 bits for parallel id (0-7)
                     ;; 3 bits for start of card number offset
@@ -150,7 +148,7 @@
            (bit-and (codec/checksum (count @byte-buffer) @byte-buffer)
                     0xFF))
     ;; Store deck name
-    (doseq [character-byte (get-bytes deck-name)]
+    (doseq [character-byte (spec/get-bytes deck-name)]
       (append-to-buffer! byte-buffer character-byte))
     @byte-buffer))
 

@@ -3,7 +3,13 @@
   (:require
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
-   [clojure.string :as string]))
+   [clojure.string :as string]
+   #?(:cljs [goog.crypt :as crypt])))
+
+(defn get-bytes
+  [^String s]
+  #?(:clj (.getBytes s "UTF8")
+     :cljs (crypt/stringToUtf8ByteArray s)))
 
 (def ^:private card-number-regex
   "1-4 alphanumeric characters followed by 2-3 digits separated by a hyphen"
@@ -43,17 +49,20 @@
       (== (count card-ids)
           (count (set card-ids))))))
 
+(s/def :deck/language
+  #{:ja :en})
+
 (s/def :deck/digi-eggs
   (s/and (s/coll-of :dcg/card)
          :dcg/deck-is-unique?
-         (fn [cards] (<= (count cards) 15))))
+         (fn [cards] (<= (count cards) 0x07))))
 
 (s/def :deck/deck
   (s/and (s/coll-of :dcg/card)
          :dcg/deck-is-unique?))
 
 (s/def :deck/name
-  (s/and string? (fn [n] (<= 0 (count n) 63))))
+  (s/and string? (fn [s] (<= (count (get-bytes s)) 0xFF))))
 
 (s/def :deck/sideboard
   (s/and (s/coll-of :dcg/card)
@@ -63,4 +72,5 @@
   (s/keys :req [:deck/digi-eggs
                 :deck/deck
                 :deck/name]
-          :opt [:deck/sideboard]))
+          :opt [:deck/language
+                :deck/sideboard]))

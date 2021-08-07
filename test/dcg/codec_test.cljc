@@ -10,7 +10,8 @@
       :cljs [cljs.test :as t :include-macros true])))
 
 (def st1-deck
-  {:deck/digi-eggs [{:card/number "ST1-01", :card/count 4}],
+  {:deck/language :en
+   :deck/digi-eggs [{:card/number "ST1-01", :card/count 4}],
    :deck/deck [{:card/number "ST1-02", :card/count 4}
                {:card/number "ST1-03", :card/count 4}
                {:card/number "ST1-04", :card/count 4}
@@ -33,7 +34,8 @@
        "IFtTVC0xXQ"))
 
 (def digi-bros-deck
-  {:deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
+  {:deck/language :en
+   :deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
                     {:card/number "ST1-01", :card/count 1}]
    :deck/deck [{:card/number "BT1-009", :card/count 1}
                {:card/number "BT1-019", :card/count 4}
@@ -55,7 +57,8 @@
    :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"})
 
 (def deck-with-sideboard
-  {:deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
+  {:deck/language :en
+   :deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
                     {:card/number "ST1-01", :card/count 1}]
    :deck/deck [{:card/number "BT1-009", :card/count 1}
                {:card/number "BT1-019", :card/count 4}
@@ -82,7 +85,9 @@
        "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ"))
 
 (def ja-deck
-  (assoc st1-deck :deck/name "予算の赤いデッキ"))
+  (assoc st1-deck
+         :deck/language :ja
+         :deck/name "予算の赤いデッキ"))
 
 (def invalid-deck
   {:deck/digi-eggs [{:card/number "ST1-01", :card/count 3}
@@ -113,15 +118,18 @@
                               decode/decode))
       st1-deck
       digi-bros-deck
-      ja-deck)))
+      ja-deck
+      deck-with-sideboard)))
 
 (t/deftest stable-decoder-v1
   (t/testing "Deck decoding of v1 strings is stable"
-    (t/is (= st1-deck (decode/decode st1-deck-encoded)))))
+    (t/is (= (dissoc st1-deck :deck/language)
+             (decode/decode st1-deck-encoded)))))
 
 (t/deftest stable-decoder-v2
   (t/testing "Deck decoding of v2 strings is stable"
-    (t/is (= deck-with-sideboard (decode/decode deck-with-sideboard-encoded)))))
+    (t/is (= (dissoc deck-with-sideboard :deck/language)
+             (decode/decode deck-with-sideboard-encoded)))))
 
 (t/deftest stable-encoder-v0
   (t/testing "Deck encoding of v0 deck is stable"
@@ -152,7 +160,8 @@
 ;; the padding is omitted by the Base64URL process
 (t/deftest decode-without-b64-padding
   (t/testing "Deck decodes without Base64 padding on encoded string"
-    (t/is (= (decode/decode st1-deck-encoded) st1-deck))))
+    (t/is (= (decode/decode st1-deck-encoded)
+             (dissoc st1-deck :deck/language)))))
 
 (t/deftest invalid-deck-throws
   (t/testing "Invalid deck throws an Exception/Error"
@@ -222,6 +231,7 @@
                               (update :deck/deck clean-deck)
                               (update :deck/sideboard clean-deck))
                           (-> deck
+                              (update :deck/language #(if (nil? %) :en %))
                               (update :deck/digi-eggs clean-deck)
                               (update :deck/deck clean-deck)
                               (update :deck/sideboard clean-deck))))

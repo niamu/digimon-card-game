@@ -91,7 +91,12 @@
   (let [byte-index (atom 0)
         version-and-digi-egg-count (nth deck-bytes @byte-index)
         version (bit-shift-right version-and-digi-egg-count 4)
-        digi-egg-set-count (bit-and version-and-digi-egg-count 0x0F)
+        language (-> (bit-shift-right version-and-digi-egg-count 3)
+                     (bit-and 0x01)) ;; 0: JA, 1: EN
+        digi-egg-set-count (bit-and version-and-digi-egg-count
+                                    (if (>= version 3)
+                                      0x07
+                                      0x0F))
         _ (swap! byte-index inc)
         checksum (nth deck-bytes @byte-index)
         _ (swap! byte-index inc)
@@ -196,7 +201,9 @@
                           "")}
       (and (>= version 2)
            (not (empty? sideboard)))
-      (assoc :deck/sideboard sideboard))))
+      (assoc :deck/sideboard sideboard)
+      (>= version 3)
+      (assoc :deck/language (if (zero? language) :ja :en)))))
 
 (defn- decode-deck-string
   [deck-code-str]
