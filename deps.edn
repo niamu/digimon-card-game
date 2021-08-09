@@ -1,6 +1,5 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.10.3"}
-        org.clojure/clojurescript {:mvn/version "1.10.773"}
         org.clojure/tools.cli {:mvn/version "1.0.206"}}
  :aliases {:dcg/cli    {:main-opts ["-m" "dcg.cli"]}
            :dcg/encode {:main-opts ["-m" "dcg.codec.encode"]}
@@ -8,11 +7,13 @@
 
            :figwheel
            {:extra-paths ["dev" "resources"]
-            :extra-deps {com.bhauman/figwheel-main {:mvn/version "0.2.12"}
+            :extra-deps {org.clojure/clojurescript {:mvn/version "1.10.866"}
+                         com.bhauman/figwheel-main {:mvn/version "0.2.12"}
                          com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}}
             :main-opts ["-m" "figwheel.main" "--build" "figwheel" "--repl"]}
            :cljs
            {:extra-paths ["dev"]
+            :extra-deps {org.clojure/clojurescript {:mvn/version "1.10.866"}}
             :main-opts ["-m" "cljs.main" "-co" "build.cljs.edn" "-c"]}
 
            :native-image
