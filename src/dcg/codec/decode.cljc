@@ -122,14 +122,14 @@
         (loop [deck []]
           (if (< @byte-index total-card-bytes)
             (let [;; card set is 4 characters/bytes
-                  card-set (condp = version
-                             0 (let [result (-> (drop @byte-index deck-bytes)
-                                                (as-> deck-bytes
-                                                    (take 4 deck-bytes))
-                                                codec/bytes->string
-                                                string/trim)]
-                                 (swap! byte-index #(+ % 4))
-                                 result)
+                  card-set (if (zero? version)
+                             (let [result (-> (drop @byte-index deck-bytes)
+                                              (as-> deck-bytes
+                                                  (take 4 deck-bytes))
+                                              codec/bytes->string
+                                              string/trim)]
+                               (swap! byte-index #(+ % 4))
+                               result)
                              (loop [cs ""]
                                (let [cb (nth deck-bytes @byte-index)]
                                  (if-not (zero? (bit-shift-right cb 7))
@@ -149,23 +149,23 @@
                           (bit-shift-right 6)
                           inc)
                   card-set-count
-                  (condp = version
-                    2 (read-var-encoded-uint32 card-set-pad-and-count
-                                               6
-                                               deck-bytes
-                                               byte-index
-                                               total-card-bytes)
+                  (if (>= version 2)
+                    (read-var-encoded-uint32 card-set-pad-and-count
+                                             6
+                                             deck-bytes
+                                             byte-index
+                                             total-card-bytes)
                     (bit-and card-set-pad-and-count 0x3F))]
               (recur (->> (loop [cards []
                                  card-index 0
                                  prev-card-number 0]
                             (if (< card-index card-set-count)
                               (let [[card-count parallel-id number]
-                                    (condp = version
-                                      0 (serialized-card-v0 deck-bytes
-                                                            byte-index
-                                                            total-card-bytes
-                                                            prev-card-number)
+                                    (if (zero? version)
+                                      (serialized-card-v0 deck-bytes
+                                                          byte-index
+                                                          total-card-bytes
+                                                          prev-card-number)
                                       (serialized-card-v1 deck-bytes
                                                           byte-index
                                                           total-card-bytes

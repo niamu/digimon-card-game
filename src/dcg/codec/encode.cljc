@@ -73,16 +73,16 @@
       (loop [card-set-index 0]
         (when (< card-set-index (count d))
           (let [[[card-set pad] cards] (nth d card-set-index)]
-            (doseq [c (case codec/version
+            (doseq [c (if (zero? codec/version)
                         ;; Use 4 characters/bytes to store card sets.
                         ;; At time of writing, 3 characters is max in released
                         ;; cards, but we may see ST10 in the future
-                        0 (->> (loop [card-set card-set]
-                                 (if (< (count card-set) 4)
-                                   (recur (str card-set " "))
-                                   card-set))
-                               spec/get-bytes
-                               (map byte))
+                        (->> (loop [card-set card-set]
+                               (if (< (count card-set) 4)
+                                 (recur (str card-set " "))
+                                 card-set))
+                             spec/get-bytes
+                             (map byte))
                         ;; Encode each character of card-set in Base36.
                         ;; Use 8th bit as continue bit. If 0, reached end.
                         (reduce (fn [accl c]
@@ -99,8 +99,7 @@
             ;; 2 bits for card number zero padding
             ;; (zero padding stored as 0 indexed)
             ;; 6 bits for initial count offset of cards in a card group
-            (case codec/version
-              2
+            (if (>= codec/version 2)
               (do (append-to-buffer! byte-buffer
                                      (bit-or (bit-shift-left (dec pad) 6)
                                              (bits-with-carry (count cards) 6)))
@@ -116,20 +115,20 @@
                       number (-> number
                                  (string/split #"-")
                                  second
-                                 #?(:clj (Integer/parseInt)
-                                    :cljs (js/parseInt)))
+                                 #?(:clj (Integer/parseInt 10)
+                                    :cljs (js/parseInt 10)))
                       number-offset (- number prev-card-number)]
-                  (case codec/version
+                  (if (zero? codec/version)
                     ;; 2 bits for card count (1-4)
                     ;; 3 bits for parallel id (0-7)
                     ;; 3 bits for start of card number offset
-                    0 (do (append-to-buffer!
-                           byte-buffer
-                           (bit-or (bit-shift-left (dec count) 6)
-                                   (bit-shift-left parallel-id 3)
-                                   (bits-with-carry number-offset 3)))
-                          ;; rest of card number offset
-                          (append-rest-to-buffer! byte-buffer number-offset 3))
+                    (do (append-to-buffer!
+                         byte-buffer
+                         (bit-or (bit-shift-left (dec count) 6)
+                                 (bit-shift-left parallel-id 3)
+                                 (bits-with-carry number-offset 3)))
+                        ;; rest of card number offset
+                        (append-rest-to-buffer! byte-buffer number-offset 3))
                     ;; 1 byte for card count (1-50 with BT6-085)
                     ;; 3 bits for parallel id (0-7)
                     ;; 5 bits for start of card number offset

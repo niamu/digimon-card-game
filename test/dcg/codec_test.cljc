@@ -6,6 +6,8 @@
    [clojure.test.check.properties :as prop]
    [dcg.codec.encode :as encode]
    [dcg.codec.decode :as decode]
+   #?@(:cljs [[goog.string :refer [format]]
+              [goog.string.format]])
    #?(:clj [clojure.test :as t]
       :cljs [cljs.test :as t :include-macros true])))
 
@@ -207,6 +209,23 @@
                    {:card/number "ST1-15", :card/count 2}
                    {:card/number "ST1-16", :card/count 2}],
        :deck/name "Starter Deck, Gaia Red [ST-1]"})))
+
+(t/deftest card-group-count-in-set
+  (t/testing "card group count in set can exceed 6 bits"
+    (t/is
+     (let [cards (reduce (fn [accl n]
+                           (conj accl
+                                 {:card/number (format "TEST-%03d" n)
+                                  :card/count 1}))
+                         []
+                         (range 1 200))]
+       (= (-> (encode/encode
+               {:deck/name ""
+                :deck/digi-eggs []
+                :deck/deck cards})
+              decode/decode
+              :deck/deck)
+          cards)))))
 
 (defn clean-deck
   [cards]
