@@ -33,7 +33,7 @@
       (recur (bit-shift-right v 7)))))
 
 (defn- encode-bytes
-  [{:deck/keys [language digi-eggs deck sideboard name] :as d}]
+  [{:deck/keys [language digi-eggs deck sideboard icon name] :as d}]
   (let [byte-buffer (atom [])
         version (if (>= codec/version 3)
                   (bit-or (bit-shift-left codec/version 4)
@@ -41,6 +41,12 @@
                           (bit-and (count digi-eggs) 0x07))
                   (bit-or (bit-shift-left codec/version 4)
                           (bit-and (count digi-eggs) 0x0F)))
+        name (cond->> name
+               (and (>= codec/version 4) icon)
+               (str (string/replace (string/join (repeat 8 " "))
+                                    (re-pattern
+                                     (str "^\\s{" (count icon) "}"))
+                                    icon)))
         checksum-byte-index (atom 0)
         group-deck (fn [deck]
                      (->> deck
@@ -56,7 +62,7 @@
         name (string/trim name) ; trim the deck name just in case
         deck-name-bytes (spec/get-bytes name) ; byte # for UTF-8 compatibility
         deck-name (->> deck-name-bytes
-                       (take 63) ; sextet byte count max
+                       (take 0x3F) ; sextet byte count max
                        codec/bytes->string
                        string/trim)]
     (append-to-buffer! byte-buffer version) ; version & digi-egg card group #
@@ -65,7 +71,9 @@
     (append-to-buffer! byte-buffer (count deck-name-bytes)) ; Deck name length
     (when (>= codec/version 2)
       ;; sideboard count
-      (append-to-buffer! byte-buffer (count sideboard)))
+      (append-to-buffer! byte-buffer
+                         (cond->> (count sideboard)
+                           (and (>= codec/version 4) icon) (bit-or 0x80))))
     ;; Store decks
     (doseq [d [(group-deck digi-eggs)
                (group-deck deck)

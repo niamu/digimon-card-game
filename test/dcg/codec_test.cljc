@@ -86,6 +86,9 @@
        "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCURpZ2kgQnJvczogUmFnb"
        "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ"))
 
+(def deck-with-sideboard-and-icon
+  (assoc deck-with-sideboard :deck/icon "BACK-001"))
+
 (def ja-deck
   (assoc st1-deck
          :deck/language :ja
@@ -121,7 +124,8 @@
       st1-deck
       digi-bros-deck
       ja-deck
-      deck-with-sideboard)))
+      deck-with-sideboard
+      deck-with-sideboard-and-icon)))
 
 (t/deftest stable-decoder-v1
   (t/testing "Deck decoding of v1 strings is stable"
@@ -156,6 +160,23 @@
              (str "DCGIkAzB4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
                   "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCURpZ2kgQnJvczogUmFnb"
                   "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ")))))
+
+(t/deftest stable-encoder-v3
+  (t/testing "Deck encoding of v3 deck is stable"
+    (t/is (= (with-redefs [dcg.codec.common/version 3]
+               (encode/encode deck-with-sideboard-and-icon))
+             (str "DCGOkAzB4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCURpZ2kgQnJvczogUmFnb"
+                  "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ")))))
+
+(t/deftest stable-encoder-v4
+  (t/testing "Deck encoding of v4 deck is stable"
+    (t/is (= (with-redefs [dcg.codec.common/version 4]
+               (encode/encode deck-with-sideboard-and-icon))
+             (str "DCGSsA7h4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCUJBQ0stMDAxRGlnaSBCc"
+                  "m9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp")
+             ))))
 
 ;; st1-deck return 58 bytes before Base64 encoding which requires 2 bytes
 ;; of padding to be appended. This test checks that decoding works when

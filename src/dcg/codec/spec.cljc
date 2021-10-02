@@ -62,15 +62,21 @@
          :dcg/deck-is-unique?))
 
 (s/def :deck/name
-  (s/and string? (fn [s] (<= (count (get-bytes s)) 0xFF))))
+  (s/and string?
+         (fn [s] (<= (count (get-bytes s)) 0x3F))))
+
+(s/def :deck/icon
+  :card/number)
 
 (s/def :deck/sideboard
   (s/and (s/coll-of :dcg/card)
-         :dcg/deck-is-unique?))
+         :dcg/deck-is-unique?
+         (fn [cards] (<= (count cards) 0x7F))))
 
 (s/def :dcg/deck
   (s/keys :req [:deck/digi-eggs
                 :deck/deck
                 :deck/name]
           :opt [:deck/language
+                :deck/icon
                 :deck/sideboard]))

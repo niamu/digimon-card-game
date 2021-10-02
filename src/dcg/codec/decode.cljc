@@ -105,6 +105,11 @@
         sideboard-count (if (>= version 2)
                           (nth deck-bytes @byte-index)
                           0)
+        icon? (when (and sideboard-count (>= version 4))
+                (pos? (bit-shift-right sideboard-count 7)))
+        sideboard-count (cond-> sideboard-count
+                          (and (>= version 4)
+                               (pos? sideboard-count)) (bit-and 0x7F))
         _ (when (>= version 2)
             (swap! byte-index inc))
         total-card-bytes (- (count deck-bytes) string-length)
@@ -187,21 +192,27 @@
                           (concat deck)
                           (into []))))
             deck))
-        sideboard (into [] (take-last sideboard-count deck))]
+        sideboard (into [] (take-last sideboard-count deck))
+        deck-name (if (< @byte-index (count deck-bytes))
+                    (-> (->> (drop (- (count deck-bytes) string-length)
+                                   deck-bytes)
+                             (take string-length))
+                        codec/bytes->string)
+                    "")]
     (cond-> {:deck/digi-eggs (into [] (take digi-egg-set-count deck))
              :deck/deck (->> deck
                              (drop digi-egg-set-count)
                              (drop-last sideboard-count)
                              (into []))
-             :deck/name (if (< @byte-index (count deck-bytes))
-                          (-> (->> (drop (- (count deck-bytes) string-length)
-                                         deck-bytes)
-                                   (take string-length))
-                              codec/bytes->string)
-                          "")}
+             :deck/name (cond-> deck-name
+                          icon? (as-> n (string/join (drop 8 n))))}
       (and (>= version 2)
            (not (empty? sideboard)))
       (assoc :deck/sideboard sideboard)
+      icon?
+      (assoc :deck/icon (cond-> deck-name
+                          (and icon? (>= version 4))
+                          (as-> n (string/trim (string/join (take 8 n))))))
       (>= version 3)
       (assoc :deck/language (if (zero? language) :ja :en)))))
 
