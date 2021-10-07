@@ -79,12 +79,13 @@
                     {:card/number "ST1-07", :card/count 1}
                     {:card/number "ST1-07", :card/count 3, :card/parallel-id 1}
                     {:card/number "ST1-16", :card/count 2}]
-   :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"})
+   :deck/name (apply str (repeat 63 "_"))})
 
 (def deck-with-sideboard-encoded
-  (str "DCGIkAzB4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
-       "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCURpZ2kgQnJvczogUmFnb"
-       "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ"))
+  (str "DCGIkA_B4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+       "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCV9fX19fX19fX19fX19fX"
+       "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
+       "19fXw"))
 
 (def deck-with-sideboard-and-icon
   (assoc deck-with-sideboard :deck/icon "BACK-001"))
@@ -118,9 +119,14 @@
 
 (t/deftest codec-round-trip
   (t/testing "Deck encode and decode round-trip"
-    (t/are [deck] (= deck (-> deck
-                              encode/encode
-                              decode/decode))
+    (t/are [deck] (= (->> deck
+                          ((fn [{:keys [deck/icon deck/name] :as d}]
+                             (if icon
+                               (assoc d :deck/name (apply str (take 55 name)))
+                               d))))
+                     (->> deck
+                          encode/encode
+                          decode/decode))
       st1-deck
       digi-bros-deck
       ja-deck
@@ -157,26 +163,28 @@
   (t/testing "Deck encoding of v2 deck is stable"
     (t/is (= (with-redefs [dcg.codec.common/version 2]
                (encode/encode deck-with-sideboard))
-             (str "DCGIkAzB4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
-                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCURpZ2kgQnJvczogUmFnb"
-                  "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ")))))
+             (str "DCGIkA_B4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCV9fX19fX19fX19fX19fX"
+                  "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
+                  "19fXw")))))
 
 (t/deftest stable-encoder-v3
   (t/testing "Deck encoding of v3 deck is stable"
     (t/is (= (with-redefs [dcg.codec.common/version 3]
                (encode/encode deck-with-sideboard-and-icon))
-             (str "DCGOkAzB4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
-                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCURpZ2kgQnJvczogUmFnb"
-                  "mFsb2FyZG1vbiBSZWQgKHlvdXR1LmJlL28wS29XMnd3aFI0KQ")))))
+             (str "DCGOkA_B4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCV9fX19fX19fX19fX19fX"
+                  "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
+                  "19fXw")))))
 
 (t/deftest stable-encoder-v4
   (t/testing "Deck encoding of v4 deck is stable"
     (t/is (= (with-redefs [dcg.codec.common/version 4]
                (encode/encode deck-with-sideboard-and-icon))
-             (str "DCGSsA7h4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
-                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCUJBQ0stMDAxRGlnaSBCc"
-                  "m9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp")
-             ))))
+             (str "DCGSsA_h4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCUJBQ0stMDAxX19fX19fX"
+                  "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
+                  "19fXw")))))
 
 ;; st1-deck return 58 bytes before Base64 encoding which requires 2 bytes
 ;; of padding to be appended. This test checks that decoding works when

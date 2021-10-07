@@ -60,15 +60,14 @@
                                          (count card-number-int)])))
                           (into [])))
         name (string/trim name) ; trim the deck name just in case
-        deck-name-bytes (spec/get-bytes name) ; byte # for UTF-8 compatibility
-        deck-name (->> deck-name-bytes
+        deck-name (->> (spec/get-bytes name) ; byte # for UTF-8 compatibility
                        (take 0x3F) ; sextet byte count max
                        codec/bytes->string
                        string/trim)]
     (append-to-buffer! byte-buffer version) ; version & digi-egg card group #
     (append-to-buffer! byte-buffer 0) ; Placeholder checksum byte
     (reset! checksum-byte-index (dec (count @byte-buffer)))
-    (append-to-buffer! byte-buffer (count deck-name-bytes)) ; Deck name length
+    (append-to-buffer! byte-buffer (count (spec/get-bytes deck-name)))
     (when (>= codec/version 2)
       ;; sideboard count
       (append-to-buffer! byte-buffer
