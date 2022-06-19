@@ -35,7 +35,7 @@
 (defn- encode-bytes
   [{:deck/keys [language digi-eggs deck sideboard icon name] :as d}]
   (let [byte-buffer (atom [])
-        version (if (>= codec/version 3)
+        version (if (<= 3 codec/version 4)
                   (bit-or (bit-shift-left codec/version 4)
                           (bit-shift-left (if (= language :ja) 0 1) 3)
                           (bit-and (count digi-eggs) 0x07))
@@ -67,7 +67,12 @@
     (append-to-buffer! byte-buffer version) ; version & digi-egg card group #
     (append-to-buffer! byte-buffer 0) ; Placeholder checksum byte
     (reset! checksum-byte-index (dec (count @byte-buffer)))
-    (append-to-buffer! byte-buffer (count (spec/get-bytes deck-name)))
+    (append-to-buffer! byte-buffer (cond->> (count (spec/get-bytes deck-name))
+                                     (>= codec/version 5)
+                                     (bit-or
+                                      (bit-shift-left (get codec/language->bits
+                                                           (or language :en))
+                                                      6))))
     (when (>= codec/version 2)
       ;; sideboard count
       (append-to-buffer! byte-buffer

@@ -1,6 +1,7 @@
 (ns dcg.codec.spec
   #?(:clj (:gen-class))
   (:require
+   [dcg.codec.common :as codec]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as gen]
    [clojure.string :as string]
@@ -50,7 +51,7 @@
           (count (set card-ids))))))
 
 (s/def :deck/language
-  #{:ja :en})
+  (set (keys codec/language->bits)))
 
 (s/def :deck/digi-eggs
   (s/and (s/coll-of :dcg/card)

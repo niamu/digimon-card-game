@@ -4,11 +4,19 @@
    [clojure.string :as string]
    #?(:cljs [goog.crypt :as crypt])))
 
-(def version 4)
+(def version 5)
 (def prefix "DCG")
 (def header-size
   "version & digi-eggs deck count, checksum, and deck name length bytes"
   3)
+
+(def language->bits
+  {:ja 0x00
+   :en 0x01
+   :zh 0x02})
+
+(def bits->language
+  (set/map-invert language->bits))
 
 (defn bytes->string
   [b]

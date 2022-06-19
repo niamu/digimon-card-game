@@ -186,6 +186,16 @@
                   "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
                   "19fXw")))))
 
+(t/deftest stable-encoder-v5
+  (t/testing "Deck encoding of v5 deck is stable"
+    (t/is (= (with-redefs [dcg.codec.common/version 5]
+               (encode/encode (assoc deck-with-sideboard-and-icon
+                                     :deck/language :zh)))
+             (str "DCGUsC_h4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
+                  "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCUJBQ0stMDAxX19fX19fX"
+                  "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
+                  "19fXw")))))
+
 ;; st1-deck return 58 bytes before Base64 encoding which requires 2 bytes
 ;; of padding to be appended. This test checks that decoding works when
 ;; the padding is omitted by the Base64URL process
