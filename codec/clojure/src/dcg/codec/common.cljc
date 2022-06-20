@@ -11,9 +11,10 @@
   3)
 
 (def language->bits
-  {:ja 0x00
-   :en 0x01
-   :zh 0x02})
+  {"ja" 0x00
+   "en" 0x01
+   "zh" 0x02
+   "ko" 0x03})
 
 (def bits->language
   (set/map-invert language->bits))

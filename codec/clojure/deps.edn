@@ -1,0 +1,11 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}}
+ :aliases {:dcg/encode {:main-opts ["-m" "dcg.codec.encode"]}
+           :dcg/decode {:main-opts ["-m" "dcg.codec.decode"]}
+
+           :test/clj {:extra-paths ["test"]
+                      :extra-deps
+                      {org.clojure/test.check {:mvn/version "1.1.1"}
+                       io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                             :git/sha "dfb30dd"}}
+                      :main-opts ["-m" "cognitect.test-runner"]}}}
