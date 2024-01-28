@@ -1,0 +1,9 @@
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure                   {:mvn/version "1.11.1"}
+        com.github.jnr/jnr-ffi                {:mvn/version "2.2.14"}
+        com.datomic/peer                      {:mvn/version "1.0.6726"}
+        com.datomic/memcache-asg-java-client  {:mvn/version "1.1.0.35"}
+        com.taoensso/timbre                   {:mvn/version "5.2.1"}
+        clj-http/clj-http                     {:mvn/version "3.12.3"}
+        hickory/hickory                       {:mvn/version "0.7.1"}
+        com.niamu/dcg-codec                   {:local/root "../codec/clojure/"}}}

@@ -1,0 +1,14 @@
+[package]
+name = "dcg-cv"
+version = "0.1.0"
+authors = ["Brendon Walsh <brendonwalsh@niamu.com>"]
+edition = "2021"
+
+[lib]
+name = "dcgcv"
+crate-type = ["dylib"]
+
+[dependencies]
+edn-derive = "0.5.0"
+edn-rs = "0.17.4"
+opencv = "0.83.0"
