@@ -1,0 +1,265 @@
+/* @link https://utopia.fyi/type/calculator?c=320,16,1.2,1240,18,1.25,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+
+:root {
+	/* Step -2: 11.1111px → 11.52px */
+	--font-size--2: clamp(0.6944rem, 0.6856rem + 0.0444vi, 0.72rem);
+	/* Step -1: 13.3333px → 14.4px */
+	--font-size--1: clamp(0.8333rem, 0.8101rem + 0.1159vi, 0.9rem);
+	/* Step 0: 16px → 18px */
+	--font-size-0: clamp(1rem, 0.9565rem + 0.2174vi, 1.125rem);
+	/* Step 1: 19.2px → 22.5px */
+	--font-size-1: clamp(1.2rem, 1.1283rem + 0.3587vi, 1.4063rem);
+	/* Step 2: 23.04px → 28.125px */
+	--font-size-2: clamp(1.44rem, 1.3295rem + 0.5527vi, 1.7578rem);
+	/* Step 3: 27.648px → 35.1563px */
+	--font-size-3: clamp(1.728rem, 1.5648rem + 0.8161vi, 2.1973rem);
+	/* Step 4: 33.1776px → 43.9453px */
+	--font-size-4: clamp(2.0736rem, 1.8395rem + 1.1704vi, 2.7466rem);
+	/* Step 5: 39.8131px → 54.9316px */
+	--font-size-5: clamp(2.4883rem, 2.1597rem + 1.6433vi, 3.4332rem);
+
+	--card-original-width: 430;
+	--card-original-height: 600;
+	--card-width: calc(100vw / 15);
+	--card-height: calc(var(--card-width) * (600 / 430));
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	scrollbar-width: thin;
+	scroll-behavior: smooth;
+	font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	font-size: var(--fontSize-0);
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.sr-only:not(:focus):not(:active) {
+	clip: rect(0 0 0 0); 
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap; 
+	width: 1px;
+}
+
+#board {
+	display: flex;
+	flex-direction: column;
+}
+
+section.memory         { order: 1; }
+section.player.current { order: 2; }
+
+memory-guage {
+	display: block;
+
+	& ul {
+		display: flex;
+		flex-direction: row;
+		justify-content: center;
+		padding: 0;
+		list-style: none;
+		text-align: center;
+
+		& li {
+			transform: rotate(180deg);
+		}
+
+		& ul {
+			flex-wrap: wrap;
+		}
+
+		&:has(+ li) {
+			& li {
+				transform: rotate(0deg);
+				color: red;
+				outline-color: red;
+				background: none;
+			}
+		}
+	}
+
+	&> ul > * {
+		align-self: center;
+	}
+
+	&> ul > li {
+		background: #888;
+	}
+
+	& li {
+		position: relative;
+		display: flex;
+		margin: 0.25rem;
+		flex-direction: column;
+		justify-content: center;
+		height: 3rem;
+		width: 3rem;
+		border-radius: 50%;
+		flex-shrink: 0;
+		color: white;
+		background: red;
+		outline: 2px solid #FFF;
+		outline-offset: -0.2rem;
+		box-shadow: 0 0 0.125rem #000;
+	}
+
+	& memory-counter {
+		position: absolute;
+		top: 0;
+		left: 0;
+		border-radius: inherit;
+		width: inherit;
+		height: inherit;
+		background: #333;
+		transform: scale(1.1);
+		box-shadow: 0 0 0.25rem #000;
+	}
+}
+
+playing-field {
+	display: grid;
+	grid-gap: 1rem;
+	grid-template:
+		"security battle-area deck"
+		"raising-area tamer-option-area trash"
+		/ auto 1fr auto;
+	grid-auto-flow: row dense;
+
+	& > * {
+		align-self: flex-end;
+	}
+}
+
+section.hand,
+section.battle-area,
+section.tamer-option-area,
+section.raising-area {
+	display: flex;
+	flex-direction: row;
+	align-items: flex-end;
+
+	& > * {
+		text-align: center;
+		margin: calc(var(--card-width) * 0.025);
+	}
+}
+
+dcg-card {
+	position: relative;
+	display: block;
+	width: var(--card-width);
+	height: var(--card-height);
+	box-shadow: 0 0 calc(var(--card-width) * 0.025) rgba(0, 0, 0, 0.35);
+	border-radius: calc(var(--card-width) * 0.055);
+	background-position: center;
+	background-size: cover;
+	transform-style: preserve-3d;
+
+	&[digi-eggs-back] {
+		background-image: url("/images/cards/BACK-002.png");
+	}
+	&[deck-back] {
+		background-image: url("/images/cards/BACK-001.png");
+	}
+
+	&::after {
+		content: "";
+		display: block;
+		width: inherit;
+		height: inherit;
+		position: absolute;
+		top: 0;
+		left: 0;
+		background-image: inherit;
+		background-size: inherit;
+		transform: rotateY(180deg);
+		backface-visibility: hidden;
+	}
+	& img {
+		display: block;
+		width: inherit;
+		height: inherit;
+	}
+}
+
+dcg-card-stack {
+	display: inline-flex;
+	flex-direction: column-reverse;
+
+	& dcg-card {
+		position: relative;
+
+		&[digi-eggs-back] + dcg-card {
+			margin-bottom: calc(var(--card-height) * -0.985);
+		}
+		&[deck-back] + dcg-card {
+			margin-bottom: calc(var(--card-height) * -0.995);
+		}
+
+		&[digi-eggs-back]:has(img) + dcg-card {
+			margin-bottom: calc(var(--card-height) * -0.832);
+		}
+		&[deck-back]:has(img) + dcg-card {
+			margin-bottom: calc(var(--card-height) * -0.865);
+		}
+	}
+}
+
+section.security {
+	& security-stack {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		margin-block: calc(var(--card-height) * -0.14);
+		width: var(--card-height);
+	}
+
+	& dcg-card {
+		position: relative;
+		transform: rotateX(-180deg) rotateZ(-90deg) translateY(calc(var(--card-height) * 0.14));
+
+		& + dcg-card {
+			margin-top: calc(var(--card-height) * -0.865);
+		}
+
+		/* Don't currently expect more than 20 security cards */
+		&:nth-child(1) { z-index: -1; }
+		&:nth-child(2) { z-index: -2; }
+		&:nth-child(3) { z-index: -3; }
+		&:nth-child(4) { z-index: -4; }
+		&:nth-child(5) { z-index: -5; }
+		&:nth-child(6) { z-index: -6; }
+		&:nth-child(7) { z-index: -7; }
+		&:nth-child(8) { z-index: -8; }
+		&:nth-child(9) { z-index: -9; }
+		&:nth-child(10) { z-index: -10; }
+		&:nth-child(11) { z-index: -11; }
+		&:nth-child(12) { z-index: -12; }
+		&:nth-child(13) { z-index: -13; }
+		&:nth-child(14) { z-index: -14; }
+		&:nth-child(15) { z-index: -15; }
+		&:nth-child(16) { z-index: -16; }
+		&:nth-child(17) { z-index: -17; }
+		&:nth-child(18) { z-index: -18; }
+		&:nth-child(19) { z-index: -19; }
+		&:nth-child(20) { z-index: -20; }
+	}
+}
+
+section.battle-area,
+section.tamer-option-area {
+	justify-content: center;
+
+	& > dcg-slot {
+		display: inline-flex;
+		flex-direction: column;
+		justify-content: flex-end;
+	}
+}
