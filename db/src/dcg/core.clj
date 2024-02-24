@@ -126,4 +126,10 @@
        db/save-to-file!
        db/import!))
 
-#_(defonce *cards (time (process-cards)))
+(comment
+  (defonce *cards (time (process-cards)))
+
+  (->> *cards
+       assertion/card-assertions
+       db/save-to-file!
+       db/import!))

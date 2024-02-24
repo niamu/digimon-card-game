@@ -260,12 +260,12 @@
   [tx]
   (d/transact conn tx))
 
-(defn read-from-file
+(defn import-from-file!
   []
   (->> (edn/read {:readers {'uri #(URI. ^String %)}}
                  (PushbackReader.
                   (io/reader
-                   (io/file "resources/db.edn"))))
+                   (io/resource "db.edn"))))
        import!))
 
 (defn save-to-file!

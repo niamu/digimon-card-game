@@ -239,6 +239,11 @@
    "BT7-044"
    {"zh-Hans" (fn [card]
                 (assoc card :card/name "ベタモン"))}
+   "BT7-070"
+   {"zh-Hans" (fn [card]
+                (assoc card
+                       :card/inherited-effect
+                       "【我方的回合】[每回合1次]当我方的驯兽师登场时,《抽1张卡》（从我方的卡组上方抽取1张卡牌）。"))}
    "BT7-085"
    {"ja" (fn [{:card/keys [inherited-effect] :as card}]
            (cond-> card
@@ -1034,6 +1039,11 @@
    "ST3-04"
    {"ko" (fn [card]
            (assoc card :card/digimon-type "포유류형"))}
+   "ST3-05"
+   {"zh-Hans" (fn [card]
+                (assoc card
+                       :card/inherited-effect
+                       "【攻击时】当我方持有4张或更多的安防卡牌时,内存值+1。"))}
    "ST3-11"
    {"ko" (fn [card]
            (assoc card :card/attribute "백신종"))}
@@ -1054,6 +1064,11 @@
              (not form) (assoc :card/form "성장기")
              (not attribute) (assoc :card/attribute "바이러스종")
              (not digimon-type) (assoc :card/digimon-type "포유류형,포유류형")))}
+   "ST7-11"
+   {"zh-Hans" (fn [{:card/keys [inherited-effect effect] :as card}]
+                (cond-> (dissoc card :card/inherited-effect)
+                  inherited-effect
+                  (assoc :card/security-effect inherited-effect)))}
    "ST10-01"
    {"en" (fn [{:card/keys [inherited-effect effect] :as card}]
            (cond-> card

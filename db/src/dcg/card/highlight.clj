@@ -215,7 +215,8 @@
               "究极体" "究極体"
               "装甲体" "アーマー体"
               "帝皇龙甲兽:龙形态" "インペリアルドラモン:ドラゴンモード"
-              "贝尔菲兽:愤怒形态" "ベルフェモン:レイジモード"}})
+              "贝尔菲兽:愤怒形态" "ベルフェモン:レイジモード"}
+   "ko" {"아머체" "アーマー体"}})
 
 (defn- highlights-in-text
   [text]
@@ -534,7 +535,7 @@
         {:keys [card-highlights translations]} (highlights card-groups)
         treats-lookup
         (reduce (fn [accl {:highlight/keys [id card-number language text mention]
-                          :as highlight}]
+                           :as highlight}]
                   (if (:mention/aka? mention)
                     (let [id (string/replace id "highlight/" "treat/")
                           field (if (contains? (:mention/fields mention)
@@ -554,7 +555,7 @@
                 card-highlights)
         ja-mentioned-cards-lookup
         (reduce (fn [accl {:highlight/keys [id card-number language text mention]
-                          :as highlight}]
+                           :as highlight}]
                   (if (and mention
                            (not (:mention/aka? mention))
                            (= language "ja"))
@@ -569,7 +570,7 @@
                 card-highlights)
         mentions
         (reduce (fn [accl {:highlight/keys [id card-number language text mention]
-                          :as highlight}]
+                           :as highlight}]
                   (if (and mention (not (:mention/aka? mention)))
                     (let [text (subs text 1 (dec (count text)))
                           ja-text (get-in translations [language text])
@@ -603,7 +604,7 @@
                 []
                 card-highlights)]
     {:mentions (reduce (fn [accl {:mention/keys [language card-number]
-                                 :as mention}]
+                                  :as mention}]
                          (update-in accl [card-number language]
                                     conj
                                     (dissoc mention
@@ -612,7 +613,7 @@
                        {}
                        mentions)
      :treats (reduce (fn [accl {:treat/keys [language card-number]
-                               :as treat}]
+                                :as treat}]
                        (update-in accl [card-number language]
                                   conj
                                   (dissoc treat
@@ -637,7 +638,7 @@
                                    (assoc :highlight/type :treat)
                                    (dissoc :highlight/mention)))))
                       (reduce (fn [accl {:highlight/keys [language card-number]
-                                        :as highlight}]
+                                         :as highlight}]
                                 (update-in accl [card-number language]
                                            conj
                                            (dissoc highlight
