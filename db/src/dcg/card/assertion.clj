@@ -135,12 +135,12 @@
 
 (defn card-assertions
   [cards]
+  (assert (empty? (card-values cards))
+          "JA card values differ across languages")
   (assert (empty? (highlights cards))
           "Card highlights differ across languages")
   (assert (empty? (mentions cards))
           "Mentions in cards differ across languages with no matches")
   (assert (empty? (text-fields cards))
           "Card text fields differ across languages")
-  (assert (empty? (card-values cards))
-          "JA card values differ across languages")
   cards)

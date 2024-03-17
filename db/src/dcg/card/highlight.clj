@@ -14,6 +14,7 @@
         "\u201C" :mention
         "「" :mention
         "【" :timing
+        "〔" :timing
         "["  :phase
         "［" :phase
         "<"  :keyword-effect
@@ -31,6 +32,7 @@
         squares [["\u300C" "\u300D"]
                  ["\u3010" "\u3011"]
                  ["[" "]"]
+                 ["\u3014" "\u3015"]
                  ["\uFF3B" "\uFF3D"]
                  ["\u201C" "\u201D"]]
         disallow-tokens (->> ["（[^）]+）?のトークン"
@@ -243,6 +245,7 @@
                                           [["\u300C" "\u300D"]
                                            ["\u3010" "\u3011"]
                                            ["[" "]"]
+                                           ["\u3014" "\u3015"]
                                            ["\uFF3B" "\uFF3D"]
                                            ["\u201C" "\u201D"]
                                            ["<" ">"]
@@ -287,6 +290,7 @@
                                        [["\u300C" "\u300D"]
                                         ["\u3010" "\u3011"]
                                         ["[" "]"]
+                                        ["\u3014" "\u3015"]
                                         ["\uFF3B" "\uFF3D"]
                                         ["\u201C" "\u201D"]
                                         ["<" ">"]
@@ -535,7 +539,7 @@
         {:keys [card-highlights translations]} (highlights card-groups)
         treats-lookup
         (reduce (fn [accl {:highlight/keys [id card-number language text mention]
-                           :as highlight}]
+                          :as highlight}]
                   (if (:mention/aka? mention)
                     (let [id (string/replace id "highlight/" "treat/")
                           field (if (contains? (:mention/fields mention)
@@ -555,7 +559,7 @@
                 card-highlights)
         ja-mentioned-cards-lookup
         (reduce (fn [accl {:highlight/keys [id card-number language text mention]
-                           :as highlight}]
+                          :as highlight}]
                   (if (and mention
                            (not (:mention/aka? mention))
                            (= language "ja"))
@@ -570,7 +574,7 @@
                 card-highlights)
         mentions
         (reduce (fn [accl {:highlight/keys [id card-number language text mention]
-                           :as highlight}]
+                          :as highlight}]
                   (if (and mention (not (:mention/aka? mention)))
                     (let [text (subs text 1 (dec (count text)))
                           ja-text (get-in translations [language text])
@@ -604,7 +608,7 @@
                 []
                 card-highlights)]
     {:mentions (reduce (fn [accl {:mention/keys [language card-number]
-                                  :as mention}]
+                                 :as mention}]
                          (update-in accl [card-number language]
                                     conj
                                     (dissoc mention
@@ -613,7 +617,7 @@
                        {}
                        mentions)
      :treats (reduce (fn [accl {:treat/keys [language card-number]
-                                :as treat}]
+                               :as treat}]
                        (update-in accl [card-number language]
                                   conj
                                   (dissoc treat
@@ -638,7 +642,7 @@
                                    (assoc :highlight/type :treat)
                                    (dissoc :highlight/mention)))))
                       (reduce (fn [accl {:highlight/keys [language card-number]
-                                         :as highlight}]
+                                        :as highlight}]
                                 (update-in accl [card-number language]
                                            conj
                                            (dissoc highlight

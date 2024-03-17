@@ -276,17 +276,71 @@
 (comment
   (d/delete-database db-uri)
 
-  (d/q '{:find [[(pull ?d [:card/id
-                           :card/number
-                           {:card/limitation [:limitation/id
-                                              :limitation/allowance]}]) ...]]
-         :where [[?d :card/limitation _]]}
-       (d/db conn))
-
   (d/q '{:find [[(pull ?c [:card/number]) ...]]
-         :where [[?c :card/limitation ?l]
-                 [?l :limitation/type :ban]]}
+         :where [[?c :card/effect ?e]
+                 [(clojure.string/includes? ?e "Digivolve]")]]}
        (d/db conn))
 
-  (d/transact conn
-              [[:db/retractEntity 17592186045419]]))
+  (let [lookup (edn/read {:readers {'uri #(URI. ^String %)}}
+                         (PushbackReader.
+                          (io/reader
+                           (io/file "/Users/niamu/Desktop/wiki.edn"))))
+        db-lookup (->> (d/q '{:find [[(pull ?c [:card/number
+                                                :card/parallel-id
+                                                :card/language
+                                                {:card/image
+                                                 [:image/source]}]) ...]]
+                              :where [[?c :card/number ?n]]}
+                            (d/db conn))
+                       (group-by :card/number)
+                       (reduce-kv (fn [accl number cards]
+                                    (assoc accl
+                                           number
+                                           (-> (group-by :card/language cards)
+                                               (update-vals (fn [cards]
+                                                              (->> cards
+                                                                   (map :card/parallel-id)))))))
+                                  {}))]
+    (->> db-lookup
+         (reduce-kv (fn [accl number cards]
+                      (let [wiki-lookup
+                            (->> (get lookup number)
+                                 (reduce-kv
+                                  (fn [accl language images]
+                                    (let [images
+                                          (->> images
+                                               (remove (fn [s]
+                                                         (or (re-find #"(?i)sample"
+                                                                      s)
+                                                             (re-find #"_P0"
+                                                                      s))))
+                                               (map (fn [image-source]
+                                                      (or (some-> (re-find #"_P([0-9]+)"
+                                                                           image-source)
+                                                                  second
+                                                                  parse-long)
+                                                          0))))]
+                                      (if (empty? images)
+                                        accl
+                                        (assoc accl language images))))
+                                  {}))
+                            result (reduce-kv (fn [accl language cards]
+                                                (let [diff (clojure.set/difference
+                                                            (set (get wiki-lookup language))
+                                                            (set cards))]
+                                                  (if (empty? diff)
+                                                    accl
+                                                    (assoc accl language diff))))
+                                              {}
+                                              cards)]
+                        (if (empty? result)
+                          accl
+                          (assoc accl
+                                 number
+                                 result
+                                 #_[cards
+                                    wiki-lookup]))))
+                    {})
+         sort))
+
+  )

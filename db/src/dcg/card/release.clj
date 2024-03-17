@@ -198,8 +198,12 @@
                           (merge r (dissoc p :release/id)))
                     (conj accl r)))
                 []
-                cardlist-releases)]
-    merged))
+                cardlist-releases)
+        merged-product-uris (set (map :release/product-uri merged))]
+    (concat merged
+            (remove (fn [{:release/keys [product-uri]}]
+                      (contains? merged-product-uris product-uri))
+                    products))))
 
 (defmethod releases "zh-Hans"
   [{:origin/keys [url language card-image-language] :as origin}]

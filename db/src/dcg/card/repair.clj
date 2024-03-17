@@ -1,7 +1,9 @@
 (ns dcg.card.repair
   (:require
    [clojure.string :as string]
-   [taoensso.timbre :as logging]))
+   [taoensso.timbre :as logging])
+  (:import
+   [java.net URI]))
 
 (def text-fixes-by-number-by-language
   "Bandai's official card site has a few issues that cannot be programmatically
@@ -116,6 +118,13 @@
    "BT3-028"
    {"en" (fn [card]
            (assoc card :card/name "Bastemon"))}
+   "BT3-057"
+   {"en" (fn [card]
+           (update-in card [:card/image :image/source]
+                      (fn [source]
+                        (if (string/ends-with? source "BT3-057_P3.png")
+                          (URI. "https://static.wikia.nocookie.net/digimoncardgame/images/0/01/BT3-057_P2.png")
+                          source))))}
    "BT3-068"
    {"ko" (fn [{:card/keys [effect inherited-effect] :as card}]
            (cond-> card
@@ -939,6 +948,41 @@
                     (str "【어택 시】 자신의 시큐리티가 3장 이상일 때, "
                          "다음 상대의 턴 종료 시까지 이 디지몬의 DP를 "
                          "+4000 한다."))))}
+   "EX2-001"
+   {"ko" (fn [{:card/keys [digimon-type] :as card}]
+           (cond-> card
+             (not digimon-type)
+             (assoc :card/digimon-type "렛서형")))}
+   "EX2-002"
+   {"ko" (fn [{:card/keys [digimon-type] :as card}]
+           (cond-> card
+             (not digimon-type)
+             (assoc :card/digimon-type "렛서형")))}
+   "EX2-003"
+   {"ko" (fn [{:card/keys [digimon-type] :as card}]
+           (cond-> card
+             (not digimon-type)
+             (assoc :card/digimon-type "렛서형")))}
+   "EX2-004"
+   {"ko" (fn [{:card/keys [digimon-type] :as card}]
+           (cond-> card
+             (not digimon-type)
+             (assoc :card/digimon-type "렛서형")))}
+   "EX2-005"
+   {"ko" (fn [{:card/keys [digimon-type] :as card}]
+           (cond-> card
+             (not digimon-type)
+             (assoc :card/digimon-type "유룡형")))}
+   "EX2-006"
+   {"ko" (fn [{:card/keys [digimon-type] :as card}]
+           (cond-> card
+             (not digimon-type)
+             (assoc :card/digimon-type "렛서형")))}
+   "EX2-007"
+   {"ko" (fn [{:card/keys [digimon-type] :as card}]
+           (cond-> card
+             (not digimon-type)
+             (assoc :card/digimon-type "능력통합 타입")))}
    "EX2-044"
    {"ja" (fn [{:card/keys [effect inherited-effect] :as card}]
            (cond-> (dissoc card :card/inherited-effect)
@@ -1009,6 +1053,50 @@
                 (-> card
                     (assoc :card/security-effect (:card/inherited-effect card))
                     (dissoc :card/inherited-effect)))}
+   "EX6-011"
+   {"ja" (fn [card]
+           (assoc card :card/inherited-effect
+                  "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))}
+   "EX6-035"
+   {"ja" (fn [card]
+           (assoc card :card/inherited-effect
+                  "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）"))}
+   "LM-027"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (-> (assoc :card/security-effect
+                        "【セキュリティ】自分のトラッシュから、赤のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+   "LM-028"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (-> (assoc :card/security-effect
+                        "【セキュリティ】自分のトラッシュから、青のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+   "LM-029"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (-> (assoc :card/security-effect
+                        "【セキュリティ】自分のトラッシュから、黄のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+   "LM-030"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (-> (assoc :card/security-effect
+                        "【セキュリティ】自分のトラッシュから、緑のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+   "LM-031"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (-> (assoc :card/security-effect
+                        "【セキュリティ】自分のトラッシュから、黒のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+   "LM-032"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (-> (assoc :card/security-effect
+                        "【セキュリティ】自分のトラッシュから、紫のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
    "RB1-018"
    {"en" (fn [card]
            (update card :card/effect
@@ -1253,7 +1341,13 @@
                      (and s
                           (cond->> s
                             (not (re-find #"^.?Digivolve" s))
-                            (str "[Digivolve] 0 from [WereGarurumon]"))))))}})
+                            (str "[Digivolve] 0 from [WereGarurumon]"))))))}
+   "P-133"
+   {"en" (fn [card]
+           (dissoc card :card/attribute))}
+   "P-136"
+   {"en" (fn [card]
+           (dissoc card :card/attribute))}})
 
 (defn html-encoding-errors
   [html-string]

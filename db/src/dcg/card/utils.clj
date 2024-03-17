@@ -3,6 +3,7 @@
    [clojure.java.io :as io]
    [clojure.string :as string]
    [clj-http.client :as client]
+   [clj-http.conn-mgr :as conn-mgr]
    [taoensso.timbre :as logging])
   (:import
    [java.awt Transparency]
@@ -95,6 +96,10 @@
         (string/replace #"(DigiXros\s?\-[0-9])\s?:" "<$1>")
         (string/replace #"\s+\." "."))))
 
+(def ^:private connection-manager
+  (conn-mgr/make-reusable-conn-manager {:timeout 10
+                                        :default-per-route 10}))
+
 (defn as-bytes
   [url]
   (-> (client/get url {:as :byte-array
@@ -102,9 +107,11 @@
                        :connection-timeout 9000
                        :cookie-policy :standard
                        :retry-handler (fn [ex try-count _]
-                                        (logging/error ex)
                                         (if (> try-count 2)
-                                          false
+                                          (logging/error
+                                           (format "Failed downloading: %s %s after %d attempts"
+                                                   url
+                                                   try-count))
                                           true))})
       :body))
 
@@ -117,33 +124,35 @@
                            :connection-timeout 9000
                            :cookie-policy :standard
                            :retry-handler (fn [ex try-count _]
-                                            (logging/error ex)
                                             (if (> try-count 2)
-                                              false
+                                              (do (logging/error
+                                                   (format "Failed HEAD: %s after %d attempts"
+                                                           url
+                                                           try-count))
+                                                  false)
                                               true))))))
 
-(defn http-get*
+(defn http-get
   ([url]
-   (http-get* url {}))
+   (http-get url {}))
   ([url options]
    (logging/debug (format "Downloading: %s %s" url (pr-str options)))
-   (-> (client/get url (assoc options
-                              :socket-timeout 10000
-                              :connection-timeout 10000
-                              :cookie-policy :standard
-                              :retry-handler
-                              (fn [ex try-count _]
-                                (logging/error
-                                 (format "Failed downloading: %s %s after %d attempts"
-                                         url
-                                         (pr-str options)
-                                         try-count))
-                                (if (> try-count 2)
-                                  false
-                                  true))))
+   (-> (client/get url
+                   (assoc options
+                          :socket-timeout 10000
+                          :connection-timeout 10000
+                          :cookie-policy :standard
+                          :retry-handler
+                          (fn [ex try-count _]
+                            (if (> try-count 2)
+                              (do (logging/error
+                                   (format "Failed GET: %s %s after %d attempts"
+                                           url
+                                           (pr-str options)
+                                           try-count))
+                                  false)
+                              true))))
        :body)))
-
-(defonce http-get (memoize http-get*))
 
 (defn text-content
   [element]

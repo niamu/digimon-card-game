@@ -34,7 +34,8 @@
         (logging/info (format "Downloaded image: [%s] %s" id (str source)))))
     image))
 
-(defn- download-icon!
+(defn- ^:deprecated download-icon!
+  "Deprecated since the shutdown of mypage.digimoncard.com"
   [{:image/keys [id language] :as image}]
   (let [number (-> id
                    (string/replace #"image/(.*?)_" "")
@@ -113,21 +114,30 @@
                                                        (Date. Long/MAX_VALUE))
                                                  :release/date))
                                   (map #(dissoc % :release/card-image-language)))
+                         existing-card-numbers (filter (fn [c]
+                                                         (= (:card/number c)
+                                                            number))
+                                                       accl)
                          parallel-id (cond
-                                       (nil? parallel-id)
+                                       (and (= number
+                                               (:card/number prev-card))
+                                            (nil? parallel-id))
                                        (or (some-> prev-card
                                                    :card/parallel-id
                                                    inc)
                                            0)
-                                       (and (= parallel-id
-                                               (get prev-card
-                                                    :card/parallel-id))
-                                            (= number
-                                               (get prev-card
-                                                    :card/number)))
+                                       (and (= number
+                                               (:card/number prev-card))
+                                            (= parallel-id
+                                               (:card/parallel-id prev-card)))
                                        (inc parallel-id)
+                                       (not (empty? existing-card-numbers))
+                                       (-> existing-card-numbers
+                                           last
+                                           (get :card/parallel-id 0)
+                                           inc)
                                        :else
-                                       parallel-id)
+                                       (or parallel-id 0))
                          card-id (format "card/%s_%s_P%s"
                                          language
                                          number
@@ -164,7 +174,7 @@
   [cards]
   (let [cards (pmap (fn [{:card/keys [language image parallel-id id] :as card}]
                       (cond-> (update card
-                                      :card/image (comp download-icon!
+                                      :card/image (comp #_download-icon!
                                                         download-image!))
                         (and (= language "ja")
                              (zero? parallel-id)) cv/digivolve-conditions
@@ -207,7 +217,9 @@
                                     (select/tag "li"))
                                    dom-tree)
                     (map utils/text-content))
-        number (nth header 0)
+        number (-> (nth header 0)
+                   ;; ko cards sometimes add a "P" suffix to the card number
+                   (string/replace #"P$" ""))
         alternate-art? (let [header-set (set header)]
                          (or (contains? header-set "パラレル")
                              (contains? header-set "Parallel Rare")
@@ -524,9 +536,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                       dp rareDegree entryConsumeValue envolutionConsumeTwo
-                       cardLevel effect envolutionEffect safeEffect
-                       imageCover cardGroup]}]
+                      dp rareDegree entryConsumeValue envolutionConsumeTwo
+                      cardLevel effect envolutionEffect safeEffect
+                      imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)
