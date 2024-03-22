@@ -97,6 +97,11 @@
                              (string/replace
                               "【시큐리티】 이 카드를 패에 추가한다."
                               "【시큐리티】 이카드의 【메인】 효과를발휘한다.")))))}
+   "BT2-097"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (string/replace s "get-4000" "get -4000"))))}
    "BT3-010"
    {"ko" (fn [{:card/keys [language level parallel-id] :as card}]
            (cond-> card

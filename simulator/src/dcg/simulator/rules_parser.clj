@@ -39,8 +39,10 @@
                                     [(clojure.string/starts-with? ?n "ST10-")]
                                     [(clojure.string/starts-with? ?n "ST12-")]
                                     [(clojure.string/starts-with? ?n "ST13-")]
-                                    [(clojure.string/starts-with? ?n "BT1-")])
+                                    [(clojure.string/starts-with? ?n "BT1-")]
+                                    [(clojure.string/starts-with? ?n "BT2-")])
                               #_[(clojure.string/starts-with? ?n "ST14-")]
+                              [(clojure.string/starts-with? ?n "BT3-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect
@@ -58,8 +60,8 @@
      :success (get result false 0)
      :total (+ (get result false 0)
                (get result true 0))}
-    #_(->> (get m true)
-           (map :text)
-           sort))
+    (->> (get m true)
+         (map :text)
+         sort))
 
   )
