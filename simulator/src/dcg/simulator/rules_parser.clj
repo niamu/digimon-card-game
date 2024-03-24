@@ -40,9 +40,11 @@
                                     [(clojure.string/starts-with? ?n "ST12-")]
                                     [(clojure.string/starts-with? ?n "ST13-")]
                                     [(clojure.string/starts-with? ?n "BT1-")]
-                                    [(clojure.string/starts-with? ?n "BT2-")])
+                                    [(clojure.string/starts-with? ?n "BT2-")]
+                                    [(clojure.string/starts-with? ?n "BT3-")])
                               #_[(clojure.string/starts-with? ?n "ST14-")]
-                              [(clojure.string/starts-with? ?n "BT3-")]
+                              [(clojure.string/starts-with? ?n "BT4-")]
+                              #_[(clojure.string/starts-with? ?n "P-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect
