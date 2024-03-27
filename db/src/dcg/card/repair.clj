@@ -170,6 +170,11 @@
              (not security-effect)
              (assoc :card/security-effect
                     "【セキュリティ】≪リカバリー+1《デッキ》≫（自分のデッキの上からカードを1枚セキュリティの上に置く）")))}
+   "BT4-113"
+   {"ko" (fn [card]
+           (update card :card/effect
+                   (fn [effect]
+                     (string/replace effect #"(\S)(\[Hybrid\])" "$1 $2"))))}
    "BT4-115"
    {"ko" (fn [card]
            (assoc card :card/attribute "백신종"))}
