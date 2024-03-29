@@ -130,21 +130,6 @@
   (def *cards (time (process-cards)))
 
   (->> *cards
-       (filter (fn [{[{:digivolve/keys [level]}] :card/digivolve-conditions
-                    :as card}]
-                 (and (:card/digivolve-conditions card)
-                      (nil? level))))
-       (map (juxt :card/id)))
-
-  (->> *cards
-       (filter (fn [{:card/keys [number language]}]
-                 (and (= number "P-028"))
-                 #_(= id "card/en_P-028_P1")))
-       (map (juxt :card/id
-                  :card/digivolve-conditions
-                  :card/releases)))
-
-  (->> *cards
        assertion/card-assertions
        db/save-to-file!
        db/import!))

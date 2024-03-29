@@ -42,9 +42,10 @@
                                     [(clojure.string/starts-with? ?n "BT1-")]
                                     [(clojure.string/starts-with? ?n "BT2-")]
                                     [(clojure.string/starts-with? ?n "BT3-")]
-                                    [(clojure.string/starts-with? ?n "BT4-")])
+                                    [(clojure.string/starts-with? ?n "BT4-")]
+                                    [(clojure.string/starts-with? ?n "BT5-")])
                               #_[(clojure.string/starts-with? ?n "ST14-")]
-                              [(clojure.string/starts-with? ?n "BT5-")]
+                              [(clojure.string/starts-with? ?n "BT6-")]
                               #_[(clojure.string/starts-with? ?n "P-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
@@ -63,6 +64,7 @@
      :success (get result false 0)
      :total (+ (get result false 0)
                (get result true 0))}
+    #_(get m false)
     (->> (get m true)
          (map :text)
          sort))

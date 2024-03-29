@@ -171,7 +171,7 @@
              (assoc :card/security-effect
                     "【セキュリティ】≪リカバリー+1《デッキ》≫（自分のデッキの上からカードを1枚セキュリティの上に置く）")))}
    "BT4-113"
-   {"ko" (fn [card]
+   {"en" (fn [card]
            (update card :card/effect
                    (fn [effect]
                      (string/replace effect #"(\S)(\[Hybrid\])" "$1 $2"))))}
