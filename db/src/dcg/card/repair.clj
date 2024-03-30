@@ -203,6 +203,13 @@
    "BT6-053"
    {"ko" (fn [card]
            (assoc card :card/attribute "데이터종"))}
+   "BT6-054"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [effect]
+                     (string/replace effect
+                                     "with Hybrid "
+                                     "with [Hybrid] "))))}
    "BT6-064"
    {"ko" (fn [card]
            (assoc card :card/attribute "데이터종"))}
@@ -950,6 +957,42 @@
                 (cond-> card
                   (not digimon-type)
                   (assoc :card/digimon-type "皇家骑士")))}
+   "BT17-094"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (assoc :card/security-effect
+                    "【セキュリティ】自分の手札か/トラッシュから、進化元効果を持つテイマーカード1枚をコストを支払わずに登場できる。その後、このカードを手札に加える。")))}
+   "BT17-095"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (assoc :card/security-effect
+                    "【セキュリティ】自分の手札か/トラッシュから、名称に「八神太一」/「石田ヤマト」を含むカード1枚をコストを支払わずに登場できる。その後、このカードを手札に加える。")))}
+   "BT17-096"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (assoc :card/security-effect
+                    "【セキュリティ】このカードの【メイン】効果を発揮する。")))}
+   "BT17-097"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (assoc :card/security-effect
+                    "【セキュリティ】自分の手札か/トラッシュから、名称に「本宮大輔」/「一乘寺賢」を含むカード1枚をコストを支払わずに登場できる。その後、このカードをバトルエリアに置く。")))}
+   "BT17-098"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (assoc :card/security-effect
+                    "【セキュリティ】自分のデッキの上から3枚オープンする。その中の「パルスモン」の記述があるカード1枚を手札に加える。残りはデッキの下に戻す。その後、このカードをバトルエリアに置く。")))}
+   "BT17-099"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (assoc :card/security-effect
+                    "【セキュリティ】自分の手札か/トラッシュから、名称に「大門大」/「リズム」を含むカード1枚をコストを支払わずに登場できる。その後、このカードをバトルエリアに置く。")))}
    "EX1-029"
    {"ko" (fn [{:card/keys [effect] :as card}]
            (cond-> card
