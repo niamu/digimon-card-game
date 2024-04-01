@@ -45,9 +45,10 @@
                                     [(clojure.string/starts-with? ?n "BT4-")]
                                     [(clojure.string/starts-with? ?n "BT5-")]
                                     [(clojure.string/starts-with? ?n "BT6-")]
-                                    [(clojure.string/starts-with? ?n "EX1-")])
+                                    [(clojure.string/starts-with? ?n "EX1-")]
+                                    [(clojure.string/starts-with? ?n "BT7-")])
                               #_[(clojure.string/starts-with? ?n "ST14-")]
-                              #_[(clojure.string/starts-with? ?n "BT7-")]
+                              [(clojure.string/starts-with? ?n "BT8-")]
                               #_[(clojure.string/starts-with? ?n "P-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
