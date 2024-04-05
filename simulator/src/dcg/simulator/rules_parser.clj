@@ -1,6 +1,7 @@
 (ns dcg.simulator.rules-parser
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as string]
    [instaparse.core :as insta]))
 
 (def parser (insta/parser (io/resource "parser.bnf")))
@@ -48,18 +49,25 @@
                                     [(clojure.string/starts-with? ?n "EX1-")]
                                     [(clojure.string/starts-with? ?n "BT7-")]
                                     [(clojure.string/starts-with? ?n "BT8-")]
-                                    [(clojure.string/starts-with? ?n "EX2-")])
-                              #_[(clojure.string/starts-with? ?n "ST14-")]
-                              #_[(clojure.string/starts-with? ?n "BT9-")]
-                              #_[(clojure.string/starts-with? ?n "P-")]
+                                    [(clojure.string/starts-with? ?n "EX2-")]
+                                    [(clojure.string/starts-with? ?n "BT9-")])
+                              [(clojure.string/starts-with? ?n "BT10-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect
                              :card/inherited-effect
                              :card/security-effect))
                (remove nil?)
-               (map dcg.simulator.rules-parser/parser)
-               (group-by instaparse.core/failure?))
+               (reduce (fn [accl s]
+                         (let [lines (string/split-lines s)
+                               results (map parser lines)
+                               processed? (boolean (some insta/failure? results))]
+                           (update accl
+                                   processed?
+                                   conj
+                                   s)))
+                       {true []
+                        false []}))
         result (update-vals m count)]
     {:percentage (when (get result false)
                    (* (float (/ (get result false)
@@ -71,7 +79,6 @@
                (get result true 0))}
     #_(get m false)
     (->> (get m true)
-         (map :text)
          sort))
 
   )
