@@ -6,6 +6,12 @@
 
 (def parser (insta/parser (io/resource "parser.bnf")))
 
+(defn parse
+  [effect]
+  (->> (string/replace effect #"\n(?!\[)" "")
+       string/split-lines
+       (map parser)))
+
 (comment
   (require '[datomic.api :as d]
            '[dcg.db :as db])
@@ -51,7 +57,7 @@
                                     [(clojure.string/starts-with? ?n "BT8-")]
                                     [(clojure.string/starts-with? ?n "EX2-")]
                                     [(clojure.string/starts-with? ?n "BT9-")])
-                              [(clojure.string/starts-with? ?n "BT10-")]
+                              #_[(clojure.string/starts-with? ?n "BT10-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect
@@ -59,8 +65,7 @@
                              :card/security-effect))
                (remove nil?)
                (reduce (fn [accl s]
-                         (let [lines (string/split-lines s)
-                               results (map parser lines)
+                         (let [results (parse s)
                                processed? (boolean (some insta/failure? results))]
                            (update accl
                                    processed?
