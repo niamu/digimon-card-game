@@ -224,7 +224,8 @@
                          (or (contains? header-set "パラレル")
                              (contains? header-set "Parallel Rare")
                              (contains? header-set "Alternative Art")
-                             (contains? header-set "병렬")))
+                             (contains? header-set "병렬")
+                             (contains? header-set "페러렐")))
         rarity (string/replace (or (nth header 1) "P")
                                "Ｕ" "U")
         dl (fn [class-name]
@@ -536,9 +537,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                      dp rareDegree entryConsumeValue envolutionConsumeTwo
-                      cardLevel effect envolutionEffect safeEffect
-                      imageCover cardGroup]}]
+                       dp rareDegree entryConsumeValue envolutionConsumeTwo
+                       cardLevel effect envolutionEffect safeEffect
+                       imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)

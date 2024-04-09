@@ -56,8 +56,10 @@
                                     [(clojure.string/starts-with? ?n "BT7-")]
                                     [(clojure.string/starts-with? ?n "BT8-")]
                                     [(clojure.string/starts-with? ?n "EX2-")]
-                                    [(clojure.string/starts-with? ?n "BT9-")])
-                              #_[(clojure.string/starts-with? ?n "BT10-")]
+                                    [(clojure.string/starts-with? ?n "BT9-")]
+                                    [(clojure.string/starts-with? ?n "BT10-")]
+                                    [(clojure.string/starts-with? ?n "EX3-")])
+                              [(clojure.string/starts-with? ?n "BT11-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect

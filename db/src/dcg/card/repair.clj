@@ -102,6 +102,16 @@
            (update card :card/effect
                    (fn [s]
                      (string/replace s "get-4000" "get -4000"))))}
+   "BT3-009"
+   {"ko" (fn [{:card/keys [form] :as card}]
+           (cond-> card
+             (not form)
+             (assoc :card/form "유년기")))}
+   "BT3-006"
+   {"ko" (fn [{:card/keys [form] :as card}]
+           (cond-> card
+             (not form)
+             (assoc :card/form "유년기")))}
    "BT3-010"
    {"ko" (fn [{:card/keys [language level parallel-id] :as card}]
            (cond-> card
@@ -1071,6 +1081,38 @@
              (not effect)
              (assoc :card/effect
                     (str "[On Play] Reveal the top 4 cards of your deck. Add 1 Digimon card with [Rock Dragon], [Earth Dragon], [Bird Dragon], [Machine Dragon], or [Sky Dragon] in its traits and 1 [Hina Kurihara] among them to your hand. Place the rest at the bottom of your deck in any order."))))}
+   "EX3-008"
+   {"en" (fn [card]
+           (update card
+                   :card/effect
+                   (fn [s]
+                     (string/replace s
+                                     "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
+                                     "You may DNA digivolve this Digimon and one of your other Digimon in play into a Digimon card in your hand for its DNA digivolve cost."))))}
+   "EX3-014"
+   {"en" (fn [card]
+           (update card
+                   :card/effect
+                   (fn [s]
+                     (string/replace s
+                                     "3000 or less"
+                                     "3000 DP or less"))))}
+   "EX3-035"
+   {"en" (fn [card]
+           (update card
+                   :card/effect
+                   (fn [s]
+                     (string/replace s
+                                     "-6000 for"
+                                     "-6000 DP for"))))}
+   "EX3-058"
+   {"en" (fn [card]
+           (update card
+                   :card/effect
+                   (fn [s]
+                     (string/replace s
+                                     "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
+                                     "You may DNA digivolve this Digimon and one of your other Digimon into a Digimon card from your hand for its DNA digivolve cost."))))}
    "EX4-012"
    {"ja" (fn [card]
            (update card :card/effect
@@ -1400,7 +1442,13 @@
            (dissoc card :card/attribute))}
    "P-136"
    {"en" (fn [card]
-           (dissoc card :card/attribute))}})
+           (dissoc card :card/attribute))}
+   "P-151"
+   {"ja" (fn [{:card/keys [security-effect] :as card}]
+           (cond-> card
+             (not security-effect)
+             (assoc :card/security-effect
+                    "【セキュリティ】このカードの【メイン】効果を発揮する。")))}})
 
 (defn html-encoding-errors
   [html-string]
