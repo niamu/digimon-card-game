@@ -55,6 +55,7 @@
 
 (defn query-url
   [url]
+  (logging/info (format "CV Query for URL: %s" url))
   (let [temp-file (File/createTempFile "temp" "")
         temp-path (.getPath temp-file)
         url-bytes (utils/as-bytes url)

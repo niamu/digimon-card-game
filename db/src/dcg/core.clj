@@ -53,9 +53,6 @@
                          (apply merge-with merge))
         errata (->> (pmap errata/errata origins)
                     (apply merge-with merge))
-        {:keys [mentions
-                treats
-                highlights]} (highlight/all unrefined-cards)
         card-common-values-by-number
         (reduce (fn [accl {:card/keys [number parallel-id language] :as card}]
                   (if (and (= language "ja") (zero? parallel-id))
@@ -71,29 +68,14 @@
                     accl))
                 {}
                 unrefined-cards)
-        cards
-        (pmap (fn [{:card/keys [number language image parallel-id] :as card}]
+        cards-with-errata-and-limitations
+        (pmap (fn [{:card/keys [number language image] :as card}]
                 (let [limitation (get-in limitations
                                          [number (:image/language image)])
                       {:errata/keys [error correction]
                        :as errata-for-card} (get-in errata
                                                     [number
-                                                     (:image/language image)])
-                      highlights (get-in highlights [number language])
-                      aka (reduce-kv (fn [s k v]
-                                       (string/replace s k v))
-                                     (:card/name card)
-                                     tr-map)
-                      treats (get-in treats [number language])
-                      treats (concat treats
-                                     (when (not= aka (:card/name card))
-                                       [{:treat/id (format "treat/%s_%s_%s"
-                                                           language
-                                                           number
-                                                           "aka")
-                                         :treat/as aka
-                                         :treat/field :card/name}]))
-                      mentions (get-in mentions [number language])]
+                                                     (:image/language image)])]
                   (cond-> (merge card (get card-common-values-by-number number))
                     errata-for-card
                     (as-> #__ c
@@ -103,20 +85,41 @@
                                               error
                                               (string/includes? v error))
                                          (assoc k
-                                                (string/replace
-                                                 v
-                                                 error correction))))
+                                                (string/replace v
+                                                                error
+                                                                correction))))
                                      c
                                      c)
                           (assoc :card/errata errata-for-card)))
                     (and limitation
                          (not= (:limitiation/type limitation)
                                :unrestrict))
-                    (assoc :card/limitation limitation)
+                    (assoc :card/limitation limitation))))
+              unrefined-cards)
+        {:keys [mentions
+                treats
+                highlights]} (highlight/all cards-with-errata-and-limitations)
+        cards
+        (pmap (fn [{:card/keys [id language] :as card}]
+                (let [highlights (get-in highlights [id language])
+                      aka (reduce-kv (fn [s k v]
+                                       (string/replace s k v))
+                                     (:card/name card)
+                                     tr-map)
+                      treats (get-in treats [id language])
+                      treats (concat treats
+                                     (when (not= aka (:card/name card))
+                                       [{:treat/id (format "treat/%s_%s"
+                                                           id
+                                                           "aka")
+                                         :treat/as aka
+                                         :treat/field :card/name}]))
+                      mentions (get-in mentions [id language])]
+                  (cond-> card
                     highlights (assoc :card/highlights highlights)
                     (not (empty? treats)) (assoc :card/treats treats)
                     mentions (assoc :card/mentions mentions))))
-              unrefined-cards)]
+              cards-with-errata-and-limitations)]
     (sort-by :card/id cards)))
 
 (defn -main

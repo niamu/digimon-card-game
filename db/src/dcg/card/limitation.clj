@@ -80,7 +80,7 @@
                           number
                           (or (->> (get-in image [:attrs :src] "")
                                    (re-find utils/card-number-re))
-                              (some-> (get-in image [:attrs :src] "")
+                              (some-> (get-in image [:attrs :src])
                                       (string/replace "../../images"
                                                       "/images")
                                       (as-> path (str url path))
@@ -264,7 +264,9 @@
                               number
                               (or (->> (get-in image [:attrs :alt] "")
                                        (re-find utils/card-number-re))
-                                  (some-> (get-in image [:attrs :src] "")
+                                  (->> (get-in image [:attrs :src] "")
+                                       (re-find utils/card-number-re))
+                                  (some-> (get-in image [:attrs :src])
                                           (string/replace "../../images"
                                                           "/images")
                                           (as-> path (str url path))

@@ -103,8 +103,8 @@
 (defn as-bytes
   [url]
   (-> (client/get url {:as :byte-array
-                       :socket-timeout 10000
-                       :connection-timeout 9000
+                       :socket-timeout 20000
+                       :connection-timeout 20000
                        :cookie-policy :standard
                        :retry-handler (fn [ex try-count _]
                                         (if (> try-count 2)
@@ -120,8 +120,8 @@
    (http-head url {}))
   ([url options]
    (client/head url (assoc options
-                           :socket-timeout 10000
-                           :connection-timeout 9000
+                           :socket-timeout 20000
+                           :connection-timeout 20000
                            :cookie-policy :standard
                            :retry-handler (fn [ex try-count _]
                                             (if (> try-count 2)
@@ -139,8 +139,8 @@
    (logging/debug (format "Downloading: %s %s" url (pr-str options)))
    (-> (client/get url
                    (assoc options
-                          :socket-timeout 10000
-                          :connection-timeout 10000
+                          :socket-timeout 20000
+                          :connection-timeout 20000
                           :cookie-policy :standard
                           :retry-handler
                           (fn [ex try-count _]
@@ -170,6 +170,10 @@
                       (= (get e :tag) :img)
                       (string/ends-with? (get-in e [:attrs :src])
                                          "/evolution.png")) "【進化】"
+                 (and (map? e)
+                      (= (get e :tag) :img)
+                      (string/ends-with? (get-in e [:attrs :src])
+                                         "/burst_evolution.png")) "【バースト進化】"
                  (and (map? e)
                       (= (get e :tag) :img)
                       (string/ends-with? (get-in e [:attrs :src])

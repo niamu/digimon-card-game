@@ -537,9 +537,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                       dp rareDegree entryConsumeValue envolutionConsumeTwo
-                       cardLevel effect envolutionEffect safeEffect
-                       imageCover cardGroup]}]
+                      dp rareDegree entryConsumeValue envolutionConsumeTwo
+                      cardLevel effect envolutionEffect safeEffect
+                      imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)
@@ -565,12 +565,15 @@
                   dp (some-> dp utils/normalize-string parse-long)
                   effect (some-> effect
                                  utils/normalize-string
+                                 repair/text-fixes
                                  (string/replace "enter" "\n"))
                   inherited-effect (some-> envolutionEffect
                                            utils/normalize-string
+                                           repair/text-fixes
                                            (string/replace "enter" "\n"))
                   security-effect (some-> safeEffect
                                           utils/normalize-string
+                                          repair/text-fixes
                                           (string/replace "enter" "\n"))
                   limitation
                   (and effect

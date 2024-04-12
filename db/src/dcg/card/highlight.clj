@@ -7,7 +7,7 @@
    [java.util Date]))
 
 (defn- text->highlight-type
-  [text]
+  [text language]
   (when text
     (let [b (subs text 0 1)]
       (case b
@@ -17,14 +17,16 @@
         "〔" :timing
         "["  :phase
         "［" :phase
-        "<"  :keyword-effect
+        "<"  (when (not= language "zh-Hans")
+               :keyword-effect)
         "≪"  :keyword-effect
         "〈" :keyword-effect
         "《" :keyword-effect
         "＜" :keyword-effect
         nil))))
 
-(def ^:private card-highlights-re
+(defn- card-highlights-re
+  [language]
   (let [re-escape-map {\[ "\\["
                        \] "\\]"
                        \( "\\("
@@ -49,7 +51,8 @@
                               "を得る"
                               "의 효과를 얻는다"
                               ;; other than
-                              "以外的"]
+                              "以外"
+                              "이외의"]
                              (string/join "|"))
         squares-format (map (fn [[open close]]
                               (format (str ""
@@ -67,7 +70,7 @@
                                            ;; other than
                                            "(?<!other\\sthan\\s)"
                                            "(?<!non\\-)"
-                                           "(?<!without\\s)"
+                                           "(?<!(without\\s|代わりに特徴に|没有))"
                                            ;; this digimon
                                            "%s(?!"
                                            "【|\\[|"
@@ -89,11 +92,12 @@
                                       (string/escape close re-escape-map)
                                       disallow-tokens))
                             squares)
-        angles  [["<" ">"]
-                 ["\u226A" "\u226B"]
-                 ["\u3008" "\u3009"]
-                 ["\u300A" "\u300B"]
-                 ["\uFF1C" "\uFF1E"]]
+        angles (cond-> [["\u226A" "\u226B"]
+                        ["\u3008" "\u3009"]
+                        ["\u300A" "\u300B"]
+                        ["\uFF1C" "\uFF1E"]]
+                 (not= language "zh-Hans")
+                 (conj ["<" ">"]))
         angles-format (map (fn [[open close]]
                              (format "%s([^%s]+)%s"
                                      (string/escape open re-escape-map)
@@ -203,7 +207,16 @@
          "Royal Knights" "ロイヤルナイツ"
          "Ryouma Mogami" "最上リョウマ"
          "Dragon Mode" "ドラゴンモード"
-         "Belphemon: Rage Mode" "ベルフェモン:レイジモード"}
+         "Belphemon: Rage Mode" "ベルフェモン:レイジモード"
+         "SoC" "SoC"
+         "Diaboromon" "ディアボロモン"
+         "Agumon" "アグモン"
+         "Gabumon" "ガブモン"
+         "Greymon" "グレイモン"
+         "Garurumon" "ガルルモン"
+         "Legend-Arms" "Legend-Arms"
+         "Ballistamon" "バリスタモン"
+         "Shoutmon" "シャウトモン"}
    "zh-Hans" {"天使型" "天使型"
               "大天使型" "天使型"
               "堕天使型" "天使型"
@@ -221,11 +234,16 @@
    "ko" {"아머체" "アーマー体"}})
 
 (defn- highlights-in-text
-  [text]
+  [text language]
   (->> (-> text
-           (string/replace #"※カードナンバー.*" "")  ;; Ignore "*card number"
-           (string/replace #"※此卡不.*?的数码宝贝" "")) ;; This card does not...
-       (re-seq card-highlights-re)
+           (string/replace #"※Card Number.*" "") ;; Ignore "*card number"
+           (string/replace #"※カードナンバー.*" "") ;; Ignore "*card number"
+           (string/replace #"※卡牌编号.*" "") ;; Ignore "*card number"
+           (string/replace #"※此卡.*" "") ;; This card...
+           (string/replace #"※名称中包含.*" "")
+           (string/replace #"※ 명칭.*" "") ;; Name
+           )
+       (re-seq (card-highlights-re language))
        (remove (fn [[match & contents]]
                  (let [re-escape-map {\- "\\-"
                                       \+ "\\+"
@@ -256,9 +274,14 @@
                                      (string/join "|")
                                      re-pattern)
                                 match)
-                       highlight-type (text->highlight-type content)]
+                       highlight-type (text->highlight-type content language)]
                    (or (every? nil? contents)
-                       (nil? highlight-type)))))
+                       (nil? highlight-type)
+                       ;; NOTE: "Rule" keywords are not highlighted
+                       (re-matches #".ルール." match)
+                       (re-matches #".Rule." match)
+                       (re-matches #".规则." match)
+                       (re-matches #".규칙." match)))))
        (reduce (fn [accl [match & contents]]
                  (let [[in-name?
                         in-characteristic?
@@ -340,7 +363,7 @@
                                                           :card/name}
                                 :else                   #{:card/number
                                                           :card/name})
-                       highlight-type (text->highlight-type text)
+                       highlight-type (text->highlight-type text language)
                        highlight-type (cond
                                         (or (string/includes? text "デジクロス")
                                             (string/includes? text "DigiXros")
@@ -348,7 +371,8 @@
                                         :digixros
                                         (or (string/includes? text "ジョグレス")
                                             (string/includes? text "DNA Digi")
-                                            (string/includes? text "合步"))
+                                            (string/includes? text "合步")
+                                            (string/includes? text "조그레스"))
                                         :dna-digivolve
                                         :else highlight-type)]
                    (conj accl
@@ -372,25 +396,24 @@
                [])))
 
 (defn- card-highlights
-  [{:card/keys [language number] :as card}]
+  [{:card/keys [id language number] :as card}]
   (mapcat (fn [k]
             (when-let [text (get card k)]
               (map (fn [highlight]
                      (cond-> (assoc highlight
                                     :highlight/id
-                                    (format "highlight/%s_%s_%s%d"
-                                            language
-                                            number
+                                    (format "highlight/%s_%s%d"
+                                            id
                                             (name k)
                                             (get highlight :highlight/index))
                                     :highlight/field k
-                                    :highlight/card-number number
+                                    :highlight/card-id id
                                     :highlight/language language)
                        (and (= language "en")
                             (not= :keyword-effect (:highlight/type highlight))
                             (not= :digixros (:highlight/type highlight)))
                        (dissoc :highlight/type)))
-                   (highlights-in-text text))))
+                   (highlights-in-text text language))))
           [:card/effect
            :card/security-effect
            :card/inherited-effect]))
@@ -432,35 +455,59 @@
             field-and-text-and-index (by-field-and-text-and-index highlights)
             field-and-text (by-field-and-text highlights)
             field-and-index (by-field-and-index highlights)
-            highlights (map (fn [{:highlight/keys [language index text field]
-                                 :as highlight}]
-                              (let [text (subs text 1 (dec (count text)))
-                                    ja-text (get-in translations
-                                                    [language text])]
-                                (cond
-                                  (or (= (:highlight/type highlight)
-                                         :keyword-effect)
-                                      (= (:highlight/type highlight)
-                                         :digixros)) highlight
-                                  (and ja-text
-                                       (not= language "ja")
+            highlights
+            (->> highlights
+                 (map (fn [{:highlight/keys [language index text field]
+                           :as highlight}]
+                        (let [text (subs text 1 (dec (count text)))
+                              ja-text (get-in translations
+                                              [language text])
+                              new-highlight
+                              (cond
+                                (or (= (:highlight/type highlight)
+                                       :keyword-effect)
+                                    (= (:highlight/type highlight)
+                                       :digixros)) highlight
+                                (and ja-text
+                                     (not= language "ja")
+                                     (get-in field-and-text-and-index
+                                             [field [ja-text index]
+                                              :highlight/type]))
+                                (merge highlight
                                        (get-in field-and-text-and-index
                                                [field [ja-text index]]))
-                                  (merge highlight
-                                         (get-in field-and-text-and-index
-                                                 [field [ja-text index]]))
-                                  (and ja-text
-                                       (not= language "ja")
+                                (and ja-text
+                                     (not= language "ja")
+                                     (get-in field-and-text
+                                             [field ja-text
+                                              :highlight/type]))
+                                (merge highlight
                                        (get-in field-and-text
                                                [field ja-text]))
-                                  (merge highlight
-                                         (get-in field-and-text
-                                                 [field ja-text]))
-                                  :else
-                                  (merge highlight
-                                         (get-in field-and-index
-                                                 [field index])))))
-                            highlights)
+                                :else
+                                (cond-> highlight
+                                  (and (= language "ja")
+                                       (get-in field-and-text-and-index
+                                               [field [ja-text index]
+                                                :highlight/type]))
+                                  (merge (get-in field-and-text-and-index
+                                                 [field [ja-text index]]))
+                                  (and (= language "ja")
+                                       (not (get-in field-and-text-and-index
+                                                    [field [ja-text index]
+                                                     :highlight/type]))
+                                       (get-in field-and-text
+                                               [field ja-text
+                                                :highlight/type]))
+                                  (get-in field-and-text
+                                          [field ja-text])
+                                  (not= language "ja")
+                                  (merge (get-in field-and-index
+                                                 [field index]))))]
+                          (cond-> new-highlight
+                            (:highlight/mention new-highlight)
+                            (assoc :highlight/type :mention)))))
+                 (filter :highlight/type))
             highlights-translations
             (->> highlights
                  (remove (fn [{:highlight/keys [language text]}]
@@ -527,7 +574,6 @@
   [cards]
   (let [card-groups
         (->> cards
-             (filter (comp zero? :card/parallel-id))
              (sort-by (juxt :card/number
                             :card/parallel-id
                             (juxt (comp (fnil inst-ms (Date. Long/MAX_VALUE))
@@ -538,7 +584,7 @@
              (partition-by :card/number))
         {:keys [card-highlights translations]} (highlights card-groups)
         treats-lookup
-        (reduce (fn [accl {:highlight/keys [id card-number language text mention]
+        (reduce (fn [accl {:highlight/keys [id card-id language text mention]
                           :as highlight}]
                   (if (:mention/aka? mention)
                     (let [id (string/replace id "highlight/" "treat/")
@@ -548,9 +594,9 @@
                                   :card/attribute)
                           text (subs text 1 (dec (count text)))]
                       (assoc-in accl
-                                [[language card-number text]]
+                                [[language card-id text]]
                                 {:treat/id id
-                                 :treat/card-number card-number
+                                 :treat/card-id card-id
                                  :treat/language language
                                  :treat/as text
                                  :treat/field field}))
@@ -558,14 +604,14 @@
                 {}
                 card-highlights)
         ja-mentioned-cards-lookup
-        (reduce (fn [accl {:highlight/keys [id card-number language text mention]
+        (reduce (fn [accl {:highlight/keys [id card-id language text mention]
                           :as highlight}]
                   (if (and mention
                            (not (:mention/aka? mention))
                            (= language "ja"))
                     (let [text (subs text 1 (dec (count text)))]
                       (assoc-in accl
-                                [card-number text mention]
+                                [card-id text mention]
                                 (card-numbers-mentioned cards
                                                         treats-lookup
                                                         highlight)))
@@ -573,17 +619,17 @@
                 {}
                 card-highlights)
         mentions
-        (reduce (fn [accl {:highlight/keys [id card-number language text mention]
+        (reduce (fn [accl {:highlight/keys [id card-id language text mention]
                           :as highlight}]
                   (if (and mention (not (:mention/aka? mention)))
                     (let [text (subs text 1 (dec (count text)))
                           ja-text (get-in translations [language text])
                           card-numbers (or (get-in ja-mentioned-cards-lookup
-                                                   [card-number
+                                                   [card-id
                                                     text
                                                     mention])
                                            (get-in ja-mentioned-cards-lookup
-                                                   [card-number
+                                                   [card-id
                                                     ja-text
                                                     mention]))
                           mentioned-cards
@@ -592,36 +638,35 @@
                                          (and (= language
                                                  (:card/language card)
                                                  (:image/language image))
-                                              (contains? card-numbers
-                                                         number))))
+                                              (contains? card-numbers number))))
                                (map (fn [{:card/keys [id]}]
                                       {:card/id id})))]
                       (conj accl
                             {:mention/id (string/replace id
                                                          "highlight/"
                                                          "mention/")
-                             :mention/card-number card-number
+                             :mention/card-id card-id
                              :mention/language language
                              :mention/text text
                              :mention/cards mentioned-cards}))
                     accl))
                 []
                 card-highlights)]
-    {:mentions (reduce (fn [accl {:mention/keys [language card-number]
+    {:mentions (reduce (fn [accl {:mention/keys [language card-id]
                                  :as mention}]
-                         (update-in accl [card-number language]
+                         (update-in accl [card-id language]
                                     conj
                                     (dissoc mention
-                                            :mention/card-number
+                                            :mention/card-id
                                             :mention/language)))
                        {}
                        mentions)
-     :treats (reduce (fn [accl {:treat/keys [language card-number]
+     :treats (reduce (fn [accl {:treat/keys [language card-id]
                                :as treat}]
-                       (update-in accl [card-number language]
+                       (update-in accl [card-id language]
                                   conj
                                   (dissoc treat
-                                          :treat/card-number
+                                          :treat/card-id
                                           :treat/language)))
                      {}
                      (vals treats-lookup))
@@ -641,11 +686,11 @@
                                                            "treat/")})
                                    (assoc :highlight/type :treat)
                                    (dissoc :highlight/mention)))))
-                      (reduce (fn [accl {:highlight/keys [language card-number]
+                      (reduce (fn [accl {:highlight/keys [language card-id]
                                         :as highlight}]
-                                (update-in accl [card-number language]
+                                (update-in accl [card-id language]
                                            conj
                                            (dissoc highlight
-                                                   :highlight/card-number
+                                                   :highlight/card-id
                                                    :highlight/language)))
                               {}))}))

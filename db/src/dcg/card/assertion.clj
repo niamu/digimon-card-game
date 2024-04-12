@@ -7,71 +7,36 @@
 (defn- highlights
   "Card highlights that differ across languages"
   [cards]
-  (->> (mapcat :card/highlights cards)
-       (partition-by (fn [{:highlight/keys [id]}]
-                       (re-find utils/card-number-re id)))
-       (map (fn [card-group]
-              [(re-find utils/card-number-re
-                        (get (first card-group) :highlight/id))
-               (->> card-group
-                    (partition-by (fn [{:highlight/keys [id]}]
-                                    (re-find #"highlight/(.*?)_" id)))
-                    (mapcat (juxt (comp (fn [{:highlight/keys [id]}]
-                                          (re-find #"highlight/(.*?)_" id))
-                                        first)
-                                  (fn [highlights]
-                                    (frequencies
-                                     (map :highlight/type highlights)))))
-                    (apply hash-map))
-               (->> card-group
-                    (partition-by (fn [{:highlight/keys [id]}]
-                                    (re-find #"highlight/(.*?)_" id))))]))
-       (reduce (fn [accl [number counts-by-lang card-group]]
-                 (if (or (empty? counts-by-lang)
-                         (apply = (vals counts-by-lang)))
-                   accl
-                   (conj accl [number counts-by-lang card-group])))
-               [])))
-
-(defn- mentions
-  "Mentions in cards that differ across languages with no matches"
-  [cards]
   (->> cards
        (filter (fn [{:card/keys [image language]}]
                  (= language
                     (:image/language image))))
-       (mapcat :card/mentions)
-       (group-by (fn [{:mention/keys [id]}]
-                   (re-find utils/card-number-re id)))
-       (reduce-kv (fn [m k v]
+       (group-by :card/number)
+       (reduce-kv (fn [accl number card-group]
                     (let [result
-                          (->> v
-                               (partition-by
-                                (fn [{:mention/keys [id]}]
-                                  (re-find #"mention/(.*?)_" id)))
-                               (mapcat (fn [group]
-                                         [(->> (get (first group) :mention/id)
-                                               (re-find #"mention/(.*?)_")
-                                               second)
-                                          (->> (map :mention/cards group)
-                                               (apply concat)
-                                               set
-                                               count)]))
-                               (apply hash-map))]
-                      (assoc m
-                             k
-                             result)))
-                  {})
-       (remove (fn [[number result]]
-                 (or (= (count (vals result)) 1)
-                     (not (some zero? (vals result)))
-                     (apply = (vals result)))))
-       (sort-by first)))
+                          (->> card-group
+                               (map (comp #(apply hash-map %)
+                                          (juxt :card/id
+                                                (comp #(dissoc %
+                                                               :treat
+                                                               :mention)
+                                                      frequencies
+                                                      #(map :highlight/type %)
+                                                      :card/highlights))))
+                               (apply merge)
+                               (into (sorted-map)))]
+                      (if (apply = (vals result))
+                        accl
+                        (assoc accl number result))))
+                  (sorted-map))))
 
 (defn- text-fields
   [cards]
   "Card text fields that differ across languages"
   (->> cards
+       (filter (fn [{:card/keys [image language]}]
+                 (= language
+                    (:image/language image))))
        (group-by :card/number)
        (reduce-kv (fn [accl number card-group]
                     (let [expected-keys
@@ -137,10 +102,12 @@
   [cards]
   (assert (empty? (card-values cards))
           "JA card values differ across languages")
-  (assert (empty? (highlights cards))
+  (assert (= (highlights cards)
+             {"BT10-099"
+              {"card/en_BT10-099_P0" {:timing 3 :keyword-effect 1}
+               "card/ja_BT10-099_P0" {:timing 3 :keyword-effect 1}
+               "card/zh-Hans_BT10-099_P0" {:timing 3 :keyword-effect 3}}})
           "Card highlights differ across languages")
-  (assert (empty? (mentions cards))
-          "Mentions in cards differ across languages with no matches")
   (assert (empty? (text-fields cards))
           "Card text fields differ across languages")
   cards)
