@@ -1948,6 +1948,12 @@
    "ST15-08"
    {"en" (fn [card]
            (dissoc card :card/security-effect))}
+   "ST15-13"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (-> s
+                         (string/replace "attack target.\n" "attack target.)\n")))))}
    "ST16-08"
    {"en" (fn [card]
            (dissoc card :card/security-effect))}

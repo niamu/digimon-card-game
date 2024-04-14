@@ -61,7 +61,17 @@
                                     [(clojure.string/starts-with? ?n "EX3-")]
                                     [(clojure.string/starts-with? ?n "BT11-")]
                                     [(clojure.string/starts-with? ?n "ST14-")]
-                                    [(clojure.string/starts-with? ?n "BT12-")])
+                                    [(clojure.string/starts-with? ?n "BT12-")]
+                                    [(clojure.string/starts-with? ?n "EX4-")]
+
+                                    [(clojure.string/starts-with? ?n "ST15-")]
+                                    [(clojure.string/starts-with? ?n "ST16-")])
+                              [(clojure.string/starts-with? ?n "BT13-")]
+                              #_[(clojure.string/starts-with? ?n "RB1-")]
+                              #_[(clojure.string/starts-with? ?n "BT14-")]
+                              #_[(clojure.string/starts-with? ?n "EX5-")]
+                              #_[(clojure.string/starts-with? ?n "BT15-")]
+                              #_[(clojure.string/starts-with? ?n "P-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect
@@ -87,8 +97,8 @@
      :total (+ (get result false 0)
                (get result true 0))}
     #_(get m false)
-    #_(->> (get m true)
-           sort))
+    (->> (get m true)
+         sort))
 
-  {:percentage 88.49265575408936, :success 2953, :total 3337}
+  {:percentage 92.95774698257446, :success 3102, :total 3337}
   )
