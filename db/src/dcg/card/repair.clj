@@ -1218,6 +1218,20 @@
                         (if (string/ends-with? source "BT12-012_P1.png")
                           (URI. "https://world.digimoncard.com/images/cardlist/card/BT11-012_P1.png")
                           source))))}
+   "BT12-021"
+   {"en" (fn [card]
+           (update card :card/inherited-effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "in your hand by paying its cost."
+                                             "in your hand for the cost.")))))}
+   "BT12-030"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "there is a green card"
+                                             "it has a green digivolution card")))))}
    "BT12-037"
    {"zh-Hans" (fn [card]
                 (update card :card/effect
@@ -1233,6 +1247,13 @@
                    (fn [s]
                      (-> s
                          (string/replace #"^Digivolve\s" "[Digivolve] ")))))}
+   "BT12-047"
+   {"en" (fn [card]
+           (update card :card/inherited-effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "in your hand by paying its cost."
+                                             "in your hand for the cost.")))))}
    "BT12-048"
    {"zh-Hans" (fn [card]
                 (update card :card/effect
@@ -1288,6 +1309,20 @@
              (assoc-in [:card/image
                         :image/source]
                        (URI. "https://world.digimoncard.com/images/cardlist/card/BT6-056_P3.png"))))}
+   "BT12-081"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "＜Save＞ text"
+                                             "＜Save＞ in text")))))}
+   "BT12-083"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "＜Save＞ text"
+                                             "＜Save＞ in text")))))}
    "BT12-084"
    {"en" (fn [card]
            (update card :card/effect
@@ -1319,8 +1354,32 @@
                          " it gains \"[Your Turn][Once Per Turn]"
                          " When this Digimon checks your opponent's "
                          "security stack, gain 2 memory.\""))))}
+   "BT12-089"
+   {"en" (fn [card]
+           (assoc card :card/effect
+                  "[Start of Your Turn] If you have 2 memory or less, set your memory to 3.\n[Main][Once Per Turn] By placing this Tamer and 1 [Growlmon] and 1 [WarGrowlmon] from your trash in any order as the bottom digivolution cards of one of your [Guilmon], that Digimon may digivolve into [Gallantmon] in your hand for the cost, ignoring its level. The Digimon that digivolved by this effect gets +2000 DP for the turn."))}
+   "BT12-090"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "for its cost"
+                                             "for the cost")))))}
+   "BT12-092"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "treat this Tamer as a"
+                                             "this Tamer is also treated as a")))))}
    "BT12-112"
-   {"zh-Hans" (fn [card]
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "trait & different"
+                                             "trait and different")))))
+    "zh-Hans" (fn [card]
                 (assoc card
                        :card/effect
                        "当此卡牌将要登场时,可将我方的1只“高吼兽”置于此数码宝贝的进化源中,并使需支付的登场费用-1,且我方废弃区中的卡牌也可以通过数码合体置于进化源中。\n\n【登场时】将对方1只数码宝贝的所有进化源自选顺序放回到其卡组最下方,并将该数码宝贝放回到其卡组最下方。\n\n【我方的回合】对方所有选项卡牌的【安防】效果不发动。\n\n≪数码合体-1≫卡牌编号不同且拥有“Xros Heart”或“蓝色闪耀”特征的数码宝贝卡牌∞张"))}

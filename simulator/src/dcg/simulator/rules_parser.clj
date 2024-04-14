@@ -8,9 +8,9 @@
 
 (defn parse
   [effect]
-  (->> (string/replace effect #"\n(?!\[)" "")
+  (->> (string/replace effect #"\n(?!\[)" " ")
        string/split-lines
-       (map parser)))
+       (map (comp parser string/trim))))
 
 (comment
   (require '[datomic.api :as d]
@@ -34,33 +34,34 @@
                                   [?c :card/inherited-effect _]
                                   [?c :card/security-effect _])
                               [?c :card/number ?n]
-                              (or [(clojure.string/starts-with? ?n "ST1-")]
-                                  [(clojure.string/starts-with? ?n "ST2-")]
-                                  [(clojure.string/starts-with? ?n "ST3-")]
-                                  [(clojure.string/starts-with? ?n "ST4-")]
-                                  [(clojure.string/starts-with? ?n "ST5-")]
-                                  [(clojure.string/starts-with? ?n "ST6-")]
-                                  [(clojure.string/starts-with? ?n "ST7-")]
-                                  [(clojure.string/starts-with? ?n "ST8-")]
-                                  [(clojure.string/starts-with? ?n "ST9-")]
-                                  [(clojure.string/starts-with? ?n "ST10-")]
-                                  [(clojure.string/starts-with? ?n "ST12-")]
-                                  [(clojure.string/starts-with? ?n "ST13-")]
-                                  [(clojure.string/starts-with? ?n "BT1-")]
-                                  [(clojure.string/starts-with? ?n "BT2-")]
-                                  [(clojure.string/starts-with? ?n "BT3-")]
-                                  [(clojure.string/starts-with? ?n "BT4-")]
-                                  [(clojure.string/starts-with? ?n "BT5-")]
-                                  [(clojure.string/starts-with? ?n "BT6-")]
-                                  [(clojure.string/starts-with? ?n "EX1-")]
-                                  [(clojure.string/starts-with? ?n "BT7-")]
-                                  [(clojure.string/starts-with? ?n "BT8-")]
-                                  [(clojure.string/starts-with? ?n "EX2-")]
-                                  [(clojure.string/starts-with? ?n "BT9-")]
-                                  [(clojure.string/starts-with? ?n "BT10-")]
-                                  [(clojure.string/starts-with? ?n "EX3-")]
-                                  [(clojure.string/starts-with? ?n "BT11-")])
-                              #_[(clojure.string/starts-with? ?n "ST14-")]
+                              #_(or [(clojure.string/starts-with? ?n "ST1-")]
+                                    [(clojure.string/starts-with? ?n "ST2-")]
+                                    [(clojure.string/starts-with? ?n "ST3-")]
+                                    [(clojure.string/starts-with? ?n "ST4-")]
+                                    [(clojure.string/starts-with? ?n "ST5-")]
+                                    [(clojure.string/starts-with? ?n "ST6-")]
+                                    [(clojure.string/starts-with? ?n "ST7-")]
+                                    [(clojure.string/starts-with? ?n "ST8-")]
+                                    [(clojure.string/starts-with? ?n "ST9-")]
+                                    [(clojure.string/starts-with? ?n "ST10-")]
+                                    [(clojure.string/starts-with? ?n "ST12-")]
+                                    [(clojure.string/starts-with? ?n "ST13-")]
+                                    [(clojure.string/starts-with? ?n "BT1-")]
+                                    [(clojure.string/starts-with? ?n "BT2-")]
+                                    [(clojure.string/starts-with? ?n "BT3-")]
+                                    [(clojure.string/starts-with? ?n "BT4-")]
+                                    [(clojure.string/starts-with? ?n "BT5-")]
+                                    [(clojure.string/starts-with? ?n "BT6-")]
+                                    [(clojure.string/starts-with? ?n "EX1-")]
+                                    [(clojure.string/starts-with? ?n "BT7-")]
+                                    [(clojure.string/starts-with? ?n "BT8-")]
+                                    [(clojure.string/starts-with? ?n "EX2-")]
+                                    [(clojure.string/starts-with? ?n "BT9-")]
+                                    [(clojure.string/starts-with? ?n "BT10-")]
+                                    [(clojure.string/starts-with? ?n "EX3-")]
+                                    [(clojure.string/starts-with? ?n "BT11-")]
+                                    [(clojure.string/starts-with? ?n "ST14-")]
+                                    [(clojure.string/starts-with? ?n "BT12-")])
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect
@@ -86,9 +87,8 @@
      :total (+ (get result false 0)
                (get result true 0))}
     #_(get m false)
-    (->> (get m true)
-         sort))
+    #_(->> (get m true)
+           sort))
 
-
-  {:percentage 85.25621891021729, :success 2845, :total 3337}
+  {:percentage 88.49265575408936, :success 2953, :total 3337}
   )
