@@ -63,11 +63,11 @@
                                     [(clojure.string/starts-with? ?n "ST14-")]
                                     [(clojure.string/starts-with? ?n "BT12-")]
                                     [(clojure.string/starts-with? ?n "EX4-")]
+                                    [(clojure.string/starts-with? ?n "BT13-")]
 
                                     [(clojure.string/starts-with? ?n "ST15-")]
                                     [(clojure.string/starts-with? ?n "ST16-")])
-                              [(clojure.string/starts-with? ?n "BT13-")]
-                              #_[(clojure.string/starts-with? ?n "RB1-")]
+                              [(clojure.string/starts-with? ?n "RB1-")]
                               #_[(clojure.string/starts-with? ?n "BT14-")]
                               #_[(clojure.string/starts-with? ?n "EX5-")]
                               #_[(clojure.string/starts-with? ?n "BT15-")]
@@ -100,5 +100,5 @@
     (->> (get m true)
          sort))
 
-  {:percentage 92.95774698257446, :success 3102, :total 3337}
+  {:percentage 95.20527124404907, :success 3177, :total 3337}
   )
