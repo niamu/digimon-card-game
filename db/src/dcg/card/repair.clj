@@ -1855,7 +1855,9 @@
                    (fn [s]
                      (some-> s
                              (string/replace #"(?<!\[On Play\])(\[When Digivolving\])"
-                                             "[On Play]$1")))))}
+                                             "[On Play]$1")
+                             (string/replace "Digivolving] on]"
+                                             "Digivolving]")))))}
    "RB1-026"
    {"en" (fn [{:card/keys [inherited-effect effect] :as card}]
            (cond-> card
@@ -1863,6 +1865,13 @@
                   effect)
              (-> (assoc :card/inherited-effect effect)
                  (dissoc :card/effect))))}
+   "RB1-030"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (some-> s
+                             (string/replace "gains”[On Deletion]"
+                                             "gains “[On Deletion]")))))}
    "ST1-12"
    {"en" (fn [card]
            (dissoc card :card/attribute))}

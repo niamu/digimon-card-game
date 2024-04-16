@@ -8,7 +8,7 @@
 
 (defn parse
   [effect]
-  (->> (string/replace effect #"\n(?!\[)" " ")
+  (->> (string/replace effect #"\n(?!\s*\[)" " ")
        string/split-lines
        (map (comp parser string/trim))))
 
@@ -64,11 +64,10 @@
                                     [(clojure.string/starts-with? ?n "BT12-")]
                                     [(clojure.string/starts-with? ?n "EX4-")]
                                     [(clojure.string/starts-with? ?n "BT13-")]
-
+                                    [(clojure.string/starts-with? ?n "RB1-")]
                                     [(clojure.string/starts-with? ?n "ST15-")]
-                                    [(clojure.string/starts-with? ?n "ST16-")])
-                              [(clojure.string/starts-with? ?n "RB1-")]
-                              #_[(clojure.string/starts-with? ?n "BT14-")]
+                                    [(clojure.string/starts-with? ?n "ST16-")]
+                                    [(clojure.string/starts-with? ?n "BT14-")])
                               #_[(clojure.string/starts-with? ?n "EX5-")]
                               #_[(clojure.string/starts-with? ?n "BT15-")]
                               #_[(clojure.string/starts-with? ?n "P-")]
@@ -97,8 +96,8 @@
      :total (+ (get result false 0)
                (get result true 0))}
     #_(get m false)
-    (->> (get m true)
-         sort))
+    #_(->> (get m true)
+           sort))
 
-  {:percentage 95.20527124404907, :success 3177, :total 3337}
+  {:percentage 97.03326225280762, :success 3238, :total 3337}
   )
