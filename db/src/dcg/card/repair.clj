@@ -1795,6 +1795,14 @@
                    :card/inherited-effect
                    (fn [s]
                      (string/replace s "gains." "gains ＜Security A. +1＞."))))}
+   "EX5-058"
+   {"en" (fn [card]
+           (update card
+                   :card/inherited-effect
+                   (fn [s]
+                     (string/replace s
+                                     "or fewer, play"
+                                     "or fewer total Digimon, play"))))}
    "EX5-071"
    {"zh-Hans" (fn [card]
                 (-> card

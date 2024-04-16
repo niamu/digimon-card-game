@@ -67,9 +67,9 @@
                                     [(clojure.string/starts-with? ?n "RB1-")]
                                     [(clojure.string/starts-with? ?n "ST15-")]
                                     [(clojure.string/starts-with? ?n "ST16-")]
-                                    [(clojure.string/starts-with? ?n "BT14-")])
-                              #_[(clojure.string/starts-with? ?n "EX5-")]
-                              #_[(clojure.string/starts-with? ?n "BT15-")]
+                                    [(clojure.string/starts-with? ?n "BT14-")]
+                                    [(clojure.string/starts-with? ?n "EX5-")])
+                              [(clojure.string/starts-with? ?n "BT15-")]
                               #_[(clojure.string/starts-with? ?n "P-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
@@ -96,8 +96,8 @@
      :total (+ (get result false 0)
                (get result true 0))}
     #_(get m false)
-    #_(->> (get m true)
-           sort))
+    (->> (get m true)
+         sort))
 
-  {:percentage 97.03326225280762, :success 3238, :total 3337}
+  {:percentage 98.32184314727783, :success 3281, :total 3337}
   )
