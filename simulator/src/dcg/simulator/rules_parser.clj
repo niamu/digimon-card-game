@@ -8,7 +8,7 @@
 
 (defn parse
   [effect]
-  (->> (string/replace effect #"\n(?!\s*\[)" " ")
+  (->> (string/replace effect #"\n(?!\s*[\[<＜])" " ")
        string/split-lines
        (map (comp parser string/trim))))
 
@@ -16,17 +16,10 @@
   (require '[datomic.api :as d]
            '[dcg.db :as db])
   (db/import-from-file!)
-  (let [m (->> (d/q '{:find [[(pull ?c [:card/name
-                                        :card/number
+  (let [m (->> (d/q '{:find [[(pull ?c [:card/id
                                         :card/effect
                                         :card/inherited-effect
-                                        :card/security-effect
-                                        {:card/highlights
-                                         [:highlight/id
-                                          :highlight/type
-                                          :highlight/field
-                                          :highlight/index
-                                          :highlight/text]}]) ...]]
+                                        :card/security-effect]) ...]]
                       :in [$]
                       :where [[?c :card/image ?i]
                               [?c :card/parallel-id 0]
@@ -34,43 +27,6 @@
                                   [?c :card/inherited-effect _]
                                   [?c :card/security-effect _])
                               [?c :card/number ?n]
-                              #_(or [(clojure.string/starts-with? ?n "ST1-")]
-                                    [(clojure.string/starts-with? ?n "ST2-")]
-                                    [(clojure.string/starts-with? ?n "ST3-")]
-                                    [(clojure.string/starts-with? ?n "ST4-")]
-                                    [(clojure.string/starts-with? ?n "ST5-")]
-                                    [(clojure.string/starts-with? ?n "ST6-")]
-                                    [(clojure.string/starts-with? ?n "ST7-")]
-                                    [(clojure.string/starts-with? ?n "ST8-")]
-                                    [(clojure.string/starts-with? ?n "ST9-")]
-                                    [(clojure.string/starts-with? ?n "ST10-")]
-                                    [(clojure.string/starts-with? ?n "ST12-")]
-                                    [(clojure.string/starts-with? ?n "ST13-")]
-                                    [(clojure.string/starts-with? ?n "BT1-")]
-                                    [(clojure.string/starts-with? ?n "BT2-")]
-                                    [(clojure.string/starts-with? ?n "BT3-")]
-                                    [(clojure.string/starts-with? ?n "BT4-")]
-                                    [(clojure.string/starts-with? ?n "BT5-")]
-                                    [(clojure.string/starts-with? ?n "BT6-")]
-                                    [(clojure.string/starts-with? ?n "EX1-")]
-                                    [(clojure.string/starts-with? ?n "BT7-")]
-                                    [(clojure.string/starts-with? ?n "BT8-")]
-                                    [(clojure.string/starts-with? ?n "EX2-")]
-                                    [(clojure.string/starts-with? ?n "BT9-")]
-                                    [(clojure.string/starts-with? ?n "BT10-")]
-                                    [(clojure.string/starts-with? ?n "EX3-")]
-                                    [(clojure.string/starts-with? ?n "BT11-")]
-                                    [(clojure.string/starts-with? ?n "ST14-")]
-                                    [(clojure.string/starts-with? ?n "BT12-")]
-                                    [(clojure.string/starts-with? ?n "EX4-")]
-                                    [(clojure.string/starts-with? ?n "BT13-")]
-                                    [(clojure.string/starts-with? ?n "RB1-")]
-                                    [(clojure.string/starts-with? ?n "ST15-")]
-                                    [(clojure.string/starts-with? ?n "ST16-")]
-                                    [(clojure.string/starts-with? ?n "BT14-")]
-                                    [(clojure.string/starts-with? ?n "EX5-")])
-                              [(clojure.string/starts-with? ?n "BT15-")]
-                              #_[(clojure.string/starts-with? ?n "P-")]
                               [?i :image/language "en"]]}
                     (d/db db/conn))
                (mapcat (juxt :card/effect
@@ -95,9 +51,4 @@
      :success (get result false 0)
      :total (+ (get result false 0)
                (get result true 0))}
-    #_(get m false)
-    (->> (get m true)
-         sort))
-
-  {:percentage 98.32184314727783, :success 3281, :total 3337}
-  )
+    (get m true)))
