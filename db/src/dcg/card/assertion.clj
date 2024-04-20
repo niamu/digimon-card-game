@@ -45,7 +45,7 @@
                                       (->> [:card/name
                                             :card/form
                                             :card/attribute
-                                            :card/digimon-type
+                                            :card/type
                                             :card/effect
                                             :card/inherited-effect
                                             :card/security-effect]
@@ -89,7 +89,8 @@
                               (select-keys card [:card/rarity
                                                  :card/level
                                                  :card/dp
-                                                 :card/play-cost]))
+                                                 :card/play-cost
+                                                 :card/use-cost]))
                    accl))
                {})
        (reduce (fn [accl [number counts-by-lang]]

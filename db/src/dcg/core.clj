@@ -63,6 +63,7 @@
                                          :card/rarity
                                          :card/level
                                          :card/play-cost
+                                         :card/use-cost
                                          :card/dp
                                          :card/digivolve-conditions]))
                     accl))

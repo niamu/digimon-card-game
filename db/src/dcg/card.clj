@@ -220,6 +220,9 @@
         number (-> (nth header 0)
                    ;; ko cards sometimes add a "P" suffix to the card number
                    (string/replace #"P$" ""))
+        category (string/replace (nth header 2)
+                                 "DIgimon"
+                                 "Digimon")
         alternate-art? (let [header-set (set header)]
                          (or (contains? header-set "パラレル")
                              (contains? header-set "Parallel Rare")
@@ -256,17 +259,27 @@
                                   dom-tree)
                    first
                    :content)
-        colors (->> (get-in dom-tree [:attrs :class])
-                    (re-seq (re-pattern (->> [:red
-                                              :blue
-                                              :yellow
-                                              :green
-                                              :black
-                                              :purple
-                                              :white]
-                                             (map name)
-                                             (string/join "|"))))
-                    (mapv keyword))
+        colors (if (get info-top "色")
+                 (->> (select/select (select/descendant
+                                      (select/and (select/tag "dd")
+                                                  (select/class "cardColor"))
+                                      (select/tag "span"))
+                                     dom-tree)
+                      (mapv (fn [{:keys [attrs]}]
+                              (-> (:class attrs)
+                                  (string/replace "cardColor_" "")
+                                  keyword))))
+                 (->> (get-in dom-tree [:attrs :class])
+                      (re-seq (re-pattern (->> [:red
+                                                :blue
+                                                :yellow
+                                                :green
+                                                :black
+                                                :purple
+                                                :white]
+                                               (map name)
+                                               (string/join "|"))))
+                      (mapv keyword)))
         play-cost (some->> (or (get info-top "Play Cost")
                                (get info-top "登場コスト")
                                (get info-top "등장 비용"))
@@ -350,19 +363,19 @@
         attribute (or (get info-top "Attribute")
                       (get info-top "属性")
                       (get info-top "속성"))
-        digimon-type (or (get info-top "Type")
-                         (get info-top "タイプ")
-                         (get info-top "유형"))
-        [attribute digimon-type] (if (and (contains? #{"Variable"
-                                                       "Free"
-                                                       "Data"
-                                                       "Unidentified"
-                                                       "Unknown"
-                                                       "Vaccine"
-                                                       "Virus"} digimon-type)
-                                          attribute)
-                                   [digimon-type attribute]
-                                   [attribute digimon-type])
+        type (or (get info-top "Type")
+                 (get info-top "タイプ")
+                 (get info-top "유형"))
+        [attribute type] (if (and (contains? #{"Variable"
+                                               "Free"
+                                               "Data"
+                                               "Unidentified"
+                                               "Unknown"
+                                               "Vaccine"
+                                               "Virus"} type)
+                                  attribute)
+                           [type attribute]
+                           [attribute type])
         effect (some-> (or (get info-bottom "上段テキスト")
                            (get info-bottom "Effect")
                            (get info-bottom "Upper Text")
@@ -403,8 +416,14 @@
              :card/number number
              :card/parallel-id parallel-id
              :card/rarity rarity
-             :card/type (string/replace (nth header 2) "DIgimon" "Digimon")
-             :card/color colors
+             :card/category category
+             :card/color (->> colors
+                              (map-indexed (fn [i color]
+                                             {:color/id (format "color/%s_index%d"
+                                                                number i)
+                                              :color/index i
+                                              :color/color (keyword color)}))
+                              (into []))
              :card/name (->> (select/select
                               (select/descendant
                                (select/and (select/tag "div")
@@ -426,14 +445,18 @@
                                     :content)))
              :card/image {:image/language card-image-language
                           :image/source (URI. (str origin image-source))}}
-      play-cost (assoc :card/play-cost play-cost)
+      play-cost (assoc (if (or (= category "オプション")
+                               (= category "Option")
+                               (= category "옵션"))
+                         :card/use-cost
+                         :card/play-cost) play-cost)
       digivolve-conditions (assoc :card/digivolve-conditions
                                   digivolve-conditions)
       level (assoc :card/level level)
       dp (assoc :card/dp dp)
       form (assoc :card/form form)
       attribute (assoc :card/attribute attribute)
-      digimon-type (assoc :card/digimon-type digimon-type)
+      type (assoc :card/type type)
       (not (empty? effect)) (assoc :card/effect effect)
       (or (and (= language "ja")
                inherited-effect
@@ -537,9 +560,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                      dp rareDegree entryConsumeValue envolutionConsumeTwo
-                      cardLevel effect envolutionEffect safeEffect
-                      imageCover cardGroup]}]
+                       dp rareDegree entryConsumeValue envolutionConsumeTwo
+                       cardLevel effect envolutionEffect safeEffect
+                       imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)
@@ -554,7 +577,7 @@
                                  (re-find #"[0-9]+")
                                  parse-long)
                   attribute (some-> attribute utils/normalize-string)
-                  digimon-type (some-> type utils/normalize-string)
+                  type (some-> type utils/normalize-string)
                   form (some-> form utils/normalize-string)
                   play-cost (or (some-> entryConsumeValue
                                         utils/normalize-string
@@ -590,17 +613,19 @@
                        :card/number number
                        :card/parallel-id parallel-id
                        :card/rarity (last (re-find #"（(.*)）" rareDegree))
-                       :card/type belongsType
+                       :card/category belongsType
                        :card/name name
                        :card/image {:image/language card-image-language
                                     :image/source (URI. imageCover)}}
-                play-cost (assoc :card/play-cost play-cost)
+                play-cost (assoc (if (= belongsType "选项")
+                                   :card/use-cost
+                                   :card/play-cost) play-cost)
                 level (assoc :card/level level)
                 dp (assoc :card/dp dp)
                 form (assoc :card/form form)
                 attribute (assoc :card/attribute
                                  (utils/normalize-string attribute))
-                digimon-type (assoc :card/digimon-type digimon-type)
+                type (assoc :card/type type)
                 (not (empty? effect)) (assoc :card/effect effect)
                 (not (empty? inherited-effect))
                 (assoc :card/inherited-effect inherited-effect)

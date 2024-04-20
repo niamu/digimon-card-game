@@ -1,6 +1,7 @@
 use edn_derive::Serialize;
 use edn_rs;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
@@ -102,13 +103,13 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
         &image,
         &mut blurred_image,
         Size::new(3, 3),
-        3.0,
-        3.0,
+        0.0,
+        0.0,
         cv::core::BORDER_DEFAULT,
     )
     .unwrap();
     let mut images: Vector<Mat> = Vector::new();
-    images.push(image.clone());
+    images.push(blurred_image.clone());
     let channels = Vector::from_slice(&[0, 1, 2]);
     let mask_roi = cv::core::no_array();
     let hsize = Vector::from_slice(&[2, 2, 2]);
@@ -119,7 +120,7 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
         &images, &channels, &mask_roi, &mut hist, &hsize, &ranges, false,
     )
     .unwrap();
-    let mut detected: Vec<(f32, &str)> = Vec::default();
+    let mut detected_map: HashMap<&str, f32> = HashMap::new();
     for i in 0..2 {
         for j in 0..2 {
             for k in 0..2 {
@@ -130,27 +131,32 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
                     (0, 1, 0) => "green",
                     (0, 0, 0) => "black",
                     (1, 0, 1) => "purple",
+                    (1, 0, 0) => "purple",
                     (1, 1, 1) => "white",
                     _ => "",
                 };
                 let color_count: f32 = *hist.at_3d::<f32>(i, j, k).unwrap();
                 let percent = (color_count
-                    / (image.rows() as f32 * image.cols() as f32))
+                    / (blurred_image.rows() as f32 * blurred_image.cols() as f32))
                     * 100.0;
                 if color != "" && percent >= 11.75 {
-                    detected.push((color_count, color));
+                    if detected_map.contains_key(color) {
+                        detected_map.insert(color, detected_map.get(color).unwrap() + color_count);
+                    } else {
+                        detected_map.insert(color, color_count);
+                    }
                 }
             }
         }
     }
-    let non_text_color_counts = detected
-        .iter()
-        .filter(|(_, c)| *c != "white" && *c != "black")
-        .collect::<Vec<&(f32, &str)>>()
-        .len();
+
+    let mut non_text_color_counts = detected_map.clone();
+    non_text_color_counts.retain(|c, _| *c != "white" && *c != "black");
+    let non_text_color_counts = non_text_color_counts.len();
+    let mut detected = Vec::from_iter(detected_map.iter());
     let detected_colors = detected
         .iter()
-        .map(|(_, color)| color.to_string())
+        .map(|(color, _)| color.to_string())
         .collect::<Vec<_>>();
     if non_text_color_counts >= 3 {
         result = vec![
@@ -175,12 +181,12 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
         if non_text_colors.len() != 0 {
             result.push(non_text_colors.first().unwrap().to_owned().clone())
         } else {
-            detected.sort_by(|(a, _), (b, _)| b.partial_cmp(a).unwrap());
-            result.push(detected.first().unwrap().1.to_string());
+            detected.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+            result.push(detected.first().unwrap().0.to_string());
         }
     } else {
-        detected.sort_by(|(a, _), (b, _)| b.partial_cmp(a).unwrap());
-        result.push(detected.first().unwrap().1.to_string());
+        detected.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+        result.push(detected.first().unwrap().0.to_string());
     }
     result
 }
@@ -225,8 +231,8 @@ fn conditions_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveCondition> {
             name: "red".to_string(),
             coords: Coords { x: 50, y: 20 },
             rgb: RGB {
-                r: 225,
-                g: 0,
+                r: 200,
+                g: 20,
                 b: 53,
             },
         },
@@ -241,10 +247,10 @@ fn conditions_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveCondition> {
         },
         Color {
             name: "yellow".to_string(),
-            coords: Coords { x: 42, y: 51 },
+            coords: Coords { x: 43, y: 52 },
             rgb: RGB {
-                r: 255,
-                g: 255,
+                r: 225,
+                g: 225,
                 b: 0,
             },
         },
@@ -268,7 +274,7 @@ fn conditions_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveCondition> {
         },
         Color {
             name: "purple".to_string(),
-            coords: Coords { x: 13, y: 20 },
+            coords: Coords { x: 14, y: 20 },
             rgb: RGB {
                 r: 100,
                 g: 85,
@@ -357,7 +363,6 @@ pub extern "C" fn digivolve_conditions(
         None => None,
     };
     let edn_string = edn_rs::to_string(edn);
-    println!("{:?}", edn_string);
     let c_str = CString::new(edn_string).unwrap();
     c_str.into_raw()
 }

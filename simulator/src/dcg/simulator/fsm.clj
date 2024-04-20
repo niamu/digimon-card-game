@@ -36,11 +36,12 @@
   (d/q '{:find [(pull ?c [:card/id
                           :card/name
                           :card/number
-                          :card/type
+                          :card/category
                           :card/language
                           :card/parallel-id
                           :card/block-marker
                           :card/play-cost
+                          :card/use-cost
                           :card/level
                           :card/dp
                           :card/effect
@@ -48,7 +49,7 @@
                           :card/security-effect
                           :card/form
                           :card/attribute
-                          :card/digimon-type
+                          :card/type
                           :card/rarity
                           :card/color
                           {:card/digivolve-conditions
@@ -262,7 +263,9 @@
                            0)]
     (cond-> state
       (when card-in-hand
-        (<= (:card/play-cost card-in-hand) available-memory))
+        (<= (or (:card/play-cost card-in-hand)
+                (:card/use-cost card-in-hand))
+            available-memory))
       (-> (update-in [:game/players
                       current-turn
                       :player/zones
@@ -301,7 +304,9 @@
                                     match?))))))
           ;; TODO: Handle "On Play" and "Main" timings
           ;; TODO: Trash Option card after "Main" effect
-          (update-memory (get card-in-hand :card/play-cost 0))))))
+          (update-memory (or (:card/play-cost card-in-hand)
+                             (:card/use-cost card-in-hand)
+                             0))))))
 
 (defn player-can-block?
   [{:game/keys [players] :as state} player-uuid]
@@ -574,31 +579,31 @@
                current-turn
                :player/prompt]
               (cond-> #{:phase/end}
-                (some (fn [{:card/keys [play-cost] :as card}]
-                        (and (= (:card/type card)
+                (some (fn [{:card/keys [play-cost use-cost] :as card}]
+                        (and (= (:card/category card)
                                 "Digimon")
-                             (<= play-cost available-memory)))
+                             (<= (or play-cost use-cost) available-memory)))
                       hand)
                 (conj :phase/main.play-digimon)
-                (some (fn [{:card/keys [play-cost] :as card}]
-                        (and (= (:card/type card)
+                (some (fn [{:card/keys [play-cost use-cost] :as card}]
+                        (and (= (:card/category card)
                                 "Tamer")
-                             (<= play-cost available-memory)))
+                             (<= (or play-cost use-cost) available-memory)))
                       hand)
                 (conj :phase/main.play-tamer)
                 (let [colors-in-play (->> (conj battle-area-cards
                                                 raising-area-cards)
                                           (mapcat :card/color)
                                           (into #{}))]
-                  (some (fn [{:card/keys [color play-cost]
+                  (some (fn [{:card/keys [color play-cost use-cost]
                              :as card}]
-                          (and (= (:card/type card) "Option")
+                          (and (= (:card/category card) "Option")
                                (not
                                 (empty?
                                  (set/intersection
                                   colors-in-play
                                   (set color))))
-                               (<= play-cost available-memory)))
+                               (<= (or play-cost use-cost) available-memory)))
                         hand))
                 (conj :phase/main.play-option)
                 (when (>= available-memory 0)
@@ -810,7 +815,7 @@
                                                    players))]
                                         [:phase/mulligan? (constantly true)]]}
    :phase/mulligan?decline {:handler (fn [{:game/keys [current-turn players]
-                                          :as state} _]
+                                           :as state} _]
                                        (-> state
                                            (assoc-in [:game/players
                                                       current-turn
@@ -852,21 +857,21 @@
                                         (hatch-digi-egg current-turn)))
                          :dispatches [[:phase/main (constantly true)]]}
    :phase/raising?move-to-battle-area {:handler (fn [{:game/keys [current-turn]
-                                                     :as state} _]
+                                                      :as state} _]
                                                   (-> state
                                                       (move-out-of-raising-area
                                                        current-turn)))
                                        :dispatches [[:phase/main
                                                      (constantly true)]]}
    :phase/raising?do-nothing {:handler (fn [{:game/keys [current-turn]
-                                            :as state} _]
+                                             :as state} _]
                                          state)
                               :dispatches [[:phase/main (constantly true)]]}
    :phase/main {:handler main-phase}
    :phase/main.play-digimon {:handler play-from-hand
                              :dispatches [[:phase/end
                                            (fn [{:game/keys [current-turn players]
-                                                :as state}]
+                                                 :as state}]
                                              (neg? (get-in players
                                                            [current-turn
                                                             :player/memory])))]
@@ -920,7 +925,7 @@
                                :phase/main.attack.block?decline})))}
    :phase/main.attack.block?accept
    {:handler (fn [{:game/keys [current-turn moves] :as state}
-                 blocking-slot-id]
+                  blocking-slot-id]
                (let [[attacking-slot-id _]
                      (->> moves
                           reverse

@@ -27,7 +27,7 @@
     {:db/ident :card/name
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}
-    {:db/ident :card/type
+    {:db/ident :card/category
      :db/valueType :db.type/string
      ;; TODO: This probably should be a keyword
      ;; - :digi-egg
@@ -45,6 +45,9 @@
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/play-cost
+     :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :card/use-cost
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/level
@@ -68,7 +71,7 @@
     {:db/ident :card/attribute
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}
-    {:db/ident :card/digimon-type
+    {:db/ident :card/type
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/rarity
@@ -81,7 +84,7 @@
      :db/valueType :db.type/keyword
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/color
-     :db/valueType :db.type/keyword
+     :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}
     {:db/ident :card/digivolve-conditions
      :db/valueType :db.type/ref
@@ -107,6 +110,17 @@
     {:db/ident :card/highlights
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}]
+   ;; Color
+   [{:db/ident :color/id
+     :db/valueType :db.type/string
+     :db/unique :db.unique/identity
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :color/index
+     :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :color/color
+     :db/valueType :db.type/keyword
+     :db/cardinality :db.cardinality/one}]
    ;; Digivolve Condition
    [{:db/ident :digivolve/id
      :db/valueType :db.type/string
