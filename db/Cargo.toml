@@ -11,4 +11,4 @@ crate-type = ["dylib"]
 [dependencies]
 edn-derive = "0.5.0"
 edn-rs = "0.17.4"
-opencv = "0.83.0"
+opencv = { version = "0.88.9", features = ["clang-runtime"] }
