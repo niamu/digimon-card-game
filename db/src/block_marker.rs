@@ -11,7 +11,7 @@ struct Template {
     pub value: i32,
 }
 
-const BLOCK_MARKERS: [Template; 3] = [
+const BLOCK_MARKERS: [Template; 4] = [
     Template {
         path: "resources/images/templates/block-markers/01.png",
         value: 1,
@@ -23,6 +23,10 @@ const BLOCK_MARKERS: [Template; 3] = [
     Template {
         path: "resources/images/templates/block-markers/03.png",
         value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-markers/04.png",
+        value: 4,
     },
 ];
 
