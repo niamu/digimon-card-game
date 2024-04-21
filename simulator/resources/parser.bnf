@@ -1658,11 +1658,11 @@ target =
         / digivolution-cards-include
         / (<","? SPACE? "and "?>? mention)+
         / (opponent / you)
+        / that
         / card-type
         / target-effect
         / zone
         / number-of-cards
-        / that
         / revealed-cards
     )
     (<SPACE> except-target)?
