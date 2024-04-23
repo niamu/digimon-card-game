@@ -216,12 +216,12 @@ pub fn encode(
     // Only store the first byte of checksum
     let total_card_bytes = deck_bytes.len() - HEADER_SIZE;
     let computed_checksum =
-        compute_checksum(total_card_bytes, &deck_bytes.clone()[3..]);
+        compute_checksum(total_card_bytes, &deck_bytes.clone()[HEADER_SIZE..]);
     deck_bytes[1] = (computed_checksum & 0xFF) as u8;
 
     deck_bytes.append(&mut name.as_bytes().to_vec());
 
     let deck_b64_encoded = URL_SAFE_NO_PAD.encode(deck_bytes);
-    let deck_string = "DCG".to_string() + &deck_b64_encoded;
+    let deck_string = PREFIX.to_string() + &deck_b64_encoded;
     deck_string
 }

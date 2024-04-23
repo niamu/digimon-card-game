@@ -4,6 +4,7 @@ This directory hosts multiple library implementations for encoding and decoding 
 
 - [Clojure](/codec/clojure)
 - [Rust](/codec/rust)
+- [Python](/codec/python)
 - [PHP](/codec/php)
 
 
