@@ -5,7 +5,8 @@
    [clojure.string :as string]
    [dcg.card.cv :as cv]
    [dcg.card.repair :as repair]
-   [dcg.card.utils :as utils]
+   [dcg.card.utils :as card-utils]
+   [dcg.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])
@@ -26,7 +27,7 @@
     (when-not (.exists (io/file filename))
       (let [image-bytes (-> (str source)
                             utils/as-bytes
-                            utils/trim-transparency!)]
+                            card-utils/trim-transparency!)]
         (.mkdirs (io/file (.getParent (io/file filename))))
         (with-open [in (io/input-stream image-bytes)
                     out (io/output-stream filename)]
@@ -51,7 +52,7 @@
                (not (.exists (io/file filename))))
       (when-let [image-bytes (try (-> image-uri
                                       utils/as-bytes
-                                      utils/trim-transparency!)
+                                      card-utils/trim-transparency!)
                                   (catch Exception _ nil))]
         (.mkdirs (io/file (.getParent (io/file filename))))
         (with-open [in (io/input-stream image-bytes)
@@ -64,8 +65,8 @@
   [releases cards]
   (let [releases-by-set
         (reduce (fn [accl {:release/keys [name] :as release}]
-                  (if-let [set-id (some-> (re-find (utils/within-brackets-re
-                                                    (get utils/text-punctuation
+                  (if-let [set-id (some-> (re-find (card-utils/within-brackets-re
+                                                    (get card-utils/text-punctuation
                                                          :square-brackets))
                                                    name)
                                           rest
@@ -98,8 +99,8 @@
                          release (dissoc release :release/card-image-language)
                          releases-in-notes
                          (some->> notes
-                                  (re-seq (utils/within-brackets-re
-                                           (get utils/text-punctuation
+                                  (re-seq (card-utils/within-brackets-re
+                                           (get card-utils/text-punctuation
                                                 :square-brackets)))
                                   (mapcat rest)
                                   (remove nil?)
@@ -216,7 +217,7 @@
                                                 (select/class "cardinfo_head"))
                                     (select/tag "li"))
                                    dom-tree)
-                    (map utils/text-content))
+                    (map card-utils/text-content))
         number (-> (nth header 0)
                    ;; ko cards sometimes add a "P" suffix to the card number
                    (string/replace #"P$" ""))
@@ -241,15 +242,15 @@
         info-top
         (->> (dl "cardinfo_top_body")
              (map (comp repair/text-fixes
-                        utils/normalize-string
-                        utils/text-content))
+                        card-utils/normalize-string
+                        card-utils/text-content))
              (apply hash-map))
         info-bottom
         (->> (dl "cardinfo_bottom")
              (drop-last 2)
              (map (comp repair/text-fixes
-                        utils/normalize-string
-                        utils/text-content))
+                        card-utils/normalize-string
+                        card-utils/text-content))
              (apply hash-map))
         notes (->> (select/select (select/descendant
                                    (select/class "cardinfo_bottom")
@@ -296,7 +297,7 @@
                        parse-long)
         digivolve-conditions
         (->> (->> (dl "cardinfo_top_body")
-                  (map (comp utils/normalize-string string/trim first :content))
+                  (map (comp card-utils/normalize-string string/trim first :content))
                   (partition-all 2)
                   (filter (fn [[k v]]
                             (and (or (string/includes? k "Digivolve")
@@ -430,7 +431,7 @@
                                            (select/class "card_name")))
                               dom-tree)
                              first
-                             ((comp utils/normalize-string
+                             ((comp card-utils/normalize-string
                                     string/trim
                                     (fn [s]
                                       (-> s
@@ -560,9 +561,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                       dp rareDegree entryConsumeValue envolutionConsumeTwo
-                       cardLevel effect envolutionEffect safeEffect
-                       imageCover cardGroup]}]
+                      dp rareDegree entryConsumeValue envolutionConsumeTwo
+                      cardLevel effect envolutionEffect safeEffect
+                      imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)
@@ -573,29 +574,29 @@
                                   number
                                   (str parallel-id))
                   level (some->> cardLevel
-                                 utils/normalize-string
+                                 card-utils/normalize-string
                                  (re-find #"[0-9]+")
                                  parse-long)
-                  attribute (some-> attribute utils/normalize-string)
-                  type (some-> type utils/normalize-string)
-                  form (some-> form utils/normalize-string)
+                  attribute (some-> attribute card-utils/normalize-string)
+                  type (some-> type card-utils/normalize-string)
+                  form (some-> form card-utils/normalize-string)
                   play-cost (or (some-> entryConsumeValue
-                                        utils/normalize-string
+                                        card-utils/normalize-string
                                         parse-long)
                                 (some-> envolutionConsumeTwo
-                                        utils/normalize-string
+                                        card-utils/normalize-string
                                         parse-long))
-                  dp (some-> dp utils/normalize-string parse-long)
+                  dp (some-> dp card-utils/normalize-string parse-long)
                   effect (some-> effect
-                                 utils/normalize-string
+                                 card-utils/normalize-string
                                  repair/text-fixes
                                  (string/replace "enter" "\n"))
                   inherited-effect (some-> envolutionEffect
-                                           utils/normalize-string
+                                           card-utils/normalize-string
                                            repair/text-fixes
                                            (string/replace "enter" "\n"))
                   security-effect (some-> safeEffect
-                                          utils/normalize-string
+                                          card-utils/normalize-string
                                           repair/text-fixes
                                           (string/replace "enter" "\n"))
                   limitation
@@ -624,7 +625,7 @@
                 dp (assoc :card/dp dp)
                 form (assoc :card/form form)
                 attribute (assoc :card/attribute
-                                 (utils/normalize-string attribute))
+                                 (card-utils/normalize-string attribute))
                 type (assoc :card/type type)
                 (not (empty? effect)) (assoc :card/effect effect)
                 (not (empty? inherited-effect))

@@ -3,7 +3,7 @@
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.set :as set]
-   [dcg.card.utils :as utils]
+   [dcg.utils :as utils]
    [taoensso.timbre :as logging])
   (:import
    [java.io File]

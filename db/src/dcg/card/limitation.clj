@@ -2,7 +2,8 @@
   (:require
    [clojure.string :as string]
    [dcg.card.cv :as cv]
-   [dcg.card.utils :as utils]
+   [dcg.card.utils :as card-utils]
+   [dcg.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])
@@ -50,7 +51,7 @@
         parse-limitations
         (fn parse-limitations [lifted? date subtitle cards]
           (let [restriction-type (and subtitle
-                                      (utils/text-content subtitle))
+                                      (card-utils/text-content subtitle))
                 limitation-type (cond
                                   lifted? :unrestrict
 
@@ -79,14 +80,14 @@
                                         card))
                           number
                           (or (->> (get-in image [:attrs :src] "")
-                                   (re-find utils/card-number-re))
+                                   (re-find card-utils/card-number-re))
                               (some-> (get-in image [:attrs :src])
                                       (string/replace "../../images"
                                                       "/images")
                                       (as-> path (str url path))
                                       cv/query-url
                                       (as-> #__ card-id
-                                        (re-find utils/card-number-re
+                                        (re-find card-utils/card-number-re
                                                  card-id))))
                           id (format "limitation/%s_%s"
                                      language
@@ -95,14 +96,14 @@
                                      (select/class "baseTxt")
                                      card)
                                     first
-                                    utils/text-content)
+                                    card-utils/text-content)
                           card-pairs (when (= limitation-type :banned-pair)
                                        (some->> (select/select
                                                  (select/class "noticeList")
                                                  card)
                                                 second
-                                                utils/text-content
-                                                (re-seq utils/card-number-re)
+                                                card-utils/text-content
+                                                (re-seq card-utils/card-number-re)
                                                 (into [])))]
                       (if-not number
                         (logging/error
@@ -158,10 +159,10 @@
                  [])
          (mapcat (fn [[title subtitle & cards]]
                    (let [lifted? (some-> (title? title)
-                                         utils/text-content
+                                         card-utils/text-content
                                          (string/includes? "より解除"))
                          date (or (some-> (title? title)
-                                          utils/text-content
+                                          card-utils/text-content
                                           parse-date)
                                   ;; BT08 release date
                                   nil)
@@ -233,7 +234,7 @@
             (some->> (re-find #"\w+ \d+, [0-9]{4}" s)
                      (.parse (SimpleDateFormat. "MMM dd, yyyy"))))
           (parse-limitations [lifted? date subtitle cards]
-            (let [restriction-type (utils/text-content subtitle)
+            (let [restriction-type (card-utils/text-content subtitle)
                   limitation-type (cond
                                     lifted? :unrestrict
 
@@ -263,16 +264,16 @@
                                             card))
                               number
                               (or (->> (get-in image [:attrs :alt] "")
-                                       (re-find utils/card-number-re))
+                                       (re-find card-utils/card-number-re))
                                   (->> (get-in image [:attrs :src] "")
-                                       (re-find utils/card-number-re))
+                                       (re-find card-utils/card-number-re))
                                   (some-> (get-in image [:attrs :src])
                                           (string/replace "../../images"
                                                           "/images")
                                           (as-> path (str url path))
                                           cv/query-url
                                           (as-> #__ card-id
-                                            (re-find utils/card-number-re
+                                            (re-find card-utils/card-number-re
                                                      card-id))))
                               id (format "limitation/%s_%s"
                                          language
@@ -281,7 +282,7 @@
                                              (select/class "baseTxt")
                                              card)
                                             first
-                                            utils/text-content)
+                                            card-utils/text-content)
                                        (get-in accl [(dec (count accl))
                                                      :limitation/note]))
                               card-pairs (when (= limitation-type :banned-pair)
@@ -289,8 +290,8 @@
                                                      (select/class "noticeList")
                                                      card)
                                                     second
-                                                    utils/text-content
-                                                    (re-seq utils/card-number-re)
+                                                    card-utils/text-content
+                                                    (re-seq card-utils/card-number-re)
                                                     (into [])))]
                           (if-not number
                             (do (logging/error
@@ -334,10 +335,10 @@
                  [])
          (mapcat (fn [[title subtitle & cards]]
                    (let [lifted? (some-> (title? title)
-                                         utils/text-content
+                                         card-utils/text-content
                                          (string/includes? "lifted"))
                          date (or (some-> (title? title)
-                                          utils/text-content
+                                          card-utils/text-content
                                           parse-date)
                                   ;; BT08 release date
                                   #inst "2022-05-13T04:00:00.000-00:00")

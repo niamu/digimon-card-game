@@ -2,7 +2,8 @@
   (:require
    [clojure.data.json :as json]
    [clojure.string :as string]
-   [dcg.card.utils :as utils]
+   [dcg.card.utils :as card-utils]
+   [dcg.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])
@@ -18,7 +19,7 @@
                    (select/descendant (select/class "genrename"))
                    dom-tree)
                   first
-                  utils/text-content
+                  card-utils/text-content
                   string/join
                   (string/replace "Expansion" "Booster")
                   (string/replace "拡張" "ブースター")
@@ -79,7 +80,7 @@
                           (select/descendant (select/class "proddate")
                                              (select/tag "dd")))
                          first
-                         utils/text-content
+                         card-utils/text-content
                          string/split-lines
                          (filter #(re-find #"[0-9]{4}" %))
                          first
@@ -130,7 +131,7 @@
                                              (select/class "title")))
                                            dom-tree)
                             first
-                            utils/text-content
+                            card-utils/text-content
                             (string/split #"\n+"))
         title (some-> title
                       string/join

@@ -1,7 +1,6 @@
 (ns dcg.card.repair
   (:require
-   [clojure.string :as string]
-   [taoensso.timbre :as logging])
+   [clojure.string :as string])
   (:import
    [java.net URI]))
 

@@ -815,7 +815,7 @@
                                                    players))]
                                         [:phase/mulligan? (constantly true)]]}
    :phase/mulligan?decline {:handler (fn [{:game/keys [current-turn players]
-                                           :as state} _]
+                                          :as state} _]
                                        (-> state
                                            (assoc-in [:game/players
                                                       current-turn
@@ -857,21 +857,21 @@
                                         (hatch-digi-egg current-turn)))
                          :dispatches [[:phase/main (constantly true)]]}
    :phase/raising?move-to-battle-area {:handler (fn [{:game/keys [current-turn]
-                                                      :as state} _]
+                                                     :as state} _]
                                                   (-> state
                                                       (move-out-of-raising-area
                                                        current-turn)))
                                        :dispatches [[:phase/main
                                                      (constantly true)]]}
    :phase/raising?do-nothing {:handler (fn [{:game/keys [current-turn]
-                                             :as state} _]
+                                            :as state} _]
                                          state)
                               :dispatches [[:phase/main (constantly true)]]}
    :phase/main {:handler main-phase}
    :phase/main.play-digimon {:handler play-from-hand
                              :dispatches [[:phase/end
                                            (fn [{:game/keys [current-turn players]
-                                                 :as state}]
+                                                :as state}]
                                              (neg? (get-in players
                                                            [current-turn
                                                             :player/memory])))]
@@ -925,7 +925,7 @@
                                :phase/main.attack.block?decline})))}
    :phase/main.attack.block?accept
    {:handler (fn [{:game/keys [current-turn moves] :as state}
-                  blocking-slot-id]
+                 blocking-slot-id]
                (let [[attacking-slot-id _]
                      (->> moves
                           reverse
@@ -1042,7 +1042,7 @@
               :where [[?c :card/highlights ?h]
                       [?c :card/image ?i]
                       [?i :image/language "en"]
-                      [?h :highlight/type :phase]
+                      [?h :highlight/type :precondition]
                       [?h :highlight/text ?t]]}
             (d/db db/conn))
        sort))

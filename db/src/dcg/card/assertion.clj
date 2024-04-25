@@ -1,8 +1,7 @@
 (ns dcg.card.assertion
   (:require
    [clojure.set :as set]
-   [clojure.string :as string]
-   [dcg.card.utils :as utils]))
+   [clojure.string :as string]))
 
 (defn- highlights
   "Card highlights that differ across languages"

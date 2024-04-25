@@ -118,4 +118,21 @@
        (into [])
        #_json)
 
+  (-> #_(str "[Digivolve] Lv.4 w/[Gammamon] in name: Cost 3[Hand] [Counter] ＜Blast Digivolve＞ (One of your Digimon may digivolve into this card without paying the cost.)[On Play] [When Digivolving] Trash 1 card in your hand. Then, you may place 1 card with [Gammamon] in its text from your trash as this Digimon's bottom digivolution card.[All Turns] [Once Per Turn] When an effect adds digivolution cards to this Digimon, by deleting 1 level 4 or lower Digimon, you may play 1 level 4 or lower Digimon card from your trash without paying the cost.")
+      #_(str "[Hand] [Counter] ＜Blast Digivolve＞ (One of your Digimon may digivolve into this card without paying the cost.)＜Blocker＞[On Play] [When Digivolving] You may play 1 purple level 3 Digimon card or 1 purple Tamer card from your trash without paying the cost.")
+      (str "[Digivolve] Lv.5 w/[X Antibody]/[DigiPolice] trait: Cost 4
+＜Blocker＞
+[When Digivolving] If a [DigiPolice] trait Tamer card is in this Digimon's digivolution cards, return 1 of your opponent's suspended Digimon or Tamers to the bottom of the deck.
+[All Turns] [Once Per Turn] When this Digimon suspends, you may play 1 [Beast Dragon] or [DigiPolice] trait Digimon card with 5000 DP or less from your hand without paying the cost.")
+      (string/replace #"\s*\n\s*" " ")
+      ;; TODO: Digivolve/DNA lines that match up to the next timing/precondition/keyword
+      (string/replace #"(\[Digivolve\].*?)(＜)" "$1\n$2")
+      ;; Timings following the end of a sentence always start a new line
+      (string/replace #"(\.\)?\s?)(\[|＜)" "$1\n$2")
+      ;; Timings following a keyword always start a new line
+      (string/replace #"(＞\s?)(\[)" "$1\n$2")
+      string/split-lines
+      (as-> #__ coll
+        (mapv string/trim coll)))
+
   )

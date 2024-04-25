@@ -1,7 +1,8 @@
 (ns dcg.card.errata
   (:require
    [clojure.string :as string]
-   [dcg.card.utils :as utils]
+   [dcg.card.utils :as card-utils]
+   [dcg.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])
@@ -46,7 +47,7 @@
                                        (select/class "wrap_redCol"))
                                       heading)
                                      first
-                                     utils/text-content
+                                     card-utils/text-content
                                      (re-find date-re))
                 date (try (.parse (SimpleDateFormat. "yyyy.MM.dd")
                                   date-string)
@@ -70,7 +71,7 @@
                                  :tag :div
                                  :content contents})
                                first
-                               utils/text-content)]
+                               card-utils/text-content)]
             (map (fn [card]
                    (let [number (-> (select/select (select/descendant
                                                     (select/tag "img"))
@@ -81,7 +82,7 @@
                                     (string/replace "_" "-")
                                     (string/replace #"([A-Z]{2})0" "$1")
                                     (as-> #__ src
-                                      (re-find utils/card-number-re src)))
+                                      (re-find card-utils/card-number-re src)))
                          error (some-> (select/select
                                         (select/descendant
                                          (select/follow-adjacent
@@ -91,7 +92,7 @@
                                           (select/tag "dd")))
                                         card)
                                        first
-                                       utils/text-content)
+                                       card-utils/text-content)
                          correction (if error
                                       (some-> (select/select
                                                (select/descendant
@@ -102,14 +103,14 @@
                                                  (select/tag "dd")))
                                                card)
                                               first
-                                              utils/text-content)
+                                              card-utils/text-content)
                                       (some->> (select/select
                                                 (select/descendant
                                                  (select/and
                                                   (select/tag "dd")
                                                   (select/class "mt_s")))
                                                 card)
-                                               (map utils/text-content)
+                                               (map card-utils/text-content)
                                                (string/join "\n")))]
                      (cond-> {:errata/id (format "errata/%s_%s"
                                                  language number)
@@ -169,7 +170,7 @@
                              (string/replace "_" "-")
                              (string/replace #"([A-Z]{2})0" "$1")
                              (as-> #__ src
-                               (re-find utils/card-number-re src)))
+                               (re-find card-utils/card-number-re src)))
                          (->> (select/select (select/descendant
                                               (select/tag "dl")
                                               (select/tag "dd")
@@ -185,7 +186,7 @@
                                           string/trim
                                           (string/replace #"^Start of Your"
                                                           "[Start of Your")))
-                                    utils/text-content)))
+                                    card-utils/text-content)))
                          (->> (select/select
                                (select/or
                                 (select/descendant
@@ -196,7 +197,7 @@
                                  (select/tag "dd"))
                                 (select/descendant (select/class "note")))
                                text)
-                              (map utils/text-content)
+                              (map card-utils/text-content)
                               (string/join "\n"))]))
                  (map (fn [[number [error correction] notes]]
                         (let [error (if (apply = (string/split-lines error))

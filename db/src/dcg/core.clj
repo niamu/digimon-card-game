@@ -10,7 +10,6 @@
    [dcg.card.limitation :as limitation]
    [dcg.card.release :as release]
    [dcg.card.translation :as translation]
-   [dcg.card.utils :as utils]
    [dcg.db :as db]))
 
 (def origins
@@ -26,9 +25,13 @@
    {:origin/url "https://digimoncard.co.kr"
     :origin/language "ko"}])
 
+(def releases-per-origin
+  (memoize (fn []
+             (pmap release/releases origins))))
+
 (defn process-cards
   []
-  (let [releases-per-origin (pmap release/releases origins)
+  (let [releases-per-origin (releases-per-origin)
         cards-per-origin
         (pmap (fn [releases]
                 (->> releases
