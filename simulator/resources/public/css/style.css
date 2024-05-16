@@ -1,0 +1,545 @@
+/* @link https://utopia.fyi/type/calculator?c=320,16,1.2,1240,18,1.25,5,2,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+
+:root {
+	/* Step -2: 11.1111px → 11.52px */
+	--font-size--2: clamp(0.6944rem, 0.6856rem + 0.0444vi, 0.72rem);
+	/* Step -1: 13.3333px → 14.4px */
+	--font-size--1: clamp(0.8333rem, 0.8101rem + 0.1159vi, 0.9rem);
+	/* Step 0: 16px → 18px */
+	--font-size-0: clamp(1rem, 0.9565rem + 0.2174vi, 1.125rem);
+	/* Step 1: 19.2px → 22.5px */
+	--font-size-1: clamp(1.2rem, 1.1283rem + 0.3587vi, 1.4063rem);
+	/* Step 2: 23.04px → 28.125px */
+	--font-size-2: clamp(1.44rem, 1.3295rem + 0.5527vi, 1.7578rem);
+	/* Step 3: 27.648px → 35.1563px */
+	--font-size-3: clamp(1.728rem, 1.5648rem + 0.8161vi, 2.1973rem);
+	/* Step 4: 33.1776px → 43.9453px */
+	--font-size-4: clamp(2.0736rem, 1.8395rem + 1.1704vi, 2.7466rem);
+	/* Step 5: 39.8131px → 54.9316px */
+	--font-size-5: clamp(2.4883rem, 2.1597rem + 1.6433vi, 3.4332rem);
+
+	--card-original-width: 430;
+	--card-original-height: 600;
+	--card-width: 200px;
+	--card-gap: 20px;
+	--card-aspect-ratio: var(--card-original-width) / var(--card-original-height);
+	--card-height: calc(var(--card-width) / calc(var(--card-aspect-ratio)));
+}
+
+* {
+	box-sizing: border-box;
+}
+
+@font-face{font-family:"Peter-Black";src:url("/fonts/Peter-Black.woff") format("woff");font-weight:800}
+@font-face{font-family:"Prohibition";src:url("/fonts/Prohibition-Regular.woff") format("woff");font-weight:400}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-ThinItalic.woff") format("woff");font-style:italic;font-weight:100}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-Bold.woff") format("woff");font-style:normal;font-weight:700}
+@font-face{font-family:"Roboto Condensed";src:url("/fonts/RobotoCondensed-Light.woff") format("woff");font-style:normal;font-weight:300}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-Light.woff") format("woff");font-style:normal;font-weight:300}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-BlackItalic.woff") format("woff");font-style:italic;font-weight:900}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-Italic.woff") format("woff");font-style:italic;font-weight:400}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-BoldItalic.woff") format("woff");font-style:italic;font-weight:700}
+@font-face{font-family:"Roboto Condensed";src:url("/fonts/RobotoCondensed-Bold.woff") format("woff");font-style:normal;font-weight:700}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-Black.woff") format("woff");font-style:normal;font-weight:900}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-Thin.woff") format("woff");font-style:normal;font-weight:100}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-Regular.woff") format("woff");font-style:normal;font-weight:400}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-MediumItalic.woff") format("woff");font-style:italic;font-weight:500}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-Medium.woff") format("woff");font-style:normal;font-weight:500}
+@font-face{font-family:"Roboto Condensed";src:url("/fonts/RobotoCondensed-LightItalic.woff") format("woff");font-style:italic;font-weight:300}
+@font-face{font-family:"Roboto";src:url("/fonts/Roboto-LightItalic.woff") format("woff");font-style:italic;font-weight:300}
+@font-face{font-family:"Roboto Condensed";src:url("/fonts/RobotoCondensed-Italic.woff") format("woff");font-style:italic;font-weight:400}
+@font-face{font-family:"Roboto Condensed";src:url("/fonts/RobotoCondensed-BoldItalic.woff") format("woff");font-style:italic;font-weight:700}
+@font-face{font-family:"Roboto Condensed";src:url("/fonts/RobotoCondensed-Regular.woff") format("woff");font-style:normal;font-weight:400}
+
+body {
+	font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	font-size: var(--fontSize-0);
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	margin: 0;
+	width: 100dvw;
+	min-height: 100dvh;
+	display: inline-block;
+
+	& div.wrapper {
+		display: flex;
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+		max-width: inherit;
+		min-height: inherit;
+	}
+}
+
+svg {
+	max-width: 100%;
+	height: auto;
+}
+
+button:not([disabled]) {
+	cursor: pointer;
+}
+
+dcg-playmat {
+	display: grid;
+	container-type: inline-size;
+	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.125));
+	grid-template-columns: repeat(7, minmax(var(--card-width), 1fr));
+	grid-template-rows: repeat(2, auto);
+	grid-template-areas:
+		"security battle battle deck"
+		"digi-eggs breeding tamer-option trash";
+	gap: var(--card-gap);
+	padding: var(--card-gap);
+	aspect-ratio: 2 / 1;
+
+	& dcg-area {
+		align-items: center;
+		justify-content: end;
+
+		&[security] {
+			grid-area: security;
+			grid-column-start: 1;
+	  		grid-column-end: 2;
+	  		align-items: start;
+	  		width: 140%;
+		}
+
+		&[battle] {
+			grid-area: battle;
+			grid-column-start: 2;
+	  		grid-column-end: 7;
+	  		margin-left: calc(var(--card-width) * 0.4);
+		}
+
+		&[deck] {
+			grid-area: deck;
+			grid-column-start: 7;
+			grid-column-end: 8;
+		}
+
+		&[digi-eggs] {
+			& form {
+				display: flex;
+				justify-content: end;
+			}
+			grid-area: digi-eggs;
+		}
+
+		&[breeding] {
+			grid-area: breeding;
+			justify-content: end;
+		}
+
+		&[tamer-option] {
+			grid-area: tamer-option;
+			grid-column-start: 3;
+	  		grid-column-end: 7;
+		}
+
+		&[trash] {
+			grid-area: trash;
+			justify-content: start;
+			grid-column-start: 7;
+			grid-column-end: 8;
+		}
+	}
+}
+
+dcg-area {
+	display: flex;
+	flex-direction: column;
+	gap: var(--card-gap);
+
+	&[digi-eggs] {
+		& button {
+			text-indent: -100vh;
+			border: none;
+			width: 100%;
+			padding: 0;
+			border-radius: inherit;
+			background: transparent;
+		}
+
+		& dcg-card {
+			background-image: url("/images/cards/BACK-002.png");
+		}
+	}
+
+	&[hand] {
+		flex-direction: row;
+	}
+
+	&[security] {
+		--stack-offset: calc(var(--card-width) / 10);
+
+		& dcg-card {
+			rotate: 90deg;
+			translate: calc((var(--card-width) * 1) - 80%);
+
+			&:has(+ dcg-card) {
+				margin-bottom: calc(
+					(
+						(
+							var(--card-width) / calc(var(--card-aspect-ratio))
+						) - (
+							var(--stack-offset) - var(--card-gap)
+						)
+					) * -1);
+			}
+
+			&:last-of-type {
+				margin-bottom: calc((var(--stack-offset) * 1.85) * -1);
+			}
+
+			&:hover {
+				z-index: auto;
+			}
+		}
+
+		& dcg-card:nth-child(2) { z-index: -1 }
+		& dcg-card:nth-child(3) { z-index: -2 }
+		& dcg-card:nth-child(4) { z-index: -3 }
+		& dcg-card:nth-child(5) { z-index: -4 }
+		& dcg-card:nth-child(6) { z-index: -5 }
+		& dcg-card:nth-child(7) { z-index: -6 }
+		& dcg-card:nth-child(8) { z-index: -7 }
+		& dcg-card:nth-child(9) { z-index: -8 }
+		& dcg-card:nth-child(10) { z-index: -9 }
+		& dcg-card:nth-child(11) { z-index: -10 }
+		& dcg-card:nth-child(12) { z-index: -11 }
+		& dcg-card:nth-child(13) { z-index: -12 }
+		& dcg-card:nth-child(14) { z-index: -13 }
+		& dcg-card:nth-child(15) { z-index: -14 }
+		& dcg-card:nth-child(16) { z-index: -15 }
+		& dcg-card:nth-child(17) { z-index: -16 }
+		& dcg-card:nth-child(18) { z-index: -17 }
+		& dcg-card:nth-child(19) { z-index: -18 }
+		& dcg-card:nth-child(20) { z-index: -19 }
+		& dcg-card:nth-child(21) { z-index: -20 }
+		& dcg-card:nth-child(22) { z-index: -21 }
+		& dcg-card:nth-child(23) { z-index: -22 }
+		& dcg-card:nth-child(24) { z-index: -23 }
+		& dcg-card:nth-child(25) { z-index: -24 }
+	}
+}
+
+dcg-stack {
+	display: flex;
+	flex-direction: column;
+}
+
+dcg-card > [itemscope],
+.sr-only:not(:focus):not(:active) {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 0px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 0px;
+}
+
+@property --pointer-x {
+	syntax: "<percentage>";
+	inherits: true;
+	initial-value: 50%;
+}
+
+@property --pointer-y {
+	syntax: "<percentage>";
+	inherits: true;
+	initial-value: 50%;
+}
+
+@property --card-rotate-percent-x {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --card-rotate-percent-y {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --card-rotate-percent-z {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --glare-opacity {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@keyframes cardIdle {
+	0% {
+		--pointer-x: 50%;
+		--pointer-y: 50%;
+		--card-rotate-percent-x: 0;
+		--card-rotate-percent-y: 0;
+		--card-rotate-percent-z: 0;
+		--glare-opacity: 50;
+	}
+
+	25% {
+		--pointer-x: 50%;
+		--pointer-y: 50%;
+		--card-rotate-percent-x: 0;
+		--card-rotate-percent-y: 0;
+		--card-rotate-percent-z: 0;
+		--glare-opacity: 50;
+	}
+
+	50% {
+		--pointer-x: 0%;
+		--pointer-y: 100%;
+		--card-rotate-percent-x: 0.25;
+		--card-rotate-percent-y: 0.25;
+		--card-rotate-percent-z: 0.05;
+		--glare-opacity: 100;
+	}
+
+	62.5% {
+		--glare-opacity: 50;
+	}
+
+	75% {
+		--pointer-x: 100%;
+		--pointer-y: 0%;
+		--card-rotate-percent-x: -0.25;
+		--card-rotate-percent-y: -0.25;
+		--card-rotate-percent-z: -0.05;
+		--glare-opacity: 100;
+	}
+
+	100% {
+		--pointer-x: 50%;
+		--pointer-y: 50%;
+		--card-rotate-percent-x: 0;
+		--card-rotate-percent-y: 0;
+		--card-rotate-percent-z: 0;
+		--glare-opacity: 50;
+	}
+}
+
+@keyframes cardGlow {
+	0% {
+		opacity: 0;
+	}
+
+	50% {
+		opacity: 1;
+	}
+
+	100% {
+		opacity: 0;
+	}
+}
+
+dcg-card {
+	--card-rotate-max-x: 50deg;
+	--card-rotate-max-y: 20deg;
+	--card-rotate-max-z: 45deg;
+	--card-perspective: 600px;
+	--animation-duration: 10s;
+	display: inline-flex;
+	perspective: var(--card-perspective);
+	aspect-ratio: var(--card-aspect-ratio);
+	width: var(--card-width);
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-image: url("/images/cards/BACK-001.png");
+	border-radius: 5.25% / 3.75%;
+	transition: scale 0.05s ease-in-out;
+
+	&:hover {
+		z-index: 1;
+	}
+
+	&:has(picture),
+	&[showcase] {
+		background: none;
+	}
+
+	&::before,
+	&::after {
+		content: "";
+		display: block;
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		border-radius: inherit;
+		pointer-events: none;
+	}
+
+	&:not(:has(picture))::before {
+		box-shadow:
+			0 0 3px -1px #FFF,
+			0 0 3px 1px rgba(0, 0, 0, 0.25),
+			0 0 6px 1px rgba(0, 0, 0, 0.25);
+	}
+
+	&[showcase]::before,
+	&[showcase]::after {
+		transition: transform 0.5s ease-in-out;
+		transform-origin: center;
+		transform:
+			translate3d(0px, 0px, 0.01px)
+			rotateX(calc(var(--card-rotate-max-y, 0) * var(--card-rotate-percent-y, 0)))
+			rotateY(calc(var(--card-rotate-max-x, 0) * var(--card-rotate-percent-x, 0)))
+			rotateZ(calc(var(--card-rotate-max-z, 0) * var(--card-rotate-percent-z, 0)));
+		animation:
+			var(--animation-duration) ease-in-out 0s infinite both running cardIdle;
+	}
+
+	&::after {
+		opacity: 0;
+		z-index: -1;
+	}
+
+	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::before {
+		box-shadow:
+			0 0 3px -1px #FFF,
+			0 0 3px 1px #fabd4a,
+			0 0 12px 2px #fa9600,
+			0 10px 20px -5px #000,
+			0 0 40px -30px #fa9600,
+			0 0 50px -20px #fa9600;
+	}
+
+	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::after {
+		opacity: 0;
+		box-shadow:
+			0 0 calc(3px * 1.5) -1px #FFF,
+			0 0 calc(3px * 1.5) 1px #fabd4a,
+			0 0 calc(12px * 1.5) 2px #fa9600,
+			0 10px calc(20px * 1.5) -5px #000,
+			0 0 calc(40px * 1.5) -30px #fa9600,
+			0 0 calc(50px * 1.5) -20px #fa9600;
+		animation:
+			2s ease-in-out 0s infinite both running cardGlow,
+			var(--animation-duration) ease-in-out 0s infinite both running cardIdle;
+	}
+
+	& picture::before {
+		background-image: url("/images/cards/BACK-001.png");
+	}
+
+	&:has(data[itemprop="category"][value="Digi-Egg"]) {
+		& picture::before {
+			background-image: url("/images/cards/BACK-002.png");
+		}
+	}
+
+	&[showcase][interacting] {
+		&::before {
+			transition: none;
+			animation: none;
+		}
+		&:has(data[itemprop="parallel-id"]:not([value="0"]))::before {
+			transition: none;
+			animation: none;
+		}
+		&:has(data[itemprop="parallel-id"]:not([value="0"]))::after {
+			transition: none;
+			animation: 2s ease-in-out 0s infinite both running cardGlow;
+		}
+		& picture {
+			transition: none;
+			animation: none;
+	
+			& img {
+				animation: none;
+			}
+		}
+	}
+
+	&[showcase] picture {
+		transform:
+			translate3d(0px, 0px, 0.01px)
+			rotateX(calc(var(--card-rotate-max-y, 0) * var(--card-rotate-percent-y, 0)))
+			rotateY(calc(var(--card-rotate-max-x, 0) * var(--card-rotate-percent-x, 0)))
+			rotateZ(calc(var(--card-rotate-max-z, 0) * var(--card-rotate-percent-z, 0)));
+		animation: var(--animation-duration) ease-in-out 0s infinite both running cardIdle;
+	}
+
+	& picture {
+		display: inherit;
+		transform-origin: center;
+		transform-style: preserve-3d;
+		perspective: var(--card-perspective);
+		border-radius: inherit;
+		transition: transform 0.5s ease-in-out;
+		background-color: #FFF;
+		background-position: inherit;
+		background-size: cover;
+		background-repeat: inherit;
+		max-width: 100%;
+		max-height: var(--card-height);
+		aspect-ratio: inherit;
+		transform: translate3d(0px, 0px, 0.01px);
+		box-shadow:
+			0 0 3px -1px #FFF,
+			0 0 3px 1px rgba(0, 0, 0, 0.25),
+			0 0 6px 1px rgba(0, 0, 0, 0.25);
+
+		&::before,
+		&::after {
+			scale: 1.005;
+			content: "";
+			display: block;
+			width: 100%;
+			height: 100%;
+			max-width: inherit;
+			position: absolute;
+			top: 0;
+			left: 0;
+			border-radius: inherit;
+			pointer-events: none;
+		}
+
+		&::before {
+			background-position: inherit;
+			background-size: inherit;
+			transform: translate3d(0px, 0px, -0.01px) rotateY(-180deg);
+			backface-visibility: visible;
+		}
+
+		&::after {
+			transform: translate3d(0px, 0px, 0.01px);
+		}
+
+		& img {
+			scale: 1.005;
+			transform: translate3d(0px, 0px, 0.01px);
+			max-width: inherit;
+			max-height: inherit;
+			height: auto;
+			border-radius: inherit;
+			backface-visibility: hidden;
+		}
+	}
+
+	&[showcase] picture::after {
+		overflow: hidden;
+		background-image: radial-gradient(
+			farthest-corner circle at
+			var(--pointer-x, 0%) var(--pointer-y, 0%),
+			hsla(0, 0%, 100%, 0.8) 10%,
+			hsla(0, 0%, 100%, 0.65) 20%,
+			hsla(0, 0%, 25%, 0.25) 90%
+		);
+		mix-blend-mode: overlay;
+		animation: inherit;
+		opacity: calc(var(--glare-opacity, 50) / 100);
+	}
+}

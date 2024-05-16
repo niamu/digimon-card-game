@@ -1,131 +1,111 @@
 (ns dcg.simulator.server.core
   (:gen-class)
   (:require
-   [dcg.simulator.fsm :as fsm]
+   [clojure.edn :as edn]
+   [dcg.db :as db]
+   [dcg.simulator :as-alias simulator]
+   [dcg.simulator.player :as-alias player]
+   [dcg.simulator.state :as state]
    [dcg.simulator.server.render :as render]
-   [reitit.core :as r]
    [reitit.ring :as ring]
-   [reitit.coercion :as coercion]
-   [reitit.coercion.spec :as spec]
-   [reitit.ring.coercion :as rrc]
-   [reitit.ring.middleware.exception :as reitit-exception]
    [ring.adapter.jetty :as jetty]
    [ring.middleware.defaults :as defaults]
-   [ring.middleware.multipart-params :as multipart-params]
-   [ring.middleware.not-modified :as not-modified]
-   [ring.middleware.resource :as resource]))
+   [ring.middleware.session.cookie :as cookie]
+   [ring.util.response :as response])
+  (:import
+   [java.util UUID]))
 
-(def error404
-  {:status 404
-   :headers {"Content-Type" "text/html"}
-   :body "Not Found"})
+(def routes
+  [["/"
+    {:name ::index
+     :get (fn [{{:keys [player]} :session :as request}]
+            (state/initialize-from-queue!)
+            (let [player (or player {::player/id (random-uuid)})]
+              (if-let [game-id (state/player-in-game? player)]
+                (response/redirect (str "/game/" game-id))
+                (cond-> {:status 200
+                         :headers {"Content-Type" "text/html"}
+                         :body (render/index player)}
+                  (nil? (get-in request [:session :player]))
+                  (assoc-in [:session :player] player)))))}]
+   ["/queue"
+    {:name ::queue
+     :post (fn [{{:keys [player]} :session
+                :keys [params]
+                :as request}]
+             (let [player (merge player
+                                 {::player/name (:username params)
+                                  ::player/deck-code (:deck-code params)})]
+               (swap! state/state update ::state/queue conj player)
+               (response/redirect "/")))}]
+   ["/game/:game-id"
+    {:name ::game
+     :get {:parameters {:path {:game-id uuid?}}
+           :handler (fn [{{:keys [player]} :session
+                         {:keys [game-id]} :path-params
+                         :as request}]
+                      (if-let [game (some-> @state/state
+                                            (get-in [::state/games-by-id
+                                                     (UUID/fromString game-id)])
+                                            (state/private-state-for-player-id
+                                             (::player/id player)))]
+                        {:status 200
+                         :headers {"Content-Type" "text/html"}
+                         :body (render/game game player)}
+                        {:status 404
+                         :headers {"Content-Type" "text/html"}
+                         :body "Not Found"}))}
+     :post {:parameters {:path {:game-id uuid?}}
+            :handler (fn [{{:keys [player]} :session
+                          {:keys [game-id]} :path-params
+                          {:keys [action params]} :params
+                          :as request}]
+                       (let [action (edn/read-string action)
+                             params (edn/read-string params)]
+                         (swap! state/state update-in
+                                [::state/games-by-id (UUID/fromString game-id)]
+                                (fn [game]
+                                  (state/flow game
+                                              [action
+                                               (::player/id player)
+                                               params])))
+                         (response/redirect (str "/game/" game-id))))}}]])
 
-(defonce game-state
-  (-> (fsm/step nil
-                :game/start
-                [{:player/name "niamu"
-                  :player/deck-codec "DCGAREdU1QxIEHBU1QxIE_CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ"}
-                 {:player/name "AI"
-                  :player/deck-codec "DCGARMhU1QyIEHBU1QyIE_CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0"}])
-      (fsm/step :phase/mulligan?decline nil)
-      (fsm/step :phase/mulligan?accept nil)))
-
-(defn response
-  [request]
-  (if-let [route-name (get-in request [::r/match :data :name])]
-    {:status 200
-     :headers {"Content-Type" "text/html"}
-     :body (-> game-state
-               (fsm/step :phase/raising?hatch nil)
-               (fsm/step :phase/main.digivolve ["card/en_ST1-03_P0" :zone/raising-area 1])
-               (fsm/step :phase/main.digivolve ["card/en_ST1-06_P0" :zone/raising-area 1])
-               (fsm/step :phase/raising?hatch nil)
-               (fsm/step :phase/main.digivolve ["card/en_ST2-04_P0" :zone/raising-area 1])
-               (fsm/step :phase/main.digivolve ["card/en_ST2-06_P0" :zone/raising-area 1])
-               (fsm/step :phase/main.digivolve ["card/en_ST2-09_P0" :zone/raising-area 1])
-               (fsm/step :phase/raising?do-nothing nil)
-               (fsm/step :phase/main.digivolve ["card/en_ST1-09_P0" :zone/raising-area 1])
-               (fsm/step :phase/main.play-tamer ["card/en_ST1-12_P0"])
-               (fsm/step :phase/raising?do-nothing nil)
-               (fsm/step :phase/main.digivolve ["card/en_ST2-10_P0" :zone/raising-area 1])
-               (fsm/step :phase/end nil)
-               (fsm/step :phase/raising?move-to-battle-area nil)
-               #_(fsm/step :phase/main.attack [2 nil])
-               #_(fsm/step :phase/main.digivolve ["card/en_ST1-11_P0" :zone/battle-area 2])
-               (render/game-board #uuid "c7005f93-e754-3dce-88bb-3ccc64dee208"))
-     #_(-> (fsm/step nil
-                     :game/start
-                     [{:player/name "niamu"
-                       :player/deck-codec "DCGAREdU1QxIEHBU1QxIE_CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ"}
-                      {:player/name "AI"
-                       :player/deck-codec "DCGARMhU1QyIEHBU1QyIE_CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0"}])
-           (fsm/step :phase/mulligan?accept nil)
-           (fsm/step :phase/mulligan?decline nil)
-           (fsm/step :phase/raising?hatch nil)
-           (fsm/step :phase/main.play-digimon ["card/en_ST2-03_P0"])
-           (fsm/step :phase/raising?hatch nil)
-           (fsm/step :phase/main.play-digimon ["card/en_ST1-03_P0"])
-           (fsm/step :phase/main.digivolve ["card/en_ST1-07_P0" :zone/battle-area 1])
-           (fsm/step :phase/main.play-tamer ["card/en_ST2-12_P0"])
-           (fsm/step :phase/main.play-option ["card/en_ST2-13_P0"])
-           (fsm/step :phase/main.digivolve ["card/en_ST2-07_P0" :zone/battle-area 1])
-           (fsm/step :phase/main.digivolve ["card/en_ST1-08_P0" :zone/battle-area 1])
-           (fsm/step :phase/main.attack [1 nil])
-           (fsm/step :phase/main.play-digimon ["card/en_ST2-07_P0"])
-           (fsm/step :phase/main.attack [1 1])
-           (fsm/step :phase/main.attack.block?accept 3)
-           (fsm/step :phase/main.digivolve ["card/en_ST1-10_P0" :zone/battle-area 1])
-           (fsm/step :phase/main.play-tamer ["card/en_ST1-12_P0"])
-           (fsm/step :phase/main.play-digimon ["card/en_ST1-05_P0"])
-           (fsm/step :phase/main.attack [1 nil])
-           (fsm/step :phase/main.play-digimon ["card/en_ST2-05_P0"])
-           (fsm/step :phase/main.play-digimon ["card/en_ST2-06_P0"])
-           (fsm/step :phase/main.attack [1 nil])
-           (fsm/step :phase/main.play-digimon ["card/en_ST1-06_P0"])
-           (fsm/step :phase/main.attack [3 nil])
-           (fsm/step :phase/end nil)
-           (fsm/step :phase/main.digivolve ["card/en_ST2-08_P0" :zone/battle-area 3])
-           (fsm/step :phase/main.attack [2 nil])
-           (fsm/step :phase/main.attack.block?accept 3)
-           (fsm/step :phase/main.attack [2 nil])
-           (fsm/step :phase/main.play-digimon ["card/en_ST2-10_P0"])
-           (fsm/step :phase/main.attack [1 nil])
-           (fsm/step :phase/main.attack [3 nil])
-           (render/game-board #uuid "c7005f93-e754-3dce-88bb-3ccc64dee208"))}
-    error404))
-
-(defn routes
-  [handler opts]
-  (ring/router
-   ["" {:handler handler}
-    ["/" ::index]]
-   opts))
+(defonce ^:private store-key
+  (.getBytes "a6505635aa8b426c"
+             #_(subs (clojure.string/replace (random-uuid) "-" "") 0 16)))
 
 (def route-handler
   (ring/ring-handler
-   (routes response
-           {:data
-            {:middleware [(reitit-exception/create-exception-middleware
-                           (merge
-                            reitit-exception/default-handlers
-                            {::coercion/request-coercion
-                             (constantly error404)}))
-                          rrc/coerce-request-middleware
-                          rrc/coerce-response-middleware]
-             :coercion spec/coercion}})
-   response))
+   (ring/router routes)
+   (ring/create-default-handler
+    {:not-found          (constantly {:status 404
+                                      :headers {"Content-Type" "text/html"}
+                                      :body "Not Found"})
+     :method-not-allowed (constantly {:status 404
+                                      :headers {"Content-Type" "text/html"}
+                                      :body "Method Not Allowed"})
+     :not-acceptable     (constantly {:status 406
+                                      :headers {"Content-Type" "text/html"}
+                                      :body "Not Acceptable"})})))
 
 (def handler
   (-> #'route-handler
-      multipart-params/wrap-multipart-params
-      (resource/wrap-resource "")
       (defaults/wrap-defaults
-       (-> defaults/site-defaults
-           (assoc-in [:security :anti-forgery] false)))
-      not-modified/wrap-not-modified))
+       (-> defaults/secure-site-defaults
+           (assoc-in [:security :ssl-redirect] false)
+           (update-in [:session :cookie-attrs] merge
+                      {:same-site :lax
+                       :secure false
+                       ;; 1 Year expiration
+                       :max-age (* 60 60 24 365)})
+           (update-in [:session] merge
+                      {:store (cookie/cookie-store {:key store-key})
+                       :cookie-name "player"})))))
 
 (defn -main
   [& args]
+  (db/import-from-file!)
   (jetty/run-jetty #'handler
                    {:join? false
                     :ssl? false

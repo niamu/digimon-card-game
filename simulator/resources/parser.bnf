@@ -8,7 +8,7 @@ EFFECT =
                 keyword-effect
                 <SPACE>?
             )+
-            | keyword-effect_dna-digivolve
+            | timing_dna-digivolve
         )
         /
         (
@@ -16,11 +16,11 @@ EFFECT =
                 (
                     (
                         <SPACE>?
-                        (timing | phase)
+                        (timing | precondition)
                         (<SPACE>? keyword-effect)?
                         <SPACE>?
                     )+
-                    | keyword-effect_dna-digivolve
+                    | timing_dna-digivolve
                 )
                 <SPACE>?
             )*
@@ -84,7 +84,7 @@ EFFECT =
             / moves-between
             / timing_digivolve
             / timing_burst_digivolve
-            / timing_dna_digivolve
+            / timing_dna-digivolve
             / replace-digixros-requirement-with
             / turn-end-condition
             / declare-category
@@ -134,7 +134,7 @@ OPERATOR = "+" | "-"
 LTE =
     (
           <#"(?i)Up to">
-        | <#"or (less|lower|fewer)">
+        | (<"as much" SPACE>? <#"or (less|lower|fewer)">)
         | <"fewer than">
         | <("is" SPACE)? "less than or equal" (SPACE "to")?>
     )
@@ -188,7 +188,7 @@ color =
     / (non? _colors_)
     / color_or
     / n-color
-<_colors_> = (red | blue | yellow | green | purple | black | white)
+<_colors_> = <"is" SPACE>? (red | blue | yellow | green | purple | black | white)
 n-color =
     value <"-color" SPACE>
     (
@@ -207,22 +207,22 @@ black = <#"(?i)black">
 white = <#"(?i)white">
 
 
-(* PHASE *)
-phase =
+(* PRECONDITION *)
+precondition =
     <"[">
     (
           breeding
         | hand
         | once-per-turn
         | twice-per-turn
-        | trash_phase
+        | precondition_trash
     )
     <"]">
 breeding = <"Breeding">
 hand = <"Hand">
 once-per-turn = <"Once Per Turn">
 twice-per-turn = <"Twice Per Turn">
-trash_phase = <"Trash">
+precondition_trash = <"Trash">
 
 
 (* TIMING *)
@@ -270,10 +270,24 @@ timing_digivolve =
     <"[Digivolve]">
     <SPACE>?
     (digivolve-cost-from_or / digivolve-cost-from)
-timing_dna_digivolve =
-    <"[DNA Digivolve]">
+timing_dna-digivolve =
+    <"[">
+    <"DNA" SPACE ("Digivolve" | "Digivolution")>
+    <"]">
     <SPACE>?
-    (digivolve-cost-from_or / digivolve-cost-from)
+    (
+          (digivolve-cost-from_or / digivolve-cost-from)
+        | (
+            (
+                (value <SPACE "from" SPACE>)
+                card-type <SPACE? "+" SPACE?> card-type
+            ) | (
+                card-type <SPACE? "+" SPACE?> card-type
+                (<": Cost" SPACE> value)
+            )
+        )
+    )
+    <SPACE? "Digivolve unsuspended with the 2 specified Digimon stacked on top of each other.">?
 timing_burst_digivolve =
     <"[Burst Digivolve]">
     <SPACE>?
@@ -361,6 +375,7 @@ keyword-effect =
             | retaliation
             | recovery
             | digixros
+            | partition
         )
         (<SPACE> (target | state))?
         (<"."? SPACE?>? PARENTHESES)?
@@ -421,16 +436,7 @@ digixros =
         )
     )?
 digixrosing = <#"(?i)DigiXrosing"> (<SPACE with>)? (<SPACE> target)?
-
-keyword-effect_dna-digivolve =
-    <#"[\<＜]">
-    <"DNA Digivolution:" SPACE>
-    value
-    <SPACE "from" SPACE>
-    dna-digivolve-requirement <" + "> dna-digivolve-requirement
-    <#"[\>＞]">
-    <SPACE? "Digivolve unsuspended with the 2 specified Digimon stacked on top of each other.">?
-dna-digivolve-requirement = (color <SPACE>)? level
+partition = <#"[\<＜]"> <#"(?i)Partition"> <SPACE>? <"("> card-type <" & "> card-type <")"> <#"[\>＞]">
 
 
 (* GAIN/LOSE *)
@@ -1672,7 +1678,7 @@ target-if-has-name =
     in-name
 target_and-or = target <SPACE and-or SPACE> target
 and-or = <"and/or">
-target_or = target <","? " or "> target
+target_or = target <","? " or "> (target / color)
 itself = <#"(?i)This"> (<SPACE> (<"one"> | card-type))?
 that =
     (
@@ -1781,6 +1787,7 @@ either-player =
     (<SPACE "has" SPACE> card-type)?
 card-type =
       mention
+    / (color <SPACE>)? level
     / (level <SPACE> mention)
     / (
         <"another" SPACE>?
@@ -1976,7 +1983,7 @@ digimon_card-type =
     <#"(?i)Card" "/">?
     <#"(?i)Digimon(\'s)?">
     <SPACE #"(?i)card(\'?s)?">?
-    (<SPACE "is" SPACE> color)?
+    (<SPACE> color)?
     (<SPACE> sum)?
     (<SPACE> mention)?
     <SPACE>?
@@ -2577,9 +2584,8 @@ conditional =
                     (
                         (
                             (<#"(?i)When"> | <#"(?i)While"> | <#"(?i)If">)
-                            <SPACE "there's">?
                             (
-                                  (<SPACE> (<"there are"> | <"there're">))
+                                  (<SPACE> (<"there are"> | <"there're"> | <"there's">))
                                 | <SPACE "it's a">
                             )?
                         ) | (if-do | if-do-not)
@@ -2721,37 +2727,39 @@ state =
         ((did-not | does-not | can-not) <SPACE>)?
         (tense <SPACE>)?
         (
-              attacks
-            | attacking
-            | attack-switched
-            | block
-            | blocked
-            | blockable
-            | unblockable
-            | battling
-            | digivolved
-            | dna-digivolving
-            | survives
-            | leave
-            | deleted
-            | returned
-            | revealed
-            | suspended
-            | unsuspended
-            | played
-            | played-with
-            | played-from
-            | added-to
-            | placed
-            | placed-to
-            | checks
-            | returns
-            | remove-target-from
-            | of-declared-category
-            | adds-digivolution-cards-to
+            (
+                  attacks
+                | attacking
+                | attack-switched
+                | block
+                | blocked
+                | blockable
+                | unblockable
+                | battling
+                | digivolved
+                | dna-digivolving
+                | survives
+                | leave
+                | deleted
+                | returned
+                | revealed
+                | suspended
+                | unsuspended
+                | played
+                | played-with
+                | played-from
+                | added-to
+                | placed
+                | placed-to
+                | checks
+                | returns
+                | remove-target-from
+                | of-declared-category
+                | adds-digivolution-cards-to
+            ) / state-or
         )
         (<SPACE> duration)?
-    ) / state-or
+    )
 state-or = state <SPACE "or" SPACE> state
 tense = is | is-not | becomes | was | was-not
 is = <"is"> | <"are">

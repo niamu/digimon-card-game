@@ -13,43 +13,51 @@
        string/split-lines
        (map (comp parser string/trim))))
 
+#_(parse "[Your Turn] While [Phoenixmon] or [X Antibody] is in this Digimon's digivolution cards, attach [End of Attack] to all of this Digimon's [On Deletion] effects.")
+
 (comment
   (require '[datomic.api :as d]
            '[dcg.db :as db])
   (db/import-from-file!)
-  (let [m (->> (d/q '{:find [[(pull ?c [:card/id
-                                        :card/effect
-                                        :card/inherited-effect
-                                        :card/security-effect]) ...]]
-                      :in [$]
-                      :where [[?c :card/image ?i]
-                              [?c :card/parallel-id 0]
-                              [?c :card/number ?n]
-                              [?i :image/language "en"]]}
-                    (d/db db/conn))
-               (mapcat (juxt :card/effect
-                             :card/inherited-effect
-                             :card/security-effect))
-               (remove nil?)
-               (reduce (fn [accl s]
-                         (let [results (parse s)
-                               processed? (boolean (some insta/failure? results))]
-                           (update accl
-                                   processed?
-                                   conj
-                                   s)))
-                       {true []
-                        false []}))
-        result (update-vals m count)]
-    {:percentage (when (get result false)
-                   (* (float (/ (get result false)
-                                (+ (get result false)
-                                   (get result true 0))))
-                      100))
-     :success (get result false 0)
-     :total (+ (get result false 0)
-               (get result true 0))}
-    (get m true))
+  (let [cards (d/q '{:find [[(pull ?c [:card/number
+                                       :card/effect
+                                       :card/inherited-effect
+                                       :card/security-effect]) ...]]
+                     :in [$]
+                     :where [[?c :card/image ?i]
+                             [?c :card/parallel-id 0]
+                             [?c :card/number ?n]
+                             [(clojure.string/starts-with? ?n "BT16-")]
+                             [?i :image/language "en"]]}
+                   (d/db db/conn))
+        failures (->> cards
+                      (pmap (fn [{:card/keys [number] :as card}]
+                              (let [effect (:card/effect card)
+                                    inherited-effect (:card/inherited-effect card)
+                                    security-effect (:card/security-effect card)
+                                    failures
+                                    (->> [effect
+                                          inherited-effect
+                                          security-effect]
+                                         (remove nil?)
+                                         (pmap (comp (fn [[s results]]
+                                                       (when (some insta/failure?
+                                                                   results)
+                                                         s))
+                                                     (juxt identity parse)))
+                                         (remove nil?))]
+                                (when-not (empty? failures)
+                                  [number (into [] failures)]))))
+                      (remove nil?)
+                      (into []))]
+    {:percentage (* (float (/ (- (count cards)
+                                 (count failures))
+                              (count cards)))
+                    100)
+     :success (- (count cards)
+                 (count failures))
+     :total (count cards)
+     :failures failures})
 
   (defn json
     [x]
@@ -78,6 +86,7 @@
                                 :card/attribute
                                 :card/type
                                 :card/rarity
+                                :card/block-marker
                                 :card/notes
                                 {:card/color [:color/index
                                               :color/color]}
