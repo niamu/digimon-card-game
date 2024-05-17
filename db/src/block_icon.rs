@@ -11,27 +11,27 @@ struct Template {
     pub value: i32,
 }
 
-const BLOCK_MARKERS: [Template; 4] = [
+const BLOCK_ICONS: [Template; 4] = [
     Template {
-        path: "resources/images/templates/block-markers/01.png",
+        path: "resources/images/templates/block-icons/01.png",
         value: 1,
     },
     Template {
-        path: "resources/images/templates/block-markers/02.png",
+        path: "resources/images/templates/block-icons/02.png",
         value: 2,
     },
     Template {
-        path: "resources/images/templates/block-markers/03.png",
+        path: "resources/images/templates/block-icons/03.png",
         value: 3,
     },
     Template {
-        path: "resources/images/templates/block-markers/04.png",
+        path: "resources/images/templates/block-icons/04.png",
         value: 4,
     },
 ];
 
 #[no_mangle]
-pub extern "C" fn block_marker(image_path: *const c_char) -> i32 {
+pub extern "C" fn block_icon(image_path: *const c_char) -> i32 {
     let image_path: &str =
         unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
     let mut image_mat =
@@ -53,9 +53,9 @@ pub extern "C" fn block_marker(image_path: *const c_char) -> i32 {
         drop(reduced_image_mat);
     }
     let mut result: Vec<(f64, i32)> = Vec::default();
-    for block_marker in BLOCK_MARKERS {
+    for block_icon in BLOCK_ICONS {
         let template = cv::imgcodecs::imread(
-            block_marker.path,
+            block_icon.path,
             cv::imgcodecs::IMREAD_UNCHANGED,
         )
         .unwrap();
@@ -65,16 +65,16 @@ pub extern "C" fn block_marker(image_path: *const c_char) -> i32 {
             && match_result.coords.x < 395
             && match_result.coords.y > 460
         {
-            result.push((match_result.accuracy, block_marker.value));
+            result.push((match_result.accuracy, block_icon.value));
         }
     }
     result.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
-    let block_marker_value: i32;
+    let block_icon_value: i32;
     if result.len() > 0 {
         let (_, value) = result.first().unwrap();
-        block_marker_value = *value;
+        block_icon_value = *value;
     } else {
-        block_marker_value = -1;
+        block_icon_value = -1;
     }
-    block_marker_value
+    block_icon_value
 }

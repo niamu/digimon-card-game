@@ -41,7 +41,7 @@
     {:db/ident :card/parallel-id
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
-    {:db/ident :card/block-marker
+    {:db/ident :card/block-icon
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/play-cost
@@ -86,7 +86,7 @@
     {:db/ident :card/color
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}
-    {:db/ident :card/digivolve-conditions
+    {:db/ident :card/digivolution-requirements
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}
     {:db/ident :card/releases
@@ -121,7 +121,7 @@
     {:db/ident :color/color
      :db/valueType :db.type/keyword
      :db/cardinality :db.cardinality/one}]
-   ;; Digivolve Condition
+   ;; Digivolution Requirements
    [{:db/ident :digivolve/id
      :db/valueType :db.type/string
      :db/unique :db.unique/identity

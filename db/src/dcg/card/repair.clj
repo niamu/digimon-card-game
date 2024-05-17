@@ -14,9 +14,9 @@
            (assoc card :card/name "Dolphmon"))}
    "BT1-054"
    {"ja" (fn [card]
-           (update card :card/digivolve-conditions
-                   (fn [conditions]
-                     (map #(assoc % :digivolve/cost 3) conditions))))}
+           (update card :card/digivolution-requirements
+                   (fn [requirements]
+                     (map #(assoc % :digivolve/cost 3) requirements))))}
    "BT1-076"
    {"zh-Hans" (fn [{:card/keys [effect inherited-effect] :as card}]
                 (cond-> (dissoc card :card/effect)
@@ -133,7 +133,7 @@
                                          "BT3-009"
                                          parallel-id)
                         :card/number "BT3-009")
-                 (update-in [:card/digivolve-conditions 0 :digivolve/id]
+                 (update-in [:card/digivolution-requirements 0 :digivolve/id]
                             (fn [s]
                               (string/replace s "BT3-010" "BT3-009"))))))}
    "BT3-024"
@@ -227,9 +227,9 @@
            (assoc card :card/attribute "배리어블"))}
    "BT6-050"
    {"ja" (fn [card]
-           (update card :card/digivolve-conditions
-                   (fn [conditions]
-                     (map #(assoc % :digivolve/cost 3) conditions))))}
+           (update card :card/digivolution-requirements
+                   (fn [requirements]
+                     (map #(assoc % :digivolve/cost 3) requirements))))}
    "BT6-053"
    {"ko" (fn [card]
            (assoc card :card/attribute "데이터종"))}
@@ -396,7 +396,7 @@
                    (fn [s]
                      (cond->> s
                        (not (re-find #"^.?DNA" s))
-                       (str "＜DNA Digivolution: 0 from red Lv.4 + yellow Lv.4＞ ")))))}
+                       (str "[DNA Digivolution] 0 from red Lv.4 + yellow Lv.4\n")))))}
    "BT8-023"
    {"en" (fn [card]
            (update card :card/effect
@@ -480,7 +480,7 @@
                      (and s
                           (cond->> s
                             (not (re-find #"^.?DNA" s))
-                            (str "＜DNA Digivolution: 0 from yellow Lv.4 + blue Lv.4＞ Digivolve unsuspended with the 2 specified Digimon stacked on top of each other.\n"))))))}
+                            (str "[DNA Digivolution] 0 from yellow Lv.4 + blue Lv.4\nDigivolve unsuspended with the 2 specified Digimon stacked on top of each other.\n"))))))}
    "BT8-048"
    {"en" (fn [card]
            (update card :card/effect
@@ -556,8 +556,16 @@
    {"en" (fn [card]
            (update card :card/effect
                    (fn [s]
-                     (str "＜DNA Digivolution: 0 from Lv.4 + Lv.4＞ "
+                     (str "[DNA Digivolution] 0 from Lv.4 + Lv.4\n"
                           s))))}
+   "BT8-097"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (-> s
+                         (string/replace "[Main] Your opponent can't play Digimon by effects until the end of their next turn. Delete all of your opponent's Digimon with 6000 DP or less."
+                                         "[Main] Delete all of your opponent's Digimon with 6000 DP or less. Your opponent can't play Digimon by effects until the end of their next turn.")))))}
+
    "BT8-111"
    {"zh-Hans" (fn [card]
                 (assoc card :card/attribute "病毒种"))}
@@ -818,6 +826,15 @@
                           (cond->> s
                             (not (re-find #"^.?进化[】〕]" s))
                             (str "【进化】“加支兽” 起0")))))}
+   "BT9-073"
+   {"ja" (fn [card]
+           (assoc card
+                  :card/digivolution-requirements
+                  [{:digivolve/id "digivolve/BT9-073_index0",
+                    :digivolve/index 0
+                    :digivolve/cost 2
+                    :digivolve/level 4
+                    :digivolve/color #{:purple}}]))}
    "BT9-075"
    {"zh-Hans" (fn [card]
                 (update card :card/effect
@@ -844,17 +861,17 @@
                 (update card :card/effect
                         (fn [s]
                           (cond->> s
-                            (not (string/starts-with? s "《合步:"))
-                            (str "《合步:紫Lv.6+黄Lv.6起0》"
+                            (not (re-find #"^.?合步" s))
+                            (str "〔合步〕紫Lv.6+黄Lv.6起0"
                                  "将指定的2只数码宝贝重叠,"
-                                 "以活跃状态进化")))))
+                                 "以活跃状态进化\n")))))
     "ko" (fn [card]
            (update card :card/effect
                    (fn [s]
                      (cond-> s
                        (string/starts-with? s "조그레스")
                        (string/replace "조그레스 : 퍼플 Lv.6+옐로 Lv.6에서 0"
-                                       "《조그레스: 퍼플 Lv.6+옐로 Lv.6에서 0》")))))}
+                                       "〔조그레스〕 퍼플 Lv.6+옐로 Lv.6에서 0\n")))))}
    "BT9-083"
    {"zh-Hans" (fn [card]
                 (update card :card/effect
@@ -1124,12 +1141,41 @@
                             (not (re-find #"^.?进化[】〕]" s))
                             (str "【进化】拥有“Xros Heart”特征的Lv.5 起3")))))}
    "BT10-086"
-   {"zh-Hans" (fn [card]
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (string/replace s
+                                     "When one of your Digimon with [X Antibody] in its traits would digivolve into this card, reduce the digivolution cost by 2."
+                                     "When a Digimon with [X Antibody] in its traits would digivolve cards would digivolve into this card, reduce the digivolution cost by 2."))))
+    "zh-Hans" (fn [card]
                 (update card :card/effect
                         (fn [s]
                           (cond->> s
                             (not (re-find #"^.?进化[】〕]" s))
                             (str "【进化】“奥米加兽” 起3")))))}
+   "BT10-093"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (string/replace s
+                                     "[Your Turn][Once Per Turn]"
+                                     "[Your turn] [Once per turn]"))))}
+   "BT10-096"
+   {"en" (fn [card]
+           (update card :card/security-effect
+                   (fn [s]
+                     (string/replace s
+                                     "Add 1 card with [Xros Heart] in its traits among them to your hand, and you may play 1 [Taiki Kudo] among them without paying its memory cost."
+                                     "Add 1 card with [Xros Heart] in its traits among them to your hand and play 1 [Taiki Kudo] among them without paying its memory cost."))))}
+   "BT10-097"
+   {"en" (fn [card]
+           (update card :card/effect
+                   (fn [s]
+                     (-> s
+                         (string/replace "Add 2 cards with"
+                                         "You may add 2 cards with")
+                         (string/replace ", and you may play"
+                                         ", and play")))))}
    "BT10-102"
    {"en" (fn [card]
            (update card :card/effect
@@ -1146,6 +1192,11 @@
                    {:color/id "color/BT10-104_index1"
                     :color/index 1
                     :color/color :purple}]))}
+   "BT10-107"
+   {"en" (fn [card]
+           (assoc card
+                  :card/security-effect
+                  "[Security] You may play 1 black Tamer card from your hand or trash without paying its play cost. Then, add this card to its owner's hand."))}
    "BT10-111"
    {"zh-Hans" (fn [card]
                 (update card :card/effect
@@ -1172,6 +1223,8 @@
            (update card :card/effect
                    (fn [s]
                      (some-> s
+                             (string/replace "＜Material Save 1＞ (When this Digimon is deleted, you may place 1 card in this Digimon's DigiXros conditions from this Digimon's digivolution cards under 1 of your Tamers.)"
+                                             "＜Material Save 1＞ (When this Digimon would be deleted, you may place 2 cards in this Digimon's DigiXros requirements from this Digimon's digivolution cards under 1 of your Tamers.)")
                              (string/replace "<DigiXros -1> [Shoutmon] × [Starmons] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
                                              "")
                              (str "\n"
@@ -1436,13 +1489,20 @@
            (update card
                    :card/effect
                    (fn [s]
-                     (str "＜DNA Digivolution: 0 from green Lv.6 + blue Lv.6＞ "
+                     (str "[DNA Digivolution] 0 from green Lv.6 + blue Lv.6\n"
                           s))))}
    "BT13-110"
    {"zh-Hans" (fn [{:card/keys [type] :as card}]
                 (cond-> card
                   (not type)
                   (assoc :card/type "皇家骑士")))}
+   "BT14-002"
+   {"en" (fn [card]
+           (update card :card/inherited-effect
+                   (fn [s]
+                     (string/replace s
+                                     "[Your Turn] While your opponent has no Digimon with more digivolution cards than this Digimon, this Digimon gains ＜Jamming＞."
+                                     "[Your Turn] While your opponent has no Digimon with more digivolution cards than this Digimon, this Digimon gains <Jamming>."))))}
    "BT14-018"
    {"zh-Hans" (fn [card]
                 (update card :card/effect
@@ -1986,26 +2046,33 @@
                    {:color/id "color/ST12-09_index1"
                     :color/index 1
                     :color/color :black}]))}
+   "ST12-15"
+   {"ko" (fn [card]
+           (-> card
+               (dissoc :card/attribute)
+               (assoc :card/type "로얄 나이츠")))}
    "ST13-06"
    {"ja" (fn [card]
            (update card :card/effect
                    (fn [s]
                      (cond->> s
                        (not (string/starts-with? s "≪ジョグレス:"))
-                       (str "≪ジョグレス:赤Lv.6+黒Lv.6から0≫"
+                       (str "〔ジョグレス〕赤Lv.6+黒Lv.6から0"
                             "指定のデジモン2体を重ね、"
-                            "アクティブで進化する")))))
+                            "アクティブで進化する\n")))))
     "zh-Hans" (fn [card]
                 (update card :card/effect
                         (fn [s]
                           (cond->> s
-                            (not (string/starts-with? s "《合步:"))
-                            (str "《合步:红Lv.6+黑Lv.6起0》"
+                            (not (re-find #"^.?合步" s))
+                            (str "〔合步〕红Lv.6+黑Lv.6起0"
                                  "将指定的2只数码宝贝重叠,"
-                                 "以活跃状态进化")))))}
+                                 "以活跃状态进化\n")))))}
    "ST13-16"
    {"zh-Hans" (fn [card]
-                (assoc card :card/type "Legend-Arms"))}
+                (assoc card :card/type "Legend-Arms"))
+    "ko" (fn [card]
+           (assoc card :card/type "Legend-Arms"))}
    "ST14-12"
    {"ja" (fn [{:card/keys [security-effect] :as card}]
            (cond-> card
@@ -2081,9 +2148,9 @@
                     "【자신의턴】 이디지몬이패의 「에이션트가루몬」 으로진화할때, 지불하는진화코스트를-2한다.")))}
    "P-048"
    {"ja" (fn [card]
-           (update card :card/digivolve-conditions
-                   (fn [conditions]
-                     (map #(assoc % :digivolve/cost 4) conditions))))}
+           (update card :card/digivolution-requirements
+                   (fn [requirements]
+                     (map #(assoc % :digivolve/cost 4) requirements))))}
    "P-057"
    {"zh-Hans" (fn [{:card/keys [inherited-effect] :as card}]
                 (cond-> card
@@ -2131,11 +2198,6 @@
                   security-effect)
              (-> (assoc :card/effect security-effect)
                  (dissoc :card/security-effect))))}
-   "P-071"
-   {"en" (fn [{:card/keys [effect security-effect] :as card}]
-           (cond-> (dissoc card :card/security-effect)
-             security-effect
-             (assoc :card/effect security-effect)))}
    "P-072"
    {"ja" (fn [card]
            (update card :card/effect
@@ -2194,20 +2256,28 @@
                                (cond->> s
                                  (not (re-find #"^.?进化" s))
                                  (str "【进化】<名称中包含“大便兽”的Lv.4>起3"))))))}
+   "P-114"
+   {"ja" (fn [card]
+           (assoc card :card/rarity "P"))}
    "P-132"
    {"zh-Hans" (fn [card]
                 (update card
                         :card/effect
                         (fn [s]
                           (-> s
-                              (string/replace "【我方的回合】此数码宝贝DP+2000。" "")
-                              (str "【我方的回合】我方场上存在 “风间照人” 的期间，此数码宝贝获得《贯通》（当此数码宝贝进行攻击的战斗中仅有对方的数码宝贝被消灭时，此数码宝贝将判定安防卡牌）效果。")))))}
+                              (string/replace "【我方的回合】此数码宝贝DP+2000。" "")))))}
    "P-133"
    {"en" (fn [card]
            (dissoc card :card/attribute))}
    "P-136"
    {"en" (fn [card]
            (dissoc card :card/attribute))}
+   "P-146"
+   {"zh-Hans" (fn [{:card/keys [security-effect] :as card}]
+                (cond-> card
+                  security-effect
+                  (-> (dissoc :card/security-effect)
+                      (assoc :card/inherited-effect security-effect))))}
    "P-151"
    {"ja" (fn [{:card/keys [security-effect] :as card}]
            (cond-> card
@@ -2240,9 +2310,14 @@
           (string/replace #"(デジクロス\s?[\-\+][0-9]+):" "【$1】")
           (string/replace #"(DigiXros\s?[\-\+][0-9]+)\s?:" "<$1>")
           (string/replace #"(数码合体\s?[\-\+][0-9]+)\s?:" "≪$1≫")
-          (string/replace #"(^ジョグレス.*?ら0)" "≪$1≫")
-          (string/replace #"(^DNA Digivolution:.*?Lv\.[0-9].*?Lv\.[0-9])" "＜$1＞")
-          (string/replace #"(^合步:.*?Lv\.[0-9].*?Lv\.[0-9]起[0-9])" "《$1》")
+          (string/replace #"^≪?ジョグレス(.*?ら0)≫?"
+                          "〔ジョグレス〕$1")
+          (string/replace #"^＜?DNA Digivolution:\s*(.*?Lv\.[0-9].*?Lv\.[0-9])＞?"
+                          "[DNA Digivolution] $1")
+          (string/replace #"^《?合步:(.*?Lv\.[0-9].*?Lv\.[0-9]起[0-9])》?"
+                          "〔合步〕$1")
+          (string/replace #"^《?조그레스:\s*(.*?Lv\.[0-9].*?Lv\.[0-9]에서\s*[0-9])》?"
+                          "〔조그레스〕$1")
           (string/replace #"《진화:?(.*[0-9]+)》" "【진화】 $1")
           (string/replace #"(進化|进化|진화)\s?:" "【$1】")
           (string/replace #"［(進化|进化|진화)］" "【$1】")

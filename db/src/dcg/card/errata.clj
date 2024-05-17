@@ -10,6 +10,18 @@
    [java.text ParseException SimpleDateFormat]
    [java.net URI]))
 
+(def repair
+  {"BT8-110" (fn [s]
+               (string/replace s "[Security]You" "[Security] You"))
+   "BT14-023" (fn [s]
+                (string/replace s "(Once Per Turn)" "[Once Per Turn]"))
+   "EX3-001" (fn [s]
+               (string/replace s
+                               "[All Turns] [Once Per Turn] When this Digimon with [Dramon] or [Examon] in its name becomes unsuspended, this Digimon gets +1000 for the turn."
+                               "[All Turns][Once Per Turn] When this Digimon with [Dramon] or [Examon] in its name becomes unsuspended, this Digimon gets +1000 DP for the turn."))
+   "EX3-057" (fn [s]
+               (string/replace s "3000 or" "3000 DP or"))})
+
 (defmulti errata
   (fn [{:origin/keys [language card-image-language] :as params}]
     (and (not card-image-language)
@@ -200,12 +212,15 @@
                               (map card-utils/text-content)
                               (string/join "\n"))]))
                  (map (fn [[number [error correction] notes]]
-                        (let [error (if (apply = (string/split-lines error))
-                                      (first (string/split-lines error))
-                                      error)
-                              correction (if (apply = (string/split-lines correction))
-                                           (first (string/split-lines correction))
-                                           correction)]
+                        (let [repair-fn (get repair number)
+                              error (cond->> (if (apply = (string/split-lines error))
+                                               (first (string/split-lines error))
+                                               error)
+                                      repair-fn repair-fn)
+                              correction (cond->> (if (apply = (string/split-lines correction))
+                                                    (first (string/split-lines correction))
+                                                    correction)
+                                           repair-fn repair-fn)]
                           {:errata/id (format "errata/%s_%s" language number)
                            :errata/language language
                            :errata/date date

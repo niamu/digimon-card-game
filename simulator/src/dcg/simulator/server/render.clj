@@ -88,9 +88,9 @@
        security-effect])
     (when-let [notes (:card/notes card)]
       [:data {:itemprop "notes" :value notes} notes])
-    (when-let [block-marker (:card/block-marker card)]
-      [:data {:itemprop "block-marker" :value block-marker} block-marker])
-    (when-let [digivolve-conditions (:card/digivolve-conditions card)]
+    (when-let [block-icon (:card/block-icon card)]
+      [:data {:itemprop "block-icon" :value block-icon} block-icon])
+    (when-let [digivolution-requirements (:card/digivolution-requirements card)]
       [:div
        (map (fn [{:digivolve/keys [level color cost] :as digivolve}]
               (let [color (->> color
@@ -98,14 +98,13 @@
                                (map name)
                                (string/join "/"))]
                 [:div {:itemscope ""
-                       :itemprop "dcg-digivolve-condition"}
+                       :itemprop "dcg-digivolution-requirment"}
                  [:data {:itemprop "level" :value level} level]
                  [:data {:itemprop "color" :value color} color]
                  [:data {:itemprop "cost" :value cost} cost]]))
-            digivolve-conditions)])]
+            digivolution-requirements)])]
    [:picture
-    [:source {:srcset (string/replace (:image/path image)
-                                      "resources" "")}]
+    [:source {:srcset (:image/path image)}]
     [:img {:width 430 :height 600 :draggable "false"
            :alt (format "%s %s" number (:card/name card))}]]])
 
@@ -163,7 +162,7 @@
              :text-anchor "middle"} rarity]]))
 
 (defn compact-card-component
-  [{:card/keys [id name level block-marker rarity language category number
+  [{:card/keys [id name level block-icon rarity language category number
                 image color type attribute form] :as card}]
   (let [digimon? (or (= category "デジモン")
                      (= category "Digimon")
@@ -207,7 +206,7 @@
       [:polygon {:points "7,0 375,0 382,7 382,38 375,45 7,45 0,38 0,7"
                  :fill (str "url(#gradient-" id ")")}]
       (when digimon?
-        [:polygon {:points (if (< (or block-marker 0) 3)
+        [:polygon {:points (if (< (or block-icon 0) 3)
                              "0,4 58,4 88,34 382,34 382,45 0,45"
                              "0,4 54,4 60,11 60,34 382,34 382,45 0,45")
                    :fill (if (= (first color) :black)
@@ -260,7 +259,7 @@
               :x (if digimon?
                    (if (and (or (= "ja" language)
                                 (= "ko" language))
-                            (< (or block-marker 0) 3))
+                            (< (or block-icon 0) 3))
                      85
                      200)
                    195)
@@ -272,7 +271,7 @@
               :text-anchor (if (and digimon?
                                     (or (= "ja" language)
                                         (= "ko" language))
-                                    (< (or block-marker 0) 3))
+                                    (< (or block-icon 0) 3))
                              "start"
                              "middle")} name]
       [:text {:font-family "Roboto Condensed"
@@ -284,13 +283,13 @@
               :font-weight 700
               :x (cond-> (cond-> 359
                            (and (= rarity "SEC")
-                                (< (or block-marker 0) 3)) (- 6)
-                           (>= (or block-marker 0) 3) (+ 15)))
+                                (< (or block-icon 0) 3)) (- 6)
+                           (>= (or block-icon 0) 3) (+ 15)))
               :y 14
               :text-anchor "end"} number]
       (rarity-icon rarity
                    (-> color last :color/color)
-                   (if (>= (or block-marker 0) 3)
+                   (if (>= (or block-icon 0) 3)
                      {:x (cond-> 336
                            (= rarity "SEC")
                            (- 7))
@@ -299,7 +298,7 @@
                            (= rarity "SEC")
                            (- 6))
                       :y 3.5}))
-      (when block-marker
+      (when block-icon
         [:g
          [:polygon
           (cond-> {:points "349,24.5 353,18 370,18 374,24.5 370,31 353,31"
@@ -314,7 +313,7 @@
                  :x 362
                  :y 29.25
                  :text-anchor "middle"}
-          (format "%02d" block-marker)]])
+          (format "%02d" block-icon)]])
       (when digimon?
         [:text {:lang language
                 :font-family "Roboto"
@@ -389,7 +388,7 @@
         [:h3.sr-only "Breeding Area"]
         (list (->> stacks
                    (map (fn [{::stack/keys [cards uuid]
-                             :as stack}]
+                              :as stack}]
                           (->> cards
                                (map (juxt ::card/uuid
                                           (comp #(get-in game %)
@@ -419,88 +418,88 @@
                                                    (::player/id player))]
     (page/html5 {:mode :html
                  :lang "en"}
-      [:head
-       [:meta {:charset "utf-8"}]
-       [:title "Heroicc"]
-       [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
-       (page/include-css "/css/style.css")
-       [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
-      [:body
-       [:h1 "Heroicc"]
-       [:h2 (::player/name me)]
-       [:pre
-        [:code
-         (->> available-actions
-              (sort-by first)
-              pprint/pprint
-              with-out-str)]]
-       (when (empty? available-actions)
-         [:p "Waiting for opponent..."])
-       (let [dialog-actions (filter (fn [[action-state-id _ _]]
-                                      (string/ends-with? (str action-state-id)
-                                                         "?"))
-                                    available-actions)
-             action-state-id (ffirst dialog-actions)]
-         (when (seq dialog-actions)
-           [:dialog {:open true}
-            [:form {:method "POST"}
-             (case action-state-id
-               :action/re-draw?
-               [:div
-                [:p [:strong "Re-draw Hand?"]]
-                (list (->> (get-in areas [::area/hand ::area/cards])
-                           (map (comp #(get-in game %) ::card/lookup))
-                           (sort-by (juxt :card/category :card/level))
-                           (map card-component)))])
-             [:input
-              {:type "hidden"
-               :name "__anti-forgery-token"
-               :value anti-forgery/*anti-forgery-token*}]
-             [:input
-              {:type "hidden"
-               :name "action"
-               :value (str action-state-id)}]
-             (->> dialog-actions
-                  (sort-by (fn [[_ _ param]] param))
-                  (map (fn [[_ _ param]]
-                         [:button
-                          {:type "submit"
-                           :name "params"
-                           :value (str param)}
-                          (case param
-                            true "Yes"
-                            false "No")]))
-                  list)]]))
-       (playmat game player)])))
+                [:head
+                 [:meta {:charset "utf-8"}]
+                 [:title "Heroicc"]
+                 [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
+                 (page/include-css "/css/style.css")
+                 [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
+                [:body
+                 [:h1 "Heroicc"]
+                 [:h2 (::player/name me)]
+                 [:pre
+                  [:code
+                   (->> available-actions
+                        (sort-by first)
+                        pprint/pprint
+                        with-out-str)]]
+                 (when (empty? available-actions)
+                   [:p "Waiting for opponent..."])
+                 (let [dialog-actions (filter (fn [[action-state-id _ _]]
+                                                (string/ends-with? (str action-state-id)
+                                                                   "?"))
+                                              available-actions)
+                       action-state-id (ffirst dialog-actions)]
+                   (when (seq dialog-actions)
+                     [:dialog {:open true}
+                      [:form {:method "POST"}
+                       (case action-state-id
+                         :action/re-draw?
+                         [:div
+                          [:p [:strong "Re-draw Hand?"]]
+                          (list (->> (get-in areas [::area/hand ::area/cards])
+                                     (map (comp #(get-in game %) ::card/lookup))
+                                     (sort-by (juxt :card/category :card/level))
+                                     (map card-component)))])
+                       [:input
+                        {:type "hidden"
+                         :name "__anti-forgery-token"
+                         :value anti-forgery/*anti-forgery-token*}]
+                       [:input
+                        {:type "hidden"
+                         :name "action"
+                         :value (str action-state-id)}]
+                       (->> dialog-actions
+                            (sort-by (fn [[_ _ param]] param))
+                            (map (fn [[_ _ param]]
+                                   [:button
+                                    {:type "submit"
+                                     :name "params"
+                                     :value (str param)}
+                                    (case param
+                                      true "Yes"
+                                      false "No")]))
+                            list)]]))
+                 (playmat game player)])))
 
 (defn index
   [player]
   (page/html5 {:mode :html
                :lang "en"}
-    [:head
-     [:meta {:charset "utf-8"}]
-     [:title "Heroicc"]
-     [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
-     (page/include-css "/css/style.css")
-     [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
-    [:body
-     [:h1 "Heroicc"]
-     [:p (pr-str player)]
-     (if (state/player-in-queue? player)
-       [:p "Waiting for another player..."]
-       [:form {:method "POST" :action "/queue"}
-        [:input
-         {:type "hidden"
-          :name "__anti-forgery-token"
-          :value anti-forgery/*anti-forgery-token*}]
-        [:label "Username"
-         [:input
-          {:type "text"
-           :name "username"}]]
-        [:label "Deck Code"
-         [:input
-          {:type "text"
-           :name "deck-code"}]]
-        [:input
-         {:type "submit"
-          :value "Queue"}]])]))
+              [:head
+               [:meta {:charset "utf-8"}]
+               [:title "Heroicc"]
+               [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
+               (page/include-css "/css/style.css")
+               [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
+              [:body
+               [:h1 "Heroicc"]
+               [:p (pr-str player)]
+               (if (state/player-in-queue? player)
+                 [:p "Waiting for another player..."]
+                 [:form {:method "POST" :action "/queue"}
+                  [:input
+                   {:type "hidden"
+                    :name "__anti-forgery-token"
+                    :value anti-forgery/*anti-forgery-token*}]
+                  [:label "Username"
+                   [:input
+                    {:type "text"
+                     :name "username"}]]
+                  [:label "Deck Code"
+                   [:input
+                    {:type "text"
+                     :name "deck-code"}]]
+                  [:input
+                   {:type "submit"
+                    :value "Queue"}]])]))

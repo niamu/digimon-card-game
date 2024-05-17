@@ -39,7 +39,7 @@
                           :card/category
                           :card/language
                           :card/parallel-id
-                          :card/block-marker
+                          :card/block-icon
                           :card/play-cost
                           :card/use-cost
                           :card/level
@@ -52,7 +52,7 @@
                           :card/type
                           :card/rarity
                           :card/color
-                          {:card/digivolve-conditions
+                          {:card/digivolution-requirements
                            [:digivolve/id
                             :digivolve/cost
                             :digivolve/color
@@ -116,7 +116,7 @@
         (fn [cards]
           (->> cards
                (mapcat (fn [{:card/keys [number parallel-id count]
-                            :or {parallel-id 0}}]
+                             :or {parallel-id 0}}]
                          (->> (find-card number
                                          parallel-id
                                          (get deck :deck/language "en"))
@@ -236,10 +236,10 @@
                  (fnil + 0)
                  amount)))
 
-(defn which-digivolve-condition
-  [card {:card/keys [digivolve-conditions]}]
-  (when digivolve-conditions
-    (->> digivolve-conditions
+(defn which-digivolution-requirement
+  [card {:card/keys [digivolution-requirements]}]
+  (when digivolution-requirements
+    (->> digivolution-requirements
          (filter (fn [{:digivolve/keys [cost color level]}]
                    (and (not (empty? (set/intersection (set (:card/color card))
                                                        (set color))))
@@ -596,7 +596,7 @@
                                           (mapcat :card/color)
                                           (into #{}))]
                   (some (fn [{:card/keys [color play-cost use-cost]
-                             :as card}]
+                              :as card}]
                           (and (= (:card/category card) "Option")
                                (not
                                 (empty?
@@ -608,8 +608,8 @@
                 (conj :phase/main.play-option)
                 (when (>= available-memory 0)
                   (some
-                   (fn [{:card/keys [digivolve-conditions]}]
-                     (when digivolve-conditions
+                   (fn [{:card/keys [digivolution-requirements]}]
+                     (when digivolution-requirements
                        (some
                         (fn [{:digivolve/keys [cost color level]}]
                           (and (<= cost available-memory)
@@ -624,7 +624,7 @@
                                            level)))
                                      (conj battle-area-cards
                                            raising-area-cards))))
-                        digivolve-conditions)))
+                        digivolution-requirements)))
                    hand))
                 (conj :phase/main.digivolve)
                 (some (fn [{:slot/keys [cards suspended? summoning-sickness?]}]
@@ -647,22 +647,22 @@
         slots (get-in players [current-turn
                                :player/zones
                                zone])
-        digivolve-condition (which-digivolve-condition
-                             (some->> slots
-                                      (filter (fn [slot]
-                                                (= (:slot/id slot)
-                                                   slot-id)))
-                                      first
-                                      :slot/cards
-                                      peek)
-                             card-in-hand)
+        digivolution-requirement (which-digivolution-requirement
+                                  (some->> slots
+                                           (filter (fn [slot]
+                                                     (= (:slot/id slot)
+                                                        slot-id)))
+                                           first
+                                           :slot/cards
+                                           peek)
+                                  card-in-hand)
         memory (get-in players [current-turn :player/memory])
         available-memory (if (>= memory 0)
                            (+ memory 10)
                            0)]
     (cond-> state
-      (when digivolve-condition
-        (<= (:digivolve/cost digivolve-condition) available-memory))
+      (when digivolution-requirement
+        (<= (:digivolve/cost digivolution-requirement) available-memory))
       (-> (update-in [:game/players
                       current-turn
                       :player/zones
@@ -672,7 +672,7 @@
                                  (conj accl
                                        (cond-> slot
                                          (and (= slot-id (:slot/id slot))
-                                              digivolve-condition)
+                                              digivolution-requirement)
                                          (update-in [:slot/cards]
                                                     conj
                                                     card-in-hand))))
@@ -701,7 +701,7 @@
                                                %2))))
                                     (inc idx)
                                     match?))))))
-          (update-memory (get digivolve-condition
+          (update-memory (get digivolution-requirement
                               :digivolve/cost 0))
           draw
           ;; TODO: Handle "When Digivolving"
@@ -815,7 +815,7 @@
                                                    players))]
                                         [:phase/mulligan? (constantly true)]]}
    :phase/mulligan?decline {:handler (fn [{:game/keys [current-turn players]
-                                          :as state} _]
+                                           :as state} _]
                                        (-> state
                                            (assoc-in [:game/players
                                                       current-turn
@@ -857,21 +857,21 @@
                                         (hatch-digi-egg current-turn)))
                          :dispatches [[:phase/main (constantly true)]]}
    :phase/raising?move-to-battle-area {:handler (fn [{:game/keys [current-turn]
-                                                     :as state} _]
+                                                      :as state} _]
                                                   (-> state
                                                       (move-out-of-raising-area
                                                        current-turn)))
                                        :dispatches [[:phase/main
                                                      (constantly true)]]}
    :phase/raising?do-nothing {:handler (fn [{:game/keys [current-turn]
-                                            :as state} _]
+                                             :as state} _]
                                          state)
                               :dispatches [[:phase/main (constantly true)]]}
    :phase/main {:handler main-phase}
    :phase/main.play-digimon {:handler play-from-hand
                              :dispatches [[:phase/end
                                            (fn [{:game/keys [current-turn players]
-                                                :as state}]
+                                                 :as state}]
                                              (neg? (get-in players
                                                            [current-turn
                                                             :player/memory])))]
@@ -925,7 +925,7 @@
                                :phase/main.attack.block?decline})))}
    :phase/main.attack.block?accept
    {:handler (fn [{:game/keys [current-turn moves] :as state}
-                 blocking-slot-id]
+                  blocking-slot-id]
                (let [[attacking-slot-id _]
                      (->> moves
                           reverse

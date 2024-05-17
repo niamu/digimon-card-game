@@ -1,4 +1,4 @@
-mod block_marker;
-mod digivolve_conditions;
+mod block_icon;
+mod digivolution_requirements;
 mod flann;
 mod utils;

@@ -56,19 +56,13 @@
                          (apply merge-with merge))
         errata (->> (pmap errata/errata origins)
                     (apply merge-with merge))
-        card-common-values-by-number
+        digivolve-values-by-number
         (reduce (fn [accl {:card/keys [number parallel-id language] :as card}]
                   (if (and (= language "ja") (zero? parallel-id))
                     (assoc accl
                            number
                            (select-keys card
-                                        [:card/color
-                                         :card/rarity
-                                         :card/level
-                                         :card/play-cost
-                                         :card/use-cost
-                                         :card/dp
-                                         :card/digivolve-conditions]))
+                                        [:card/digivolution-requirements]))
                     accl))
                 {}
                 unrefined-cards)
@@ -79,19 +73,43 @@
                       {:errata/keys [error correction]
                        :as errata-for-card} (get-in errata
                                                     [number
-                                                     (:image/language image)])]
-                  (cond-> (merge card (get card-common-values-by-number number))
+                                                     (:image/language image)])
+                      titles-re #"(?i)\s*\[?((Inherited|Security)\s)?Effect\]?\s+"
+                      errors (some-> error
+                                     (string/replace titles-re "\n")
+                                     string/trim
+                                     string/split-lines
+                                     (as-> #__ coll
+                                       (map string/trim coll)))
+                      corrections (some-> correction
+                                          (string/replace titles-re "\n")
+                                          string/trim
+                                          string/split-lines
+                                          (as-> #__ coll
+                                            (map string/trim coll)))]
+                  (cond-> (merge card (get digivolve-values-by-number number))
                     errata-for-card
                     (as-> #__ c
                       (-> (reduce-kv (fn [m k v]
-                                       (cond-> m
-                                         (and (string? v)
-                                              error
-                                              (string/includes? v error))
-                                         (assoc k
-                                                (string/replace v
-                                                                error
-                                                                correction))))
+                                       (let [error-indexes
+                                             (some->> errors
+                                                      (map-indexed (fn [idx s]
+                                                                     [idx s])))
+                                             [error-index error]
+                                             (some->> error-indexes
+                                                      (filter (fn [[idx s]]
+                                                                (string/includes? v s)))
+                                                      first)
+                                             correction (and error-index
+                                                             (nth corrections
+                                                                  error-index
+                                                                  nil))]
+                                         (cond-> m
+                                           (and (string? v) error correction)
+                                           (assoc k
+                                                  (string/replace v
+                                                                  error
+                                                                  correction)))))
                                      c
                                      c)
                           (assoc :card/errata errata-for-card)))

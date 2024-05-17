@@ -28,7 +28,7 @@ struct RGB {
 }
 
 #[derive(Debug, Clone, Serialize)]
-struct DigivolveCondition {
+struct DigivolveRequirement {
     colors: Vec<String>,
 }
 
@@ -36,34 +36,34 @@ struct DigivolveCondition {
 struct Template {
     path: &'static str,
     version: i32,
-    conditions_count: i32,
+    requirements_count: i32,
 }
 
 const DIGIVOLVE_TEMPLATES: [Template; 5] = [
     Template {
-        path: "resources/images/templates/digivolve-conditions/v1_1.png",
+        path: "resources/images/templates/digivolution-requirements/v1_1.png",
         version: 1,
-        conditions_count: 1,
+        requirements_count: 1,
     },
     Template {
-        path: "resources/images/templates/digivolve-conditions/v1_2.png",
+        path: "resources/images/templates/digivolution-requirements/v1_2.png",
         version: 1,
-        conditions_count: 2,
+        requirements_count: 2,
     },
     Template {
-        path: "resources/images/templates/digivolve-conditions/v1_3.png",
+        path: "resources/images/templates/digivolution-requirements/v1_3.png",
         version: 1,
-        conditions_count: 3,
+        requirements_count: 3,
     },
     Template {
-        path: "resources/images/templates/digivolve-conditions/v1_4.png",
+        path: "resources/images/templates/digivolution-requirements/v1_4.png",
         version: 1,
-        conditions_count: 4,
+        requirements_count: 4,
     },
     Template {
-        path: "resources/images/templates/digivolve-conditions/v2.png",
+        path: "resources/images/templates/digivolution-requirements/v2.png",
         version: 2,
-        conditions_count: 1,
+        requirements_count: 1,
     },
 ];
 
@@ -191,12 +191,12 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
     result
 }
 
-fn conditions_v1(
+fn requirements_v1(
     image: &Mat,
     base_coords: Coords,
     digivolve_template: Template,
-) -> Vec<DigivolveCondition> {
-    let mut result: Vec<DigivolveCondition> = Vec::new();
+) -> Vec<DigivolveRequirement> {
+    let mut result: Vec<DigivolveRequirement> = Vec::new();
     let roi_size: i32 = 28;
     let roi_y_between: i32 = 15;
     let mut rois: Vec<Rect> = Vec::new();
@@ -207,7 +207,7 @@ fn conditions_v1(
         roi_size,
     ));
     let mut i = 1;
-    while i < digivolve_template.conditions_count {
+    while i < digivolve_template.requirements_count {
         i = i + 1;
         let prev_roi = rois.last().unwrap();
         rois.push(Rect::new(
@@ -218,14 +218,14 @@ fn conditions_v1(
         ));
     }
     for roi in rois {
-        result.push(DigivolveCondition {
+        result.push(DigivolveRequirement {
             colors: colors_within_image(&Mat::roi(&image, roi).unwrap()),
         });
     }
     result
 }
 
-fn conditions_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveCondition> {
+fn requirements_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveRequirement> {
     let colors: Vec<Color> = vec![
         Color {
             name: "red".to_string(),
@@ -303,11 +303,11 @@ fn conditions_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveCondition> {
             result.push(color.name.to_string())
         }
     }
-    vec![DigivolveCondition { colors: result }]
+    vec![DigivolveRequirement { colors: result }]
 }
 
 #[no_mangle]
-pub extern "C" fn digivolve_conditions(
+pub extern "C" fn digivolution_requirements(
     image_path: *const c_char,
 ) -> *mut c_char {
     let image_path: &str =
@@ -357,8 +357,8 @@ pub extern "C" fn digivolve_conditions(
     }
     let edn = match result {
         Some((m, t)) => match t.version {
-            2 => Some(conditions_v2(&image_mat, m.coords)),
-            _ => Some(conditions_v1(&image_mat, m.coords, t)),
+            2 => Some(requirements_v2(&image_mat, m.coords)),
+            _ => Some(requirements_v1(&image_mat, m.coords, t)),
         },
         None => None,
     };

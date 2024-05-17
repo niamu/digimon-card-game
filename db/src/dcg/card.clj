@@ -15,15 +15,12 @@
    [java.util Date]))
 
 (defn- download-image!
-  [{:image/keys [id language source] :as image}]
+  [{:image/keys [id path language source] :as image}]
   (let [number (-> id
                    (string/replace #"image/(.*?)_" "")
                    (string/replace #"_P([0-9]+)" ""))
         parallel-id (last (re-find #"_P([0-9]+)" id))
-        filename (format "resources/images/cards/%s/%s.png"
-                         language
-                         (cond-> number
-                           (not= parallel-id "0") (str "_P" parallel-id)))]
+        filename (str "resources" path)]
     (when-not (.exists (io/file filename))
       (let [image-bytes (-> (str source)
                             utils/as-bytes
@@ -65,10 +62,11 @@
   [releases cards]
   (let [releases-by-set
         (reduce (fn [accl {:release/keys [name] :as release}]
-                  (if-let [set-id (some-> (re-find (card-utils/within-brackets-re
-                                                    (get card-utils/text-punctuation
-                                                         :square-brackets))
-                                                   name)
+                  (if-let [set-id (some-> (re-find
+                                           (card-utils/within-brackets-re
+                                            (get card-utils/text-punctuation
+                                                 :square-brackets))
+                                           name)
                                           rest
                                           (as-> x (remove nil? x))
                                           first
@@ -156,8 +154,7 @@
                                                     "image/")
                                                    :image/path
                                                    (format
-                                                    (str "resources/images/"
-                                                         "cards/%s/%s.png")
+                                                    "/images/cards/%s/%s.png"
                                                     (:image/language image)
                                                     (cond-> number
                                                       (not= parallel-id 0)
@@ -178,9 +175,9 @@
                                       :card/image (comp #_download-icon!
                                                         download-image!))
                         (and (= language "ja")
-                             (zero? parallel-id)) cv/digivolve-conditions
+                             (zero? parallel-id)) cv/digivolution-requirements
                         (= language
-                           (:image/language image)) cv/block-marker))
+                           (:image/language image)) cv/block-icon))
                     cards)]
     (logging/info "Adding cards to FLANN DB...")
     (doseq [card cards]
@@ -221,9 +218,9 @@
         number (-> (nth header 0)
                    ;; ko cards sometimes add a "P" suffix to the card number
                    (string/replace #"P$" ""))
-        category (string/replace (nth header 2)
-                                 "DIgimon"
-                                 "Digimon")
+        category (-> (nth header 2)
+                     (string/replace "DIgimon" "Digimon")
+                     (string/replace "Opiton" "Option"))
         alternate-art? (let [header-set (set header)]
                          (or (contains? header-set "パラレル")
                              (contains? header-set "Parallel Rare")
@@ -295,9 +292,12 @@
         level (some->> (nth header 3 nil)
                        (re-find #"[0-9]+")
                        parse-long)
-        digivolve-conditions
+        digivolution-requirements
         (->> (->> (dl "cardinfo_top_body")
-                  (map (comp card-utils/normalize-string string/trim first :content))
+                  (map (comp card-utils/normalize-string
+                             string/trim
+                             first
+                             :content))
                   (partition-all 2)
                   (filter (fn [[k v]]
                             (and (or (string/includes? k "Digivolve")
@@ -311,12 +311,12 @@
                        (if-let [c c]
                          (let [i (count accl)
                                from (or (some->> (string/lower-case c)
-                                                 (re-find #".*lv\.?(\d).*")
+                                                 (re-find #"(?i).*lv\.?(\d).*")
                                                  second
                                                  parse-long)
                                         (get (first accl) :digivolve/level))
                                cost (or (some->> (string/lower-case c)
-                                                 (re-find #".*(?<!lv\.?)(\d)")
+                                                 (re-find #"(?i).*(?<!lv\.?)(\d)")
                                                  second
                                                  parse-long)
                                         (get (first accl) :digivolve/cost))]
@@ -326,14 +326,14 @@
                                   :digivolve/index i
                                   :digivolve/cost cost
                                   :digivolve/level from
-                                  :digivolve/color [(nth colors i
-                                                         (first colors))]}))
+                                  :digivolve/color #{(nth colors i
+                                                          (first colors))}}))
                          accl))
                      []))
-        digivolve-conditions (->> (if (empty? (remove nil?
-                                                      digivolve-conditions))
-                                    nil
-                                    digivolve-conditions))
+        digivolution-requirements
+        (->> (if (empty? (remove nil? digivolution-requirements))
+               nil
+               digivolution-requirements))
         image-source (-> (select/select (select/descendant (select/tag "img"))
                                         dom-tree)
                          first
@@ -451,8 +451,8 @@
                                (= category "옵션"))
                          :card/use-cost
                          :card/play-cost) play-cost)
-      digivolve-conditions (assoc :card/digivolve-conditions
-                                  digivolve-conditions)
+      digivolution-requirements (assoc :card/digivolution-requirements
+                                       digivolution-requirements)
       level (assoc :card/level level)
       dp (assoc :card/dp dp)
       form (assoc :card/form form)
@@ -567,8 +567,9 @@
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)
-                  parallel-id (when (not= parallCard "0")
-                                0)
+                  parallel-id (if (not= parallCard "0")
+                                0
+                                1)
                   card-id (format "card/%s_%s_P%s"
                                   language
                                   number

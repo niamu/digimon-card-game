@@ -18,13 +18,14 @@
                                   (.getParent)))
         interface (gen-interface
                    :name "dcg.card.cv.INativeLibrary"
-                   :methods [[db_init [] void]
-                             [db_add [String] int]
-                             [db_train [] void]
-                             [db_query [String] int]
-                             [block_marker [String] int]
-                             [digivolve_conditions [String] jnr.ffi.Pointer]
-                             [free_string [jnr.ffi.Pointer] void]])]
+                   :methods
+                   [[db_init [] void]
+                    [db_add [String] int]
+                    [db_train [] void]
+                    [db_query [String] int]
+                    [block_icon [String] int]
+                    [digivolution_requirements [String] jnr.ffi.Pointer]
+                    [free_string [jnr.ffi.Pointer] void]])]
     (.load (LibraryLoader/create interface) library-name)))
 
 (defn- parse-edn
@@ -42,7 +43,7 @@
   (when-not (-> @db
                 set/map-invert
                 (get (:card/id card)))
-    (let [image-index (.db_add native-library path)]
+    (let [image-index (.db_add native-library (str "resources" path))]
       (swap! db assoc image-index (:card/id card)))))
 
 (defn train!
@@ -66,34 +67,36 @@
     (.delete temp-file)
     result))
 
-(defn block-marker
+(defn block-icon
   [{{:image/keys [path]} :card/image :as card}]
-  (let [v (.block_marker native-library path)]
+  (let [v (.block_icon native-library (str "resources" path))]
     (cond-> card
-      (pos? v) (assoc :card/block-marker v))))
+      (pos? v) (assoc :card/block-icon v))))
 
-(defn digivolve-conditions
-  [{:card/keys [digivolve-conditions number]
+(defn digivolution-requirements
+  [{:card/keys [digivolution-requirements number]
     {:image/keys [path]} :card/image
     :as card}]
-  (let [conditions-with-colors (-> (.digivolve_conditions native-library path)
-                                   parse-edn)]
-    (cond-> (dissoc card :card/digivolve-conditions)
-      (and digivolve-conditions
-           (not (empty? conditions-with-colors)))
-      (assoc :card/digivolve-conditions
+  (let [requirements-with-colors
+        (-> (.digivolution_requirements native-library (str "resources" path))
+            parse-edn)]
+    (cond-> (dissoc card :card/digivolution-requirements)
+      (and digivolution-requirements
+           (not (empty? requirements-with-colors)))
+      (assoc :card/digivolution-requirements
              (map-indexed
               (fn [idx {colors :colors}]
-                (let [prev-condition (or (nth digivolve-conditions idx nil)
-                                         (first digivolve-conditions))]
-                  (when-not (get prev-condition :digivolve/cost)
-                    (logging/error (format (str "Digivolve condition missing for"
-                                                " %s on index %d")
+                (let [prev-requirement
+                      (or (nth digivolution-requirements idx nil)
+                          (first digivolution-requirements))]
+                  (when-not (get prev-requirement :digivolve/cost)
+                    (logging/error (format (str "Digivolution requirement"
+                                                " missing for %s on index %d")
                                            number idx)))
-                  (merge prev-condition
+                  (merge prev-requirement
                          {:digivolve/id (format "digivolve/%s_index%d"
                                                 number
                                                 idx)
                           :digivolve/color (set (map keyword colors))
                           :digivolve/index idx})))
-              conditions-with-colors)))))
+              requirements-with-colors)))))

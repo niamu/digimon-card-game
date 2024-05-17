@@ -27,11 +27,11 @@
                       :card/attribute
                       :card/type
                       :card/rarity
-                      :card/block-marker
+                      :card/block-icon
                       :card/notes
                       {:card/color [:color/index
                                     :color/color]}
-                      {:card/digivolve-conditions [:digivolve/index
+                      {:card/digivolution-requirements [:digivolve/index
                                                    :digivolve/color
                                                    :digivolve/cost]}
                       {:card/releases [:release/name
@@ -88,11 +88,11 @@
                              :card/attribute
                              :card/type
                              :card/rarity
-                             :card/block-marker
+                             :card/block-icon
                              :card/notes
                              {:card/color [:color/index
                                            :color/color]}
-                             {:card/digivolve-conditions [:digivolve/index
+                             {:card/digivolution-requirements [:digivolve/index
                                                           :digivolve/color
                                                           :digivolve/cost]}
                              {:card/releases [:release/name
