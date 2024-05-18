@@ -167,9 +167,11 @@
   (let [digimon? (or (= category "デジモン")
                      (= category "Digimon")
                      (= category "数码宝贝")
+                     (= category "디지몬")
                      (= category "デジタマ")
                      (= category "Digi-Egg")
-                     (= category "数码蛋"))]
+                     (= category "数码蛋")
+                     (= category "디지타마"))]
     [:svg.condensed-card
      {:viewBox "0 0 383 46"
       :role "img"
@@ -205,16 +207,20 @@
           :transform "translate(0.5,0.5)"}
       [:polygon {:points "7,0 375,0 382,7 382,38 375,45 7,45 0,38 0,7"
                  :fill (str "url(#gradient-" id ")")}]
-      (when digimon?
-        [:polygon {:points (if (< (or block-icon 0) 3)
-                             "0,4 58,4 88,34 382,34 382,45 0,45"
-                             "0,4 54,4 60,11 60,34 382,34 382,45 0,45")
-                   :fill (if (= (first color) :black)
+      (when (some string? [form attribute type])
+        [:polygon {:points (if digimon?
+                             (if (< (or block-icon 0) 3)
+                               "0,4 58,4 88,34 382,34 382,45 0,45"
+                               "0,4 54,4 60,11 60,34 382,34 382,45 0,45")
+                             (if (< (or block-icon 0) 3)
+                               "0,34, 382,34 382,45 0,45"
+                               "302,45, 312,34, 382,34, 382,45 302,45"))
+                   :fill (if (= (-> color first :color/color) :black)
                            (get card-color :white)
                            (get card-color :black))}])
       (when digimon?
         [:text {:font-family "Prohibition"
-                :fill (if (not= (first color) :black)
+                :fill (if (not= (-> color first :color/color) :black)
                         (get card-color :white)
                         (get card-color :black))
                 :font-size 24
@@ -225,55 +231,153 @@
          [:tspan {:font-size 18} "v"]
          [:tspan "."]
          [:tspan {:font-size 32} (or level "-")]])
-      [:text {:lang language
-              :font-family "Peter-Black"
-              :fill (if (and (or (= (-> color first :color/color) :yellow)
-                                 (= (-> color first :color/color) :white))
-                             (< (count color) 3))
-                      (get card-color :black)
-                      (get card-color :white))
-              :style {:paint-order "stroke"}
-              :stroke (when (and (> (count color) 1)
-                                 (contains? (set (map :color/color color))
-                                            :yellow))
-                        (if (and (= (-> color first :color/color) :yellow)
-                                 (< (count color) 3))
-                          "#FFF"
-                          "#000"))
-              :stroke-width (when (> (count color) 1) 3)
-              :font-size (if (and (not digimon?)
-                                  (not= "en" language))
-                           22
-                           26)
-              :lengthAdjust "spacingAndGlyphs"
-              :textLength (cond
-                            (and (> (count name) 13) digimon?) 205
-                            (and (> (count name) 20)
-                                 (not digimon?)) 300
-                            (and digimon? (not= "en" language)
-                                 (>= (count name) 9)) 230
-                            (and (not digimon?) (not= "en" language)
-                                 (>= (count name) 15)) 340
-                            :else nil)
-              :font-weight 800
-              :x (if digimon?
-                   (if (and (or (= "ja" language)
-                                (= "ko" language))
-                            (< (or block-icon 0) 3))
-                     85
-                     200)
-                   195)
-              :y (if digimon?
-                   27
-                   (if (> (count name) 19)
-                     37
-                     32))
-              :text-anchor (if (and digimon?
-                                    (or (= "ja" language)
-                                        (= "ko" language))
-                                    (< (or block-icon 0) 3))
-                             "start"
-                             "middle")} name]
+      (if (or (and (= "en" language)
+                   (< (count name) 55))
+              (and (not= "en" language)
+                   (< (count name) 28)))
+        [:text {:lang language
+                :font-family "Peter-Black"
+                :fill (if (and (or (= (-> color first :color/color) :yellow)
+                                   (= (-> color first :color/color) :white))
+                               (< (count color) 3))
+                        (get card-color :black)
+                        (get card-color :white))
+                :style {:paint-order "stroke"}
+                :stroke (when (and (> (count color) 1)
+                                   (contains? (set (map :color/color color))
+                                              :yellow))
+                          (if (and (= (-> color first :color/color) :yellow)
+                                   (< (count color) 3))
+                            "#FFF"
+                            "#000"))
+                :stroke-width (when (> (count color) 1) 3)
+                :font-size (cond-> 22
+                             (and (not= "en" language)
+                                  (>= (count name) 9))
+                             (- (/ (count name) 2.5)))
+                :lengthAdjust "spacingAndGlyphs"
+                :textLength (cond
+                              (and (> (count name) 13)
+                                   digimon?) 205
+                              (and (> (count name) 20)
+                                   (not digimon?)) 220
+                              :else nil)
+                :font-weight 800
+                :x (if digimon?
+                     (if (and (or (= "ja" language)
+                                  (= "ko" language))
+                              (< (or block-icon 0) 3))
+                       85
+                       200)
+                     195)
+                :y (cond-> 29
+                     (some string? [form attribute type])
+                     (- 3))
+                :text-anchor (if (and digimon?
+                                      (or (= "ja" language)
+                                          (= "ko" language))
+                                      (< (or block-icon 0) 3))
+                               "start"
+                               "middle")} name]
+        (let [[line-1 line-2] (if (= "en" language)
+                                (-> (string/split name #",")
+                                    (as-> #__ splits
+                                      (->> splits
+                                           (split-at (quot (count splits) 2))
+                                           (mapv (fn [part]
+                                                   (->> part
+                                                        (map #(str % ","))
+                                                        string/join)))
+                                           (#(update-in % [1]
+                                                        (fn [s]
+                                                          (string/replace s
+                                                                          #",$"
+                                                                          "")))))))
+                                (->> (split-at (quot (count name) 2) name)
+                                     (map #(apply str %))))]
+          [:g
+           [:text {:lang language
+                   :font-family "Peter-Black"
+                   :fill (if (and (or (= (-> color first :color/color) :yellow)
+                                      (= (-> color first :color/color) :white))
+                                  (< (count color) 3))
+                           (get card-color :black)
+                           (get card-color :white))
+                   :style {:paint-order "stroke"}
+                   :stroke (when (and (> (count color) 1)
+                                      (contains? (set (map :color/color color))
+                                                 :yellow))
+                             (if (and (= (-> color first :color/color) :yellow)
+                                      (< (count color) 3))
+                               "#FFF"
+                               "#000"))
+                   :stroke-width (when (> (count color) 1) 3)
+                   :font-size 12
+                   :lengthAdjust "spacingAndGlyphs"
+                   :textLength (cond
+                                 (and (> (count line-1) 13)
+                                      digimon?) 205
+                                 (and (> (count line-1) 20)
+                                      (not digimon?)) 220
+                                 :else nil)
+                   :font-weight 800
+                   :x (if digimon?
+                        (if (and (or (= "ja" language)
+                                     (= "ko" language))
+                                 (< (or block-icon 0) 3))
+                          85
+                          200)
+                        195)
+                   :y (cond-> 22
+                        (some string? [form attribute type])
+                        (- 3))
+                   :text-anchor (if (and digimon?
+                                         (or (= "ja" language)
+                                             (= "ko" language))
+                                         (< (or block-icon 0) 3))
+                                  "start"
+                                  "middle")} line-1]
+           [:text {:lang language
+                   :font-family "Peter-Black"
+                   :fill (if (and (or (= (-> color first :color/color) :yellow)
+                                      (= (-> color first :color/color) :white))
+                                  (< (count color) 3))
+                           (get card-color :black)
+                           (get card-color :white))
+                   :style {:paint-order "stroke"}
+                   :stroke (when (and (> (count color) 1)
+                                      (contains? (set (map :color/color color))
+                                                 :yellow))
+                             (if (and (= (-> color first :color/color) :yellow)
+                                      (< (count color) 3))
+                               "#FFF"
+                               "#000"))
+                   :stroke-width (when (> (count color) 1) 3)
+                   :font-size 12
+                   :lengthAdjust "spacingAndGlyphs"
+                   :textLength (cond
+                                 (and (> (count line-2) 13)
+                                      digimon?) 205
+                                 (and (> (count line-2) 20)
+                                      (not digimon?)) 220
+                                 :else nil)
+                   :font-weight 800
+                   :x (if digimon?
+                        (if (and (or (= "ja" language)
+                                     (= "ko" language))
+                                 (< (or block-icon 0) 3))
+                          85
+                          200)
+                        195)
+                   :y (cond-> 35
+                        (some string? [form attribute type])
+                        (- 3))
+                   :text-anchor (if (and digimon?
+                                         (or (= "ja" language)
+                                             (= "ko" language))
+                                         (< (or block-icon 0) 3))
+                                  "start"
+                                  "middle")} line-2]]))
       [:text {:font-family "Roboto Condensed"
               :fill (if (or (= (-> color last :color/color) :yellow)
                             (= (-> color last :color/color) :white))
@@ -314,11 +418,11 @@
                  :y 29.25
                  :text-anchor "middle"}
           (format "%02d" block-icon)]])
-      (when digimon?
+      (when (some string? [form attribute type])
         [:text {:lang language
                 :font-family "Roboto"
                 :font-size 8
-                :font-weight 500
+                :font-weight 900
                 :kerning 1
                 :x 372
                 :y 42
@@ -388,7 +492,7 @@
         [:h3.sr-only "Breeding Area"]
         (list (->> stacks
                    (map (fn [{::stack/keys [cards uuid]
-                              :as stack}]
+                             :as stack}]
                           (->> cards
                                (map (juxt ::card/uuid
                                           (comp #(get-in game %)
@@ -412,94 +516,128 @@
          :privacy privacy}
         [:h3.sr-only "Trash"]])]))
 
+(defn card
+  [cards]
+  (page/html5
+      {:mode :html
+       :lang "en"}
+    [:head
+     [:meta {:charset "utf-8"}]
+     [:title "Heroicc"]
+     [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
+     (page/include-css "/css/style.css")
+     [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
+    [:body
+     [:h1 "Heroicc"]
+     #_[:pre
+        [:code
+         (->> cards
+              pprint/pprint
+              with-out-str)]]
+     [:div
+      [:h2 "Card names"]
+      [:ul
+       (map (comp (fn [n]
+                    [:li n " - " (count n)])
+                  :card/name) cards)]]
+     [:div
+      [:h2 "Compact cards"]
+      (map (fn [c]
+             [:div
+              [:div
+               (card-component (random-uuid) c)]
+              (compact-card-component c)
+              [:p (:card/category c)]])
+           cards)]]))
+
 (defn game
   [{::game/keys [available-actions players db] :as game} player]
   (let [{::player/keys [memory areas] :as me} (get (state/players-by-id players)
                                                    (::player/id player))]
     (page/html5 {:mode :html
                  :lang "en"}
-                [:head
-                 [:meta {:charset "utf-8"}]
-                 [:title "Heroicc"]
-                 [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
-                 (page/include-css "/css/style.css")
-                 [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
-                [:body
-                 [:h1 "Heroicc"]
-                 [:h2 (::player/name me)]
-                 [:pre
-                  [:code
-                   (->> available-actions
-                        (sort-by first)
-                        pprint/pprint
-                        with-out-str)]]
-                 (when (empty? available-actions)
-                   [:p "Waiting for opponent..."])
-                 (let [dialog-actions (filter (fn [[action-state-id _ _]]
-                                                (string/ends-with? (str action-state-id)
-                                                                   "?"))
-                                              available-actions)
-                       action-state-id (ffirst dialog-actions)]
-                   (when (seq dialog-actions)
-                     [:dialog {:open true}
-                      [:form {:method "POST"}
-                       (case action-state-id
-                         :action/re-draw?
-                         [:div
-                          [:p [:strong "Re-draw Hand?"]]
-                          (list (->> (get-in areas [::area/hand ::area/cards])
-                                     (map (comp #(get-in game %) ::card/lookup))
-                                     (sort-by (juxt :card/category :card/level))
-                                     (map card-component)))])
-                       [:input
-                        {:type "hidden"
-                         :name "__anti-forgery-token"
-                         :value anti-forgery/*anti-forgery-token*}]
-                       [:input
-                        {:type "hidden"
-                         :name "action"
-                         :value (str action-state-id)}]
-                       (->> dialog-actions
-                            (sort-by (fn [[_ _ param]] param))
-                            (map (fn [[_ _ param]]
-                                   [:button
-                                    {:type "submit"
-                                     :name "params"
-                                     :value (str param)}
-                                    (case param
-                                      true "Yes"
-                                      false "No")]))
-                            list)]]))
-                 (playmat game player)])))
+      [:head
+       [:meta {:charset "utf-8"}]
+       [:title "Heroicc"]
+       [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
+       (page/include-css "/css/style.css")
+       [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
+      [:body
+       [:h1 "Heroicc"]
+       [:h2 (::player/name me)]
+       [:pre
+        [:code
+         (->> available-actions
+              (sort-by first)
+              pprint/pprint
+              with-out-str)]]
+       (when (empty? available-actions)
+         [:p "Waiting for opponent..."])
+       (let [dialog-actions (filter (fn [[action-state-id _ _]]
+                                      (string/ends-with? (str action-state-id)
+                                                         "?"))
+                                    available-actions)
+             action-state-id (ffirst dialog-actions)]
+         (when (seq dialog-actions)
+           [:dialog {:open true}
+            [:form {:method "POST"}
+             (case action-state-id
+               :action/re-draw?
+               [:div
+                [:p [:strong "Re-draw Hand?"]]
+                (list (->> (get-in areas [::area/hand ::area/cards])
+                           (map (comp #(get-in game %) ::card/lookup))
+                           (sort-by (juxt :card/category :card/level))
+                           (map card-component)))])
+             [:input
+              {:type "hidden"
+               :name "__anti-forgery-token"
+               :value anti-forgery/*anti-forgery-token*}]
+             [:input
+              {:type "hidden"
+               :name "action"
+               :value (str action-state-id)}]
+             (->> dialog-actions
+                  (sort-by (fn [[_ _ param]] param))
+                  (map (fn [[_ _ param]]
+                         [:button
+                          {:type "submit"
+                           :name "params"
+                           :value (str param)}
+                          (case param
+                            true "Yes"
+                            false "No")]))
+                  list)]]))
+       (playmat game player)])))
 
 (defn index
   [player]
   (page/html5 {:mode :html
                :lang "en"}
-              [:head
-               [:meta {:charset "utf-8"}]
-               [:title "Heroicc"]
-               [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
-               (page/include-css "/css/style.css")
-               [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
-              [:body
-               [:h1 "Heroicc"]
-               [:p (pr-str player)]
-               (if (state/player-in-queue? player)
-                 [:p "Waiting for another player..."]
-                 [:form {:method "POST" :action "/queue"}
-                  [:input
-                   {:type "hidden"
-                    :name "__anti-forgery-token"
-                    :value anti-forgery/*anti-forgery-token*}]
-                  [:label "Username"
-                   [:input
-                    {:type "text"
-                     :name "username"}]]
-                  [:label "Deck Code"
-                   [:input
-                    {:type "text"
-                     :name "deck-code"}]]
-                  [:input
-                   {:type "submit"
-                    :value "Queue"}]])]))
+    [:head
+     [:meta {:charset "utf-8"}]
+     [:title "Heroicc"]
+     [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
+     (page/include-css "/css/style.css")
+     [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
+    [:body
+     [:h1 "Heroicc"]
+     [:p (pr-str player)]
+     (if (state/player-in-queue? player)
+       [:p "Waiting for another player..."]
+       [:form {:method "POST" :action "/queue"}
+        [:input
+         {:type "hidden"
+          :name "__anti-forgery-token"
+          :value anti-forgery/*anti-forgery-token*}]
+        [:label "Username"
+         [:input
+          {:type "text"
+           :name "username"}]]
+        [:label "Deck Code"
+         [:input
+          {:type "text"
+           :name "deck-code"}]]
+        [:input
+         {:type "submit"
+          :value "Queue"}]])]))

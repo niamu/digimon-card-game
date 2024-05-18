@@ -2,3 +2,4 @@
 .cpcache/
 .nrepl-port
 target/
+resources/public/images/

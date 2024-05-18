@@ -69,11 +69,90 @@
                                               [action
                                                (::player/id player)
                                                params])))
-                         (response/redirect (str "/game/" game-id))))}}]])
+                         (response/redirect (str "/game/" game-id))))}}]
+   ["/card/:card-number"
+    {:name ::card
+     :get {:parameters {:path {:card-number string?}}
+           :handler (fn [{{:keys [card-number]} :path-params
+                         :as request}]
+                      {:status 200
+                       :headers {"Content-Type" "text/html"}
+                       :body (render/card
+                              (db/q '{:find [[(pull ?c [:card/id
+                                                        :card/name
+                                                        :card/number
+                                                        :card/category
+                                                        :card/language
+                                                        :card/parallel-id
+                                                        :card/block-icon
+                                                        :card/play-cost
+                                                        :card/use-cost
+                                                        :card/level
+                                                        :card/dp
+                                                        :card/effect
+                                                        :card/inherited-effect
+                                                        :card/security-effect
+                                                        :card/form
+                                                        :card/attribute
+                                                        :card/type
+                                                        :card/rarity
+                                                        {:card/color
+                                                         [:color/id
+                                                          :color/index
+                                                          :color/color]}
+                                                        {:card/digivolution-requirements
+                                                         [:digivolve/id
+                                                          :digivolve/cost
+                                                          :digivolve/color
+                                                          :digivolve/level
+                                                          :digivolve/index]}
+                                                        {:card/image
+                                                         [:image/id
+                                                          :image/path]}
+                                                        {:card/errata
+                                                         [:errata/id
+                                                          :errata/date
+                                                          :errata/error
+                                                          :errata/correction
+                                                          :errata/notes]}
+                                                        {:card/limitation
+                                                         [:limitation/id
+                                                          :limitation/type
+                                                          :limitation/date
+                                                          :limitation/allowance
+                                                          :limitation/note]}
+                                                        {:card/highlights
+                                                         [:highlight/id
+                                                          :highlight/type
+                                                          :highlight/text
+                                                          :highlight/index
+                                                          :highlight/field
+                                                          {:highlight/treat
+                                                           [:treat/id
+                                                            :treat/as
+                                                            :treat/field]}
+                                                          {:highlight/mention
+                                                           [:mention/id
+                                                            :mention/text
+                                                            {:mention/cards
+                                                             [:card/id]}]}]}
+                                                        {:card/mentions
+                                                         [:mention/id
+                                                          :mention/text
+                                                          {:mention/cards
+                                                           [:card/id]}]}
+                                                        {:card/releases
+                                                         [:release/id
+                                                          :release/date
+                                                          :release/name
+                                                          :release/genre
+                                                          :release/product-uri]}]) ...]]
+                                      :in [$ ?n]
+                                      :where [[?c :card/number ?n]]}
+                                    card-number))})}}]])
 
 (defonce ^:private store-key
-  (.getBytes "a6505635aa8b426c"
-             #_(subs (clojure.string/replace (random-uuid) "-" "") 0 16)))
+  (.getBytes (subs (clojure.string/replace (random-uuid) "-" "") 0 16)))
 
 (def route-handler
   (ring/ring-handler

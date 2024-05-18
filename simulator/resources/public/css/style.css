@@ -20,7 +20,7 @@
 
 	--card-original-width: 430;
 	--card-original-height: 600;
-	--card-width: 200px;
+	--card-width: 430px;
 	--card-gap: 20px;
 	--card-aspect-ratio: var(--card-original-width) / var(--card-original-height);
 	--card-height: calc(var(--card-width) / calc(var(--card-aspect-ratio)));

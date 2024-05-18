@@ -287,13 +287,13 @@
   (spit (io/file "resources/db.edn") tx)
   tx)
 
+(defn q
+  [query & inputs]
+  (let [inputs (cons (d/db conn) inputs)]
+    (apply d/q query inputs)))
+
 (comment
   (d/delete-database db-uri)
-
-  (d/q '{:find [[(pull ?c [:card/number]) ...]]
-         :where [[?c :card/effect ?e]
-                 [(clojure.string/includes? ?e "Digivolve]")]]}
-       (d/db conn))
 
   (let [lookup (edn/read {:readers {'uri #(URI. ^String %)}}
                          (PushbackReader.
