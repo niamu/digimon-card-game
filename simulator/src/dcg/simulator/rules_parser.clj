@@ -9,11 +9,9 @@
 
 (defn parse
   [effect]
-  (->> (string/replace effect #"\n(?!\s*[\[<＜])" " ")
+  (->> (string/replace effect #"\n(?!\s*[\[<＜(\(Rule)])" " ")
        string/split-lines
        (map (comp parser string/trim))))
-
-#_(parse "[Your Turn] While [Phoenixmon] or [X Antibody] is in this Digimon's digivolution cards, attach [End of Attack] to all of this Digimon's [On Deletion] effects.")
 
 (comment
   (require '[datomic.api :as d]
@@ -27,7 +25,7 @@
                      :where [[?c :card/image ?i]
                              [?c :card/parallel-id 0]
                              [?c :card/number ?n]
-                             [(clojure.string/starts-with? ?n "BT16-")]
+                             #_[(clojure.string/starts-with? ?n "BT16-")]
                              [?i :image/language "en"]]}
                    (d/db db/conn))
         failures (->> cards
@@ -91,8 +89,8 @@
                                 {:card/color [:color/index
                                               :color/color]}
                                 {:card/digivolution-requirements [:digivolve/index
-                                                             :digivolve/color
-                                                             :digivolve/cost]}
+                                                                  :digivolve/color
+                                                                  :digivolve/cost]}
                                 {:card/releases [:release/name
                                                  :release/genre
                                                  :release/date]}

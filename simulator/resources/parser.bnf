@@ -88,10 +88,12 @@ EFFECT =
             / replace-digixros-requirement-with
             / turn-end-condition
             / declare-category
+            / end-the-attack
             / end-attack-by
+            / attach-timing
         )
-        / target
         / _play_
+        / target
     )
 
 <PARENTHESES> = <#"[(][^)]*[)]">
@@ -134,12 +136,19 @@ OPERATOR = "+" | "-"
 LTE =
     (
           <#"(?i)Up to">
-        | (<"as much" SPACE>? <#"or (less|lower|fewer)">)
+        | (<"as" SPACE ("much" | "high") SPACE>? <#"or (less|lower|fewer)">)
         | <"fewer than">
         | <("is" SPACE)? "less than or equal" (SPACE "to")?>
     )
     (<SPACE> equate-with)?
-GTE = <"or" SPACE>? (<"more"> | <"higher"> | <"greater than or">) (<SPACE> equate-with)?
+GTE =
+    (
+        <"or" SPACE>?
+        (<"more"> | <"higher"> | <"greater than or">)
+        (<SPACE> equate-with)?
+    ) | (
+        <#"(?i)Up to having">
+    )
 EQ = <"exactly">
 MAX = <("the" SPACE)? "highest">
 MIN = <("the" SPACE)? "lowest">
@@ -325,6 +334,7 @@ activate-that-timing-effect-on =
     )
     <SPACE "as an effect of" SPACE> target
 timing-effects =
+    (value <SPACE "of" SPACE> target <SPACE>)?
     <"an" SPACE>?
     (<" and ">? timing)+
     <SPACE (#"skills?" | #"effects?")>
@@ -376,6 +386,7 @@ keyword-effect =
             | recovery
             | digixros
             | partition
+            | collision
         )
         (<SPACE> (target | state))?
         (<"."? SPACE?>? PARENTHESES)?
@@ -437,6 +448,7 @@ digixros =
     )?
 digixrosing = <#"(?i)DigiXrosing"> (<SPACE with>)? (<SPACE> target)?
 partition = <#"[\<＜]"> <#"(?i)Partition"> <SPACE>? <"("> card-type <" & "> card-type <")"> <#"[\>＞]">
+collision = <#"[\<＜]"> <#"(?i)Collision"> <#"[\>＞]">
 
 
 (* GAIN/LOSE *)
@@ -510,7 +522,7 @@ gain-that-instead =
 DP =
     (
           <"whose total" SPACE>
-        | (<(with | "dropping to") SPACE>? value)
+        | (<(with | "dropping to" | "having") SPACE>? value)
     )?
     <SPACE>?
     <"DP">
@@ -525,10 +537,14 @@ sum =
     | (value <SPACE> field <SPACE "total worth of" SPACE> target)
     | (value <SPACE "total cards in" SPACE> zone)
 level =
-    ((<"a"> | (<"is"> <SPACE "a">?)) <SPACE>)?
-    (<#"[Ll][Vv]\."> | <#"(?i)levels?" SPACE>)
-    (<SPACE>? <"of">)?
-    <SPACE>? value
+    (
+        ((<"a"> | (<"is"> <SPACE "a">?)) <SPACE>)?
+        (<#"[Ll][Vv]\."> | <#"(?i)levels?" SPACE>)
+        (<SPACE>? <"of">)?
+        <SPACE>? value
+    ) | (
+        value <SPACE "a" SPACE> <#"(?i)levels?">
+    )
 memory =
     (value <SPACE>)?
     (<"memory"> / <"cost">)
@@ -577,11 +593,13 @@ reduce-play-cost-by =
         (<#"(?i)Reduce"> | <#"(?i)Decrease">)
         <SPACE>
         (<"its"> / <"the"> / target)
-        <(SPACE ("play" | "memory"))? SPACE "cost" SPACE> (conditional <SPACE>)?
+        <(SPACE ("play" | "memory"))? SPACE #"costs?" SPACE> (conditional <SPACE>)?
+        (<"of" SPACE> target <SPACE>)?
         <"by" SPACE>?
         (<("of" | "to play") SPACE> target <SPACE "by" SPACE>)?
         (value / target)
         (<SPACE> conditional)?
+        (<SPACE> duration)?
     ) | (
         <with SPACE "the play cost reduced by" SPACE> (value / target)
     )
@@ -657,7 +675,7 @@ end-of-your-turn = <#"(?i)until the end of your turn">
 end-of-your-next-turn = <#"(?i)until the end of your next turn">
 end-of-opponents-turn =
     (<#"(?i)Until"> | <#"(?i)At">)
-    <SPACE "the end of" SPACE>
+    <SPACE "the" (SPACE "next")? SPACE "end of" SPACE>
     (<#"your opponent\'s"> | <"their">)
     <SPACE "turn">
 end-of-opponents-next-turn = <#"(?i)until the end of (your opponent\'s|their) next turn">
@@ -741,7 +759,7 @@ pay-to-treat =
     | play-to-return
 play =
     (
-        ((conditional | choose | without-paying-memory-cost) <",">? <SPACE>)?
+        ((conditional | choose | ((zone <SPACE "and" SPACE>)? without-paying-memory-cost)) <",">? <SPACE>)?
         (<"and" SPACE>? before <",">? <SPACE>)?
         (duration <",">? <SPACE>)?
         ((optional_mandatory | before) <SPACE>)?
@@ -796,7 +814,7 @@ using-effect =
     <SPACE> (<"an"> | target) <SPACE>
     <#"effects?">
 without-battling = <without SPACE "battling">
-without-paying-memory-cost = <without SPACE #"payings?" SPACE> (<"its">|<"their">|<"the">) <SPACE> <"memory" SPACE>? <#"costs?">
+without-paying-memory-cost = <without SPACE #"payings?" SPACE> (<"its">|<"their">|<"the">) <SPACE> <("memory" | "play") SPACE>? <#"costs?">
 without-paying-digivolve-cost = <without SPACE "paying" SPACE> (<"its">|<"their">|<"the">) <SPACE> <"digivolution" SPACE>? <#"costs?">
 without-meeting-color-requirement = <without SPACE #"meeting (its|their) color requirements?">
 without-meeting-color-requirement-or-paying-cost = <without-meeting-color-requirement SPACE "or paying its memory cost">
@@ -840,6 +858,7 @@ for-its-play-cost =
         | trash-chosen
     )
 <_trash_prelude_> =
+    (before <",">? <SPACE>)?
     ((conditional | choose | duration) <",">? <SPACE>?)?
     (<"and" SPACE>? before <",">? <SPACE>)?
     (optional_mandatory <",">? <SPACE>)?
@@ -941,6 +960,7 @@ trash-to-disallow-trash =
 trash-to-reduce-play-cost =
     _trash_prelude_
     target
+    (<"," SPACE> until-there-are)?
     <("," | (SPACE "to")) SPACE>
     reduce-play-cost-by
 trash-to-reduce-digivolution-cost =
@@ -981,13 +1001,17 @@ trash-zone =
         | (<","? SPACE "and" SPACE>? _place_)?
     )
 until-there-are =
-    <"until" SPACE>
-    (<"there are"> | <"they have">)
-    <SPACE>
-    value
-    (<SPACE> number-of-cards)?
-    <SPACE "cards">?
-    <SPACE "left">?
+    (
+        <"until" SPACE>
+        (<"there are"> | <"they have">)
+        <SPACE>
+        value
+        (<SPACE> number-of-cards)?
+        <SPACE "cards">?
+        <SPACE "left">?
+    ) | (
+        value <SPACE "left">
+    )
 deletes-in-battle =
     _trash_prelude_
     (target <SPACE>)?
@@ -1047,7 +1071,10 @@ activate-all-effects-instead =
 
 (* END THE ATTACK *)
 end-the-attack =
-    <("to" SPACE)? "end the attack">
+    (conditional <",">? <SPACE>)?
+    (optional_mandatory <",">? <SPACE>)?
+    <"to" SPACE>?
+    <"end the attack">
 
 
 (* SUSPEND/UNSUSPEND *)
@@ -1250,6 +1277,7 @@ hatch =
         / return-to-play
         / return-to-reduce-digivolution-cost
         / return-to-disallow
+        / return-to-gain-and-disable
         / return
     )
 return =
@@ -1304,6 +1332,9 @@ return-to-reduce-digivolution-cost =
 return-to-disallow =
     return
     (<("," | (SPACE "to")) SPACE>? disallow)
+return-to-gain-and-disable =
+    return
+    (<("," | (SPACE "to")) SPACE>? gain_lose <SPACE "and" SPACE> disable)
 
 
 
@@ -1399,6 +1430,7 @@ reveal =
         )?
         (add-or-place <"." SPACE?>)?
         (gain_lose <"." SPACE?>)?
+        (reduce-play-cost-by <"." SPACE?>)?
         (trash_delete <"." SPACE?>)?
         (digivolve-into)?
         (<"," SPACE>? (otherwise | _place_))?
@@ -1457,6 +1489,7 @@ otherwise-prev-conditional =
     | place-to-activate
     | place-to-switch-attack-to
     | place-or-add
+    | place-or-trash
 place =
     ((conditional | choose) <",">? <SPACE>)?
     (optional_mandatory <",">? <SPACE>)?
@@ -1502,6 +1535,7 @@ place-to-unsuspend = place (<","> | <("," | (SPACE "to"))>) <SPACE> unsuspend
 place-to-activate = place (<","> | <("," | (SPACE "to"))>) <SPACE> activate
 place-to-switch-attack-to = place (<","> | <("," | (SPACE "to"))>) <SPACE> switch-attack-to
 place-or-add = place <SPACE "or" SPACE> add
+place-or-trash = place <"," SPACE "or" SPACE> trash_delete
 
 order = order_any
 order_any = <"in any order">
@@ -1558,6 +1592,7 @@ treat-as =
         / target <SPACE "is also treated as" SPACE> target
         / mention <SPACE "can treat" SPACE> target <SPACE "as" SPACE> level <SPACE> for-dna-digivolution
         / treat-as-name
+        / treat-as-traits
         / treat-as-card-number
     )
 treat-as-card-number =
@@ -1589,6 +1624,10 @@ treat-as-traits =
         <(SPACE "and" SPACE)? "traits include" SPACE> mention
     ) | (
         <"having the" SPACE> mention <SPACE "trait">
+    ) | (
+        <#"[\(<＜]" "Rule" #"[\)>＞]" SPACE "Trait:" SPACE #"(?i)Has" SPACE>
+        mention
+        <SPACE ("type" | "attribute")>?
     )
 
 
@@ -1597,6 +1636,12 @@ end-attack-by =
     (conditional <",">? <SPACE>)?
     <#"(?i)End" SPACE "that attack by" SPACE>
     return
+
+
+(* ATTACH TIMING *)
+attach-timing =
+    (conditional <",">? <SPACE>)?
+    <"attach" SPACE> timing <SPACE "to" SPACE> timing-effects
 
 
 (* ATTACK *)
@@ -1950,7 +1995,7 @@ any_card-type =
                 ((color | level) <SPACE>?)+
             )?
             (such <SPACE>)?
-            <#"card(\'?s\'?)?">
+            <#"(?i)card(\'?s\'?)?">
             (<SPACE> among-them)?
             (<SPACE> field)?
             (<SPACE> zone)?
@@ -1969,6 +2014,8 @@ any_card-type =
             color <SPACE "and having" SPACE> DP <SPACE "and" SPACE> field
         ) / (
             mention <SPACE #"card(\'?s\'?)?" SPACE> different-name
+        ) / (
+            field <SPACE> mention
         )
     )
 digimon_card-type =
@@ -2060,7 +2107,7 @@ option_card-type =
 (* ZONES *)
 zone =
     (
-        <"from" SPACE>?
+        <#"(?i)From" SPACE>?
         (location <SPACE>)?
         (
             (<target SPACE> zone_and-or)
@@ -2262,7 +2309,7 @@ disable =
                 (<SPACE> (state | gain_lose | dp-reduced | reduced | returned-to | unsuspend) (<SPACE> target)?)?
                 (<SPACE "be" SPACE> state)?
             )+
-        ) | (
+        ) / (
             (* None of target can... *)
             disable-all-targets <SPACE>
             (
@@ -2274,6 +2321,8 @@ disable =
                 (<SPACE> (state | gain_lose | dp-reduced | reduced | returned-to | unsuspend) (<SPACE> target)?)?
                 (<SPACE "be" SPACE> state)?
             )+
+        ) / (
+            can-not <SPACE "be" SPACE> state
         )
     )
     <SPACE "or">?
@@ -2323,6 +2372,9 @@ amplify-effect =
             <SPACE>
             <"to the" SPACE> field <SPACE "this effect may choose">
         )
+        | (
+            <#"(?i)Add" SPACE> value <SPACE "to this effect's choosable" SPACE> field
+        )
     )
 weaken-effect =
     (conditional <"," SPACE>)?
@@ -2343,7 +2395,7 @@ target-effect =
                 | any-effect
             )
         )
-        | (value <SPACE #"effect\'?s?" SPACE "of" SPACE> target)
+        | (value <SPACE "of the">? <SPACE #"effect\'?s?" SPACE ("of" | "on") SPACE> target)
         | any-effect
         | DP-based <SPACE> state <SPACE #"effect\'?s?">
         | digixrosing
@@ -2404,6 +2456,7 @@ any-security-stack-decremented = <"a card is removed from a player's security st
     | disallow-increase-number-of-cards
     | disallow-timing-effect
     | disallow-all-players-digimon-deletion-in-battle
+    | disallow-leave-area
 can-not = <#"(?i)can't">
 disallow-play =
     ((conditional | choose) <",">? <SPACE>)?
@@ -2504,7 +2557,9 @@ disallow-attack-and-activation =
     disallow-attack
     <SPACE "and" SPACE>
     disallow-activation
-disallow-effect-to-reduce = target-effect <SPACE> <can-not SPACE "reduce" SPACE> target
+disallow-effect-to-reduce =
+    (duration <"," SPACE>)?
+    target-effect <SPACE> <can-not SPACE "reduce" SPACE> target
 disallow-effect-to-trash-or-reduce-dp =
     <"prevent" SPACE>
     target-effect
@@ -2570,12 +2625,20 @@ disallow-timing-effect =
 disallow-all-players-digimon-deletion-in-battle =
     <"Neither player's Digimon can be deleted" SPACE> in-battle
     (<SPACE> duration)?
+disallow-leave-area =
+    (duration <"," SPACE>)?
+    target <SPACE>
+    <can-not SPACE>
+    <"leave" SPACE>
+    zone
+    (<SPACE> except-by)?
+except-by =
+    except <SPACE "by" SPACE> deleted
 
 
-
-
-if-do = <#"(?i)If" SPACE> target <SPACE ("do" | "did" | "does")> <",">?
+if-do = <#"(?i)If" SPACE> target <SPACE ("do" | "did" | "does")> (<SPACE> either)? <",">?
 if-do-not = <#"(?i)If" SPACE> target <SPACE> (<"don't"> | <"do not"> | <"didn't">) <",">?
+either = <"either">
 then = <#"(?i)Then,?"> | <#"(?i)When you do,?">
 conditional =
     (
@@ -2585,7 +2648,7 @@ conditional =
                         (
                             (<#"(?i)When"> | <#"(?i)While"> | <#"(?i)If">)
                             (
-                                  (<SPACE> (<"there are"> | <"there're"> | <"there's">))
+                                  (<SPACE> (<"there are"> | <"there're"> | <"there's"> | <"there is">))
                                 | <SPACE "it's a">
                             )?
                         ) | (if-do | if-do-not)
@@ -2737,10 +2800,12 @@ state =
                 | unblockable
                 | battling
                 | digivolved
+                | dna-digivolved
                 | dna-digivolving
                 | survives
                 | leave
                 | deleted
+                | deleted-by
                 | returned
                 | revealed
                 | suspended
@@ -2795,12 +2860,17 @@ blockable = <"blockable">
 unblockable = <"unblockable">
 battling = <"battling">
 digivolved =
-    <"that" SPACE>?
-    <"next" SPACE>?
-    <#"digivolv(e[sd]?|ing)">
-    <SPACE "into">?
-    (<SPACE> target)?
-    (<SPACE "from" SPACE> level <("," | (SPACE "to")) SPACE> level)?
+    (
+        <"that" SPACE>?
+        <"next" SPACE>?
+        <#"digivolv(e[sd]?|ing)">
+        <SPACE "into">?
+        (<SPACE> target)?
+        (<SPACE "from" SPACE> level <("," | (SPACE "to")) SPACE> level)?
+    ) | (
+        <"digivolves" SPACE> target
+    )
+dna-digivolved = <"DNA digivolved">
 dna-digivolving = <"DNA digivolving">
 for-dna-digivolution = <"for DNA" SPACE #"(?i)Digivolution">
 survives = <("and" SPACE)? "survives">
@@ -2854,11 +2924,12 @@ of-declared-category =
 adds-digivolution-cards-to =
     <"adds digivolution cards to" SPACE> target
 added = target <SPACE "added" SPACE> target
-suspended = <#"suspend(ed|s)"> (<SPACE> target)?
+suspended = <#"suspend(ed|s)?"> (<SPACE> target)?
 unsuspended = <#"unsuspend(ed)?">
 played =
       (<"played is" SPACE> target)
     | (target <SPACE "play">)
+    | (<"plays"> (<SPACE> target)?)
     | (<"played"> | <"used">)
 played-with =
     (
@@ -3031,7 +3102,7 @@ different-name =
         (<SPACE "than" SPACE> target)?
         (<SPACE> that-includes-the-chosen-target-name)?
     ) | (
-        <without SPACE "the same name as the" SPACE> target
+        <without SPACE "the same name as" SPACE> <"the" SPACE>? target
     )
 that-includes-the-chosen-target-name = <"that includes the" SPACE> target <SPACE "name">
 token = _mention_ <SPACE #"(?i)Tokens?">
@@ -3054,7 +3125,7 @@ token-attributes =
         )
         <".)">
     ) | (
-        <"("> card-type <"/"> color <"/"> DP <"/"> (keyword-effect / <OPEN_QUOTE> (EFFECT / EFFECT+) <CLOSE_QUOTE>) <")">
+        <"("> card-type <"/"> color <"/"> DP <"/"> (keyword-effect / <OPEN_QUOTE> (EFFECT / EFFECT+) <CLOSE_QUOTE> / (EFFECT / EFFECT+)) <")">
         <SPACE #"(?i)Tokens?">?
     ) | (
         <"("> card-type <"/"> play-cost <"/"> level <"/"> color <"/"> form <"/"> attribute <"/"> digimon-type <"/"> DP <")">
