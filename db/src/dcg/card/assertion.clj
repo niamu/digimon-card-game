@@ -3,6 +3,24 @@
    [clojure.set :as set]
    [clojure.string :as string]))
 
+(def category-keyword
+  {"Digi-Egg"    :digi-egg
+   "デジタマ"    :digi-egg
+   "디지타마"    :digi-egg
+   "数码蛋"      :digi-egg
+   "Digimon"     :digimon
+   "デジモン"    :digimon
+   "디지몬"      :digimon
+   "数码宝贝"    :digimon
+   "Tamer"       :tamer
+   "テイマー"    :tamer
+   "테이머"      :tamer
+   "驯兽师"      :tamer
+   "Option"      :option
+   "オプション"  :option
+   "옵션"        :option
+   "选项"        :option})
+
 (defn- highlights
   "Card highlights that differ across languages"
   [cards]
@@ -107,9 +125,20 @@
 (defn- card-categories
   [cards]
   (->> cards
-       (reduce (fn [accl {:card/keys [language category]}]
-                 (update-in accl [language] (fnil conj #{}) category))
-               {})))
+       (group-by :card/number)
+       (reduce-kv
+        (fn [accl number card-group]
+          (let [result
+                (->> card-group
+                     (map (comp #(apply hash-map %)
+                                (juxt :card/id
+                                      (comp category-keyword :card/category))))
+                     (apply merge)
+                     (into (sorted-map)))]
+            (if (apply = (vals result))
+              accl
+              (assoc accl number result))))
+        (sorted-map))))
 
 (defn- card-rarities
   [cards]
@@ -167,12 +196,8 @@
           "Card highlights differ across languages")
   (assert (empty? (text-fields cards))
           "Card text fields differ across languages")
-  (assert (= (card-categories cards)
-             {"en" #{"Digi-Egg" "Option" "Digimon" "Tamer"},
-              "ja" #{"オプション" "テイマー" "デジモン" "デジタマ"},
-              "ko" #{"디지타마" "디지몬" "옵션" "테이머"},
-              "zh-Hans" #{"数码宝贝" "驯兽师" "数码蛋" "选项"}})
-          "Card category fields across languages do not amount to 4")
+  (assert (empty? (card-categories cards))
+          "Card categories differ across languages")
   (assert (every? (fn [[_ rarities]]
                     (= rarities #{"C" "U" "R" "SR" "SEC" "P"}))
                   (card-rarities cards))

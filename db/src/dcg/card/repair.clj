@@ -2460,7 +2460,9 @@
                      (and s
                           (cond->> s
                             (not (string/starts-with? s "【시큐리티】"))
-                            (str "【시큐리티】 "))))))}
+                            (str "【시큐리티】 "))))))
+    "zh-Hans" (fn [card]
+                (assoc card :card/category "驯兽师"))}
    "P-023"
    {"ja" (fn [card]
            (update card :card/effect
