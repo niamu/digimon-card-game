@@ -56,13 +56,19 @@
                          (apply merge-with merge))
         errata (->> (pmap errata/errata origins)
                     (apply merge-with merge))
-        digivolve-values-by-number
+        common-values-by-number
         (reduce (fn [accl {:card/keys [number parallel-id language] :as card}]
                   (if (and (= language "ja") (zero? parallel-id))
                     (assoc accl
                            number
                            (select-keys card
-                                        [:card/digivolution-requirements]))
+                                        [:card/color
+                                         :card/rarity
+                                         :card/level
+                                         :card/dp
+                                         :card/play-cost
+                                         :card/use-cost
+                                         :card/digivolution-requirements]))
                     accl))
                 {}
                 unrefined-cards)
@@ -87,7 +93,13 @@
                                           string/split-lines
                                           (as-> #__ coll
                                             (map string/trim coll)))]
-                  (cond-> (merge card (get digivolve-values-by-number number))
+                  (cond-> (merge (get common-values-by-number number)
+                                 card
+                                 (select-keys (get common-values-by-number number)
+                                              [:card/digivolution-requirements]))
+                    (= language "ko")
+                    (merge (select-keys (get common-values-by-number number)
+                                        [:card/use-cost]))
                     errata-for-card
                     (as-> #__ c
                       (-> (reduce-kv (fn [m k v]

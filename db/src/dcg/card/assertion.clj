@@ -82,41 +82,27 @@
   "JA card values that differ which are used as common values across languages"
   [cards]
   (->> cards
-       (reduce (fn [accl {:card/keys [number language] :as card}]
-                 (if (= language "ja")
-                   (update-in accl [number] (fnil conj #{})
-                              (select-keys card [:card/color
-                                                 :card/rarity
-                                                 :card/level
-                                                 :card/dp
-                                                 :card/play-cost
-                                                 :card/use-cost]))
-                   accl))
-               {})
-       (reduce (fn [accl [number counts-by-lang]]
-                 (if (apply = counts-by-lang)
-                   accl
-                   (conj accl [number counts-by-lang])))
-               [])))
-
-(defn- card-digivolution-requirements
-  [cards]
-  (->> cards
-       (filter :card/digivolution-requirements)
-       (reduce (fn [accl {:card/keys [number digivolution-requirements] :as card}]
-                 (let [broken (remove (fn [{:digivolve/keys [color
-                                                            cost
-                                                            level]}]
-                                        (every? (complement nil?)
-                                                [color
-                                                 cost
-                                                 level]))
-                                      digivolution-requirements)]
-                   (cond-> accl
-                     (seq broken)
-                     (update-in [number] (fnil conj #{})
-                                broken))))
-               {})))
+       (group-by :card/number)
+       (reduce-kv
+        (fn [accl number card-group]
+          (let [result
+                (->> card-group
+                     (map (comp #(apply hash-map %)
+                                (juxt :card/id
+                                      #(->> [:card/color
+                                             :card/rarity
+                                             :card/level
+                                             :card/dp
+                                             :card/play-cost
+                                             :card/use-cost
+                                             :card/digivolution-requirements]
+                                            (select-keys %)))))
+                     (apply merge)
+                     (into (sorted-map)))]
+            (if (apply = (vals result))
+              accl
+              (assoc accl number result))))
+        (sorted-map))))
 
 (defn- card-categories
   [cards]
@@ -181,14 +167,14 @@
           "Card highlights differ across languages")
   (assert (empty? (text-fields cards))
           "Card text fields differ across languages")
-  (assert (empty? (card-digivolution-requirements cards))
-          "Card digivolution requirements do not have all expected values")
-  (assert (every? (fn [[_ categories]]
-                    (= (count categories) 4))
-                  (card-categories cards))
+  (assert (= (card-categories cards)
+             {"en" #{"Digi-Egg" "Option" "Digimon" "Tamer"},
+              "ja" #{"オプション" "テイマー" "デジモン" "デジタマ"},
+              "ko" #{"디지타마" "디지몬" "옵션" "테이머"},
+              "zh-Hans" #{"数码宝贝" "驯兽师" "数码蛋" "选项"}})
           "Card category fields across languages do not amount to 4")
   (assert (every? (fn [[_ rarities]]
-                    (= (count rarities) 6))
+                    (= rarities #{"C" "U" "R" "SR" "SEC" "P"}))
                   (card-rarities cards))
           "Card rarity fields across languages do not amount to 6")
   (assert (= (card-errata cards)

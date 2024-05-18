@@ -106,9 +106,10 @@
                                                 (re-seq card-utils/card-number-re)
                                                 (into [])))]
                       (if-not number
-                        (logging/error
-                         (format "Unable to detect card from image: %s"
-                                 image))
+                        (when image
+                          (logging/error
+                            (format "Unable to detect card from image: %s"
+                                    image)))
                         (cond-> {:limitation/id id
                                  :limitation/type limitation-type
                                  :limitation/note note
@@ -294,9 +295,10 @@
                                                     (re-seq card-utils/card-number-re)
                                                     (into [])))]
                           (if-not number
-                            (do (logging/error
-                                 (format "Unable to detect card from image: %s"
-                                         image))
+                            (do (when image
+                                  (logging/error
+                                    (format "Unable to detect card from image: %s"
+                                            image)))
                                 accl)
                             (conj accl
                                   (cond-> {:limitation/id id
