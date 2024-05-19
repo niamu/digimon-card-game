@@ -148,7 +148,10 @@
                                                           :release/genre
                                                           :release/product-uri]}]) ...]]
                                       :in [$ ?n]
-                                      :where [[?c :card/number ?n]]}
+                                      :where [[?c :card/number ?n]
+                                              [?c :card/image ?i]
+                                              [?i :image/language ?l]
+                                              [?c :card/language ?l]]}
                                     card-number))})}}]])
 
 (defonce ^:private store-key

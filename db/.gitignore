@@ -7,3 +7,4 @@ resources/images/cards/
 resources/images/icons/
 resources/images/releases/
 resources/db.edn
+src/main.rs
