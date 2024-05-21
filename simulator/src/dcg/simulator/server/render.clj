@@ -212,7 +212,7 @@
                              (if (< (or block-icon 0) 3)
                                "0,4 58,4 88,34 382,34 382,45 0,45"
                                "0,4 54,4 60,11 60,34 382,34 382,45 0,45")
-                             (if (< (or block-icon 0) 3)
+                             (if (< (or block-icon 0) 4)
                                "0,34, 382,34 382,45 0,45"
                                "302,45, 312,34, 382,34, 382,45 302,45"))
                    :fill (if (= (-> color first :color/color) :black)
@@ -244,8 +244,10 @@
                         (get card-color :white))
                 :style {:paint-order "stroke"}
                 :stroke (when (and (> (count color) 1)
-                                   (contains? (set (map :color/color color))
-                                              :yellow))
+                                   (or (contains? (set (map :color/color color))
+                                                  :yellow)
+                                       (contains? (set (map :color/color color))
+                                                  :white)))
                           (if (and (= (-> color first :color/color) :yellow)
                                    (< (count color) 3))
                             "#FFF"
@@ -492,7 +494,7 @@
         [:h3.sr-only "Breeding Area"]
         (list (->> stacks
                    (map (fn [{::stack/keys [cards uuid]
-                             :as stack}]
+                              :as stack}]
                           (->> cards
                                (map (juxt ::card/uuid
                                           (comp #(get-in game %)

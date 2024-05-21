@@ -11,21 +11,57 @@ struct Template {
     pub value: i32,
 }
 
-const BLOCK_ICONS: [Template; 4] = [
+const BLOCK_ICONS: [Template; 13] = [
     Template {
-        path: "resources/images/templates/block-icons/01.png",
+        path: "resources/images/templates/block-icons/01_a.png",
         value: 1,
     },
     Template {
-        path: "resources/images/templates/block-icons/02.png",
+        path: "resources/images/templates/block-icons/02_a.png",
         value: 2,
     },
     Template {
-        path: "resources/images/templates/block-icons/03.png",
+        path: "resources/images/templates/block-icons/02_b.png",
+        value: 2,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/02_c.png",
+        value: 2,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_a.png",
         value: 3,
     },
     Template {
-        path: "resources/images/templates/block-icons/04.png",
+        path: "resources/images/templates/block-icons/03_b.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_c.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_d.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_e.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_f.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_g.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_h.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/04_a.png",
         value: 4,
     },
 ];
@@ -52,7 +88,7 @@ pub extern "C" fn block_icon(image_path: *const c_char) -> i32 {
         image_mat = reduced_image_mat.clone();
         drop(reduced_image_mat);
     }
-    let image_roi = Mat::roi(&image_mat, Rect::new(385, 460, 20, 110)).unwrap();
+    let image_roi = Mat::roi(&image_mat, Rect::new(370, 460, 28, 140)).unwrap();
     let mut result: Vec<(f64, i32)> = Vec::default();
     for block_icon in BLOCK_ICONS {
         let template = cv::imgcodecs::imread(
@@ -61,7 +97,7 @@ pub extern "C" fn block_icon(image_path: *const c_char) -> i32 {
         )
         .unwrap();
         let match_result = utils::template_match(&template, &image_roi);
-        if match_result.accuracy > 0.948
+        if match_result.accuracy > 0.875
         {
             result.push((match_result.accuracy, block_icon.value));
         }

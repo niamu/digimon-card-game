@@ -314,7 +314,7 @@ pub extern "C" fn digivolution_requirements(
         unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
     let mut image_mat =
         cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
-    if image_mat.cols() > 431 || image_mat.rows() > 601 {
+    if image_mat.cols() != 430 || image_mat.rows() != 600 {
         let image_size = cv::core::Size::new(430, 600);
         let mut reduced_image_mat = Mat::default();
         cv::imgproc::resize(
@@ -330,7 +330,7 @@ pub extern "C" fn digivolution_requirements(
         image_mat = reduced_image_mat.clone();
         drop(reduced_image_mat);
     }
-    image_mat = Mat::roi(&image_mat, Rect::new(0, 90, 85, 210)).unwrap();
+    image_mat = Mat::roi(&image_mat, Rect::new(0, 90, 90, 210)).unwrap();
     let mut result_vec: Vec<(MatchResult, Template)> = Vec::default();
     for digivolve_template in DIGIVOLVE_TEMPLATES {
         let template = cv::imgcodecs::imread(
@@ -339,7 +339,7 @@ pub extern "C" fn digivolution_requirements(
         )
         .unwrap();
         let match_result = utils::template_match(&template, &image_mat);
-        if match_result.accuracy > 0.92 && match_result.coords.y < 25 {
+        if match_result.accuracy > 0.85 && match_result.coords.y < 25 {
             result_vec.push((match_result, digivolve_template));
         }
     }

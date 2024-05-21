@@ -1,7 +1,12 @@
 (ns dcg.card.assertion
   (:require
+   [clojure.data :as data]
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
    [clojure.set :as set]
-   [clojure.string :as string]))
+   [clojure.string :as string])
+  (:import
+   [java.io PushbackReader]))
 
 (def category-keyword
   {"Digi-Egg"    :digi-egg
@@ -184,6 +189,73 @@
                  (update accl language (fnil conj #{}) number))
                {})))
 
+(defn- card-block-icons
+  [cards]
+  (let [expected-block-icons {"ST1" nil
+                              "ST2" nil
+                              "ST3" nil
+                              "BT1" nil
+                              "BT2" nil
+                              "BT3" nil
+                              "ST4" nil
+                              "ST5" nil
+                              "ST6" nil
+                              "BT4" nil
+                              "BT5" nil
+                              "ST7" 1
+                              "ST8" 1
+                              "BT6" 1
+                              "EX1" 1
+                              "BT7" 1
+                              "ST9" 1
+                              "ST10" 1
+                              "BT8" 1
+                              "EX2" 1
+                              "BT9" 1
+                              "ST12" 2
+                              "ST13" 2
+                              "BT10" 2
+                              "EX3" 2
+                              "BT11" 2
+                              "BT12" 2
+                              "ST14" 2
+                              "EX4" 2
+                              "RB1" 2
+                              "BT13" 2
+                              "ST15" 3
+                              "ST16" 3
+                              "BT14" 3
+                              "LM" 3
+                              "EX5" 3
+                              "BT15" 3
+                              "ST17" 3
+                              "BT16" 3
+                              "EX6" 3
+                              "BT17" 3
+                              "ST18" 4
+                              "ST19" 4}
+        block-icons-per-set
+        (->> cards
+             (filter (fn [{:card/keys [language image]}]
+                       (= language (:image/language image))))
+             (reduce (fn [accl {:card/keys [id number parallel-id block-icon]
+                               :as card}]
+                       (update-in accl [(string/replace number #"\-[0-9]+" "")
+                                        block-icon]
+                                  (fnil conj #{})
+                                  id))
+                     {})
+             (reduce-kv (fn [accl release kv]
+                          (let [result (dissoc kv
+                                               (get expected-block-icons
+                                                    release :not-found))]
+                            (cond-> accl
+                              (seq result)
+                              (assoc release result))))
+                        {}))]
+    (->> block-icons-per-set
+         (into (sorted-map)))))
+
 (defn card-assertions
   [cards]
   (assert (empty? (card-values cards))
@@ -198,6 +270,12 @@
           "Card text fields differ across languages")
   (assert (empty? (card-categories cards))
           "Card categories differ across languages")
+  (assert (empty? (first
+                   (data/diff (card-block-icons cards)
+                              (edn/read (PushbackReader.
+                                         (io/reader
+                                          (io/resource "block-icons.edn")))))))
+          "Card block icons do not match expected output")
   (assert (every? (fn [[_ rarities]]
                     (= rarities #{"C" "U" "R" "SR" "SEC" "P"}))
                   (card-rarities cards))

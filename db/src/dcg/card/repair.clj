@@ -44,7 +44,11 @@
                   (assoc :card/inherited-effect effect)))}
    "BT1-084"
    {"ko" (fn [card]
-           (assoc card :card/type "성기사형/로얄 나이츠"))}
+           (assoc card :card/type "성기사형/로얄 나이츠"))
+    "zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
+                (cond-> card
+                  (= source (URI. "https://source.windoent.com/DTCG/BT1-084_03.png"))
+                  (assoc :card/block-icon 0)))}
    "BT1-085"
    {"zh-Hans" (fn [card]
                 (assoc card :card/security-effect
@@ -96,6 +100,35 @@
    "BT1-106"
    {"en" (fn [card]
            (assoc card :card/name "Symphony No. 1 <Polyphony>"))}
+   "BT1-110"
+   {"ko" (fn [{:card/keys [language number]
+              {:image/keys [source]} :card/image
+              :as card}]
+           (cond-> card
+             (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/488/001/041bb4f6ddaf7187fd54b44b9aaa7924.png"))
+             (assoc :card/id (format "card/%s_%s_P%d"
+                                     language
+                                     number
+                                     0)
+                    :card/parallel-id 0)
+             (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/489/001/bcec5d312b7d5b8a1286ec0e2533e1d4.png"))
+             (assoc :card/id (format "card/%s_%s_P%d"
+                                     language
+                                     number
+                                     1)
+                    :card/parallel-id 1)
+             (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/724/005/eaaa3e875d182cd3e887ba1ab1b9e7a7.png"))
+             (assoc :card/id (format "card/%s_%s_P%d"
+                                     language
+                                     number
+                                     2)
+                    :card/parallel-id 2)
+             (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/480/009/a0e1df96c9cd4131c2cdb01bc866d8aa.png"))
+             (assoc :card/id (format "card/%s_%s_P%d"
+                                     language
+                                     number
+                                     3)
+                    :card/parallel-id 3)))}
    "BT2-001"
    {"zh-Hans" (fn [card]
                 (assoc card
@@ -151,6 +184,23 @@
            (update card :card/effect
                    (fn [s]
                      (string/replace s "get-4000" "get -4000"))))}
+   "BT2-108"
+   {"ko" (fn [{:card/keys [language number]
+              {:image/keys [source]} :card/image
+              :as card}]
+           (cond-> card
+             (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
+             (assoc :card/id (format "card/%s_%s_P%d"
+                                     language
+                                     number
+                                     0)
+                    :card/parallel-id 0)
+             (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/496/009/e44e46fcf33decf19e09a6c5ec0ad9c5.png"))
+             (assoc :card/id (format "card/%s_%s_P%d"
+                                     language
+                                     number
+                                     1)
+                    :card/parallel-id 1)))}
    "BT3-001"
    {"ko" (fn [card]
            (assoc card :card/rarity "U"))}
@@ -168,7 +218,7 @@
    {"ko" (fn [{:card/keys [language level parallel-id] :as card}]
            (cond-> card
              (= level 3)
-             (-> (assoc :card/id (format "card/%s_%s_P"
+             (-> (assoc :card/id (format "card/%s_%s_P%d"
                                          language
                                          "BT3-009"
                                          parallel-id)
@@ -185,6 +235,12 @@
    "BT3-028"
    {"en" (fn [card]
            (assoc card :card/name "Bastemon"))}
+   "BT3-043"
+   {"zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
+                (cond-> card
+                  (= source
+                     (URI. "https://source.windoent.com/DTCG/BTC2_BT3-043P_D%C2%A0%C2%A0源.png"))
+                  (assoc :card/block-icon 0)))}
    "BT3-057"
    {"en" (fn [card]
            (update-in card [:card/image :image/source]
@@ -266,6 +322,17 @@
    "BT5-038"
    {"zh-Hans" (fn [card]
                 (assoc card :card/play-cost 5))}
+   "BT5-085"
+   {"ja" (fn [{{:image/keys [source]} :card/image :as card}]
+           (cond-> card
+             (= source
+                (URI. "https://digimoncard.com/images/cardlist/card/BT5-085_P2.png"))
+             (assoc :card/block-icon 0)))
+    "en" (fn [{{:image/keys [source]} :card/image :as card}]
+           (cond-> card
+             (= source
+                (URI. "https://world.digimoncard.com/images/cardlist/card/BT5-085_P2.png"))
+             (assoc :card/block-icon 0)))}
    "BT5-094"
    {"ko" (fn [card]
            (update card
@@ -288,6 +355,17 @@
            (cond-> card
              (nil? (:card/type card))
              (assoc :card/type "성룡형/데바")))}
+   "BT6-032"
+   {"ja" (fn [{{:image/keys [source]} :card/image :as card}]
+           (cond-> card
+             (= source
+                (URI. "https://digimoncard.com/images/cardlist/card/BT6-032_P1.png"))
+             (assoc :card/block-icon 1)))
+    "zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
+                (cond-> card
+                  (= source
+                     (URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1702876797295BT6-032_01.jpg"))
+                  (assoc :card/block-icon 1)))}
    "BT6-044"
    {"ko" (fn [card]
            (assoc card :card/type "성기사형/로얄 나이츠"))}
@@ -400,6 +478,12 @@
                          "【我方的回合】[每回合1次]当我方的驯兽师登场时,《抽1张卡》（从我方的卡组上方抽取1张卡牌）。")
                   (= source (URI. "https://source.windoent.com/DTCG/BT2-070_01.png"))
                   (assoc :card/number "BT2-070")))}
+   "BT7-081"
+   {"en" (fn [{{:image/keys [source]} :card/image :as card}]
+           (cond-> card
+             (= source
+                (URI. "https://world.digimoncard.com/images/cardlist/card/BT7-081_P5.png"))
+             (assoc :card/block-icon 1)))}
    "BT7-085"
    {"ja" (fn [{:card/keys [inherited-effect] :as card}]
            (cond-> card
@@ -2173,6 +2257,12 @@
                    :card/inherited-effect
                    (fn [s]
                      (string/replace s "gains." "gains ＜Security A. +1＞."))))}
+   "EX5-024"
+   {"en" (fn [{{:image/keys [source]} :card/image :as card}]
+           (cond-> card
+             (= source
+                (URI. "https://world.digimoncard.com/images/cardlist/card/EX5-024.png"))
+             (assoc :card/block-icon 3)))}
    "EX5-071"
    {"zh-Hans" (fn [card]
                 (-> card
@@ -2402,6 +2492,13 @@
              (not security-effect)
              (assoc :card/security-effect
                     "【セキュリティ】最もLv.が驚い箱手のデジモン1体を消滅させる。")))}
+   "ST15-02"
+   {"en" (fn [{{:image/keys [source]} :card/image :as card}]
+           (cond-> card
+             (= source
+                (URI. "https://world.digimoncard.com/images/cardlist/card/ST15-02_P1.png"))
+             (assoc-in [:card/image :image/source]
+                       (URI. "https://static.wikia.nocookie.net/digimoncardgame/images/f/fd/ST15-02_P1.png"))))}
    "ST15-08"
    {"en" (fn [card]
            (dissoc card :card/security-effect))}

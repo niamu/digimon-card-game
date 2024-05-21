@@ -68,10 +68,14 @@
     result))
 
 (defn block-icon
-  [{{:image/keys [path]} :card/image :as card}]
+  [{:card/keys [block-icon]
+    {:image/keys [path]} :card/image
+    :as card}]
   (let [v (.block_icon native-library (str "resources" path))]
     (cond-> card
-      (pos? v) (assoc :card/block-icon v))))
+      (and (pos? v)
+           (nil? block-icon)) (assoc :card/block-icon v)
+      (= block-icon 0) (dissoc :card/block-icon))))
 
 (defn digivolution-requirements
   [{:card/keys [digivolution-requirements number]

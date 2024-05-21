@@ -58,7 +58,8 @@
                     (apply merge-with merge))
         common-values-by-number
         (reduce (fn [accl {:card/keys [number parallel-id language] :as card}]
-                  (if (and (= language "ja") (zero? parallel-id))
+                  (if (and (= language "ja")
+                           (zero? parallel-id))
                     (assoc accl
                            number
                            (select-keys card
