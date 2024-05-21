@@ -72,8 +72,7 @@ fn color_difference(rgb1: RGB, rgb2: RGB) -> f64 {
     let r_diff: f64 = (rgb1.r as f64 - rgb2.r as f64).into();
     let g_diff: f64 = (rgb1.g as f64 - rgb2.g as f64).into();
     let b_diff: f64 = (rgb1.b as f64 - rgb2.b as f64).into();
-    let result: f64 =
-        (r_diff.powf(2.0) + g_diff.powf(2.0) + b_diff.powf(2.0)).into();
+    let result: f64 = (r_diff.powf(2.0) + g_diff.powf(2.0) + b_diff.powf(2.0)).into();
     (result.sqrt() / max_distance) * 100.0
 }
 
@@ -113,8 +112,7 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
     let channels = Vector::from_slice(&[0, 1, 2]);
     let mask_roi = cv::core::no_array();
     let hsize = Vector::from_slice(&[2, 2, 2]);
-    let ranges =
-        Vector::from_slice(&[0_f32, 255_f32, 0_f32, 255_f32, 0_f32, 255_f32]);
+    let ranges = Vector::from_slice(&[0_f32, 255_f32, 0_f32, 255_f32, 0_f32, 255_f32]);
     let mut hist = Mat::default();
     cv::imgproc::calc_hist(
         &images, &channels, &mask_roi, &mut hist, &hsize, &ranges, false,
@@ -174,9 +172,7 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
     {
         let non_text_colors: Vec<_> = detected_colors
             .iter()
-            .filter(|color| {
-                **color != "white".to_string() && **color != "black".to_string()
-            })
+            .filter(|color| **color != "white".to_string() && **color != "black".to_string())
             .collect();
         if non_text_colors.len() != 0 {
             result.push(non_text_colors.first().unwrap().to_owned().clone())
@@ -307,13 +303,9 @@ fn requirements_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveRequirement
 }
 
 #[no_mangle]
-pub extern "C" fn digivolution_requirements(
-    image_path: *const c_char,
-) -> *mut c_char {
-    let image_path: &str =
-        unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
-    let mut image_mat =
-        cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
+pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c_char {
+    let image_path: &str = unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
+    let mut image_mat = cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
     if image_mat.cols() != 430 || image_mat.rows() != 600 {
         let image_size = cv::core::Size::new(430, 600);
         let mut reduced_image_mat = Mat::default();
@@ -333,11 +325,9 @@ pub extern "C" fn digivolution_requirements(
     image_mat = Mat::roi(&image_mat, Rect::new(0, 90, 90, 210)).unwrap();
     let mut result_vec: Vec<(MatchResult, Template)> = Vec::default();
     for digivolve_template in DIGIVOLVE_TEMPLATES {
-        let template = cv::imgcodecs::imread(
-            digivolve_template.path,
-            cv::imgcodecs::IMREAD_UNCHANGED,
-        )
-        .unwrap();
+        let template =
+            cv::imgcodecs::imread(digivolve_template.path, cv::imgcodecs::IMREAD_UNCHANGED)
+                .unwrap();
         let match_result = utils::template_match(&template, &image_mat);
         if match_result.accuracy > 0.85 && match_result.coords.y < 25 {
             result_vec.push((match_result, digivolve_template));

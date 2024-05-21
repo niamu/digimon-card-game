@@ -38,10 +38,7 @@ pub fn template_match(template: &Mat, image: &Mat) -> MatchResult {
     let mut result_sqdiff = Mat::default();
     let mut result: f64;
     let mut image_prep = image.clone();
-    let mut coords = Coords {
-        x: 0,
-        y: 0,
-    };
+    let mut coords = Coords { x: 0, y: 0 };
     if template.channels() > 3 {
         cv::core::extract_channel(&template, &mut alpha, 3).unwrap();
         cv::imgproc::threshold(
@@ -60,13 +57,7 @@ pub fn template_match(template: &Mat, image: &Mat) -> MatchResult {
         )
         .unwrap();
     } else {
-        cv::imgproc::cvt_color(
-            &image,
-            &mut image_prep,
-            cv::imgproc::COLOR_BGR2GRAY,
-            0,
-        )
-        .unwrap();
+        cv::imgproc::cvt_color(&image, &mut image_prep, cv::imgproc::COLOR_BGR2GRAY, 0).unwrap();
         cv::imgproc::cvt_color(
             &template,
             &mut template_prep,

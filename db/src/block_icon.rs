@@ -2,7 +2,11 @@ use std::cmp::Ordering;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
-use opencv::{self as cv, core::{Mat, Rect}, prelude::MatTraitConst};
+use opencv::{
+    self as cv,
+    core::{Mat, Rect},
+    prelude::MatTraitConst,
+};
 
 use crate::utils;
 
@@ -68,10 +72,8 @@ const BLOCK_ICONS: [Template; 13] = [
 
 #[no_mangle]
 pub extern "C" fn block_icon(image_path: *const c_char) -> i32 {
-    let image_path: &str =
-        unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
-    let mut image_mat =
-        cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
+    let image_path: &str = unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
+    let mut image_mat = cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
     if image_mat.cols() != 430 || image_mat.rows() != 600 {
         let image_size = cv::core::Size::new(430, 600);
         let mut reduced_image_mat = Mat::default();
@@ -91,14 +93,10 @@ pub extern "C" fn block_icon(image_path: *const c_char) -> i32 {
     let image_roi = Mat::roi(&image_mat, Rect::new(370, 460, 28, 140)).unwrap();
     let mut result: Vec<(f64, i32)> = Vec::default();
     for block_icon in BLOCK_ICONS {
-        let template = cv::imgcodecs::imread(
-            block_icon.path,
-            cv::imgcodecs::IMREAD_UNCHANGED,
-        )
-        .unwrap();
+        let template =
+            cv::imgcodecs::imread(block_icon.path, cv::imgcodecs::IMREAD_UNCHANGED).unwrap();
         let match_result = utils::template_match(&template, &image_roi);
-        if match_result.accuracy > 0.875
-        {
+        if match_result.accuracy > 0.875 {
             result.push((match_result.accuracy, block_icon.value));
         }
     }
