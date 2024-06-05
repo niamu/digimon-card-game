@@ -4,7 +4,7 @@
 
 mod codec;
 
-pub use crate::codec::{decode, encode, Deck};
+pub use crate::codec::{decode, encode, Deck, VERSION};
 use serde_json;
 use structopt::StructOpt;
 
@@ -30,6 +30,6 @@ fn main() {
 
     if let Some(deck_str) = &args.deck {
         let deck: Deck = serde_json::from_str(deck_str).unwrap();
-        println!("{:?}", codec::encode(deck, 4));
+        println!("{:?}", codec::encode(deck, VERSION));
     }
 }
