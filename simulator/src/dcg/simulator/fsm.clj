@@ -3,20 +3,12 @@
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [clojure.string :as string]
-   [datomic.api :as d]
    [dcg.codec.spec]
    [dcg.codec.decode :as decode]
    [dcg.db :as db]
    [dcg.simulator.server.render :as render])
   (:import
    [java.util ArrayList Collection Collections Date Random UUID]))
-
-(defn- shuffle-with-seed
-  [^Collection coll seed]
-  (let [al (ArrayList. coll)
-        rng (Random. seed)]
-    (Collections/shuffle al rng)
-    (clojure.lang.RT/vector (.toArray al))))
 
 (def player
   {:player/name          "PLACEHOLDER"
@@ -33,80 +25,79 @@
 
 (defn find-card
   [number parallel-id language]
-  (d/q '{:find [(pull ?c [:card/id
-                          :card/name
-                          :card/number
-                          :card/category
-                          :card/language
-                          :card/parallel-id
-                          :card/block-icon
-                          :card/play-cost
-                          :card/use-cost
-                          :card/level
-                          :card/dp
-                          :card/effect
-                          :card/inherited-effect
-                          :card/security-effect
-                          :card/form
-                          :card/attribute
-                          :card/type
-                          :card/rarity
-                          :card/color
-                          {:card/digivolution-requirements
-                           [:digivolve/id
-                            :digivolve/cost
-                            :digivolve/color
-                            :digivolve/level
-                            :digivolve/index]}
-                          {:card/image
-                           [:image/id
-                            :image/path]}
-                          {:card/errata
-                           [:errata/id
-                            :errata/date
-                            :errata/error
-                            :errata/correction
-                            :errata/notes]}
-                          {:card/limitation
-                           [:limitation/id
-                            :limitation/type
-                            :limitation/date
-                            :limitation/allowance
-                            :limitation/note]}
-                          {:card/highlights
-                           [:highlight/id
-                            :highlight/type
-                            :highlight/text
-                            :highlight/index
-                            :highlight/field
-                            {:highlight/treat
-                             [:treat/id
-                              :treat/as
-                              :treat/field]}
-                            {:highlight/mention
-                             [:mention/id
-                              :mention/text
-                              {:mention/cards
-                               [:card/id]}]}]}
-                          {:card/mentions
-                           [:mention/id
-                            :mention/text
-                            {:mention/cards
-                             [:card/id]}]}
-                          {:card/releases
-                           [:release/id
-                            :release/date
-                            :release/name
-                            :release/genre
-                            :release/product-uri]}]) .]
-         :in [$ ?number ?parallel-id ?language]
-         :where [[?c :card/language ?language]
-                 [?c :card/number ?number]
-                 [?c :card/parallel-id ?parallel-id]]}
-       (d/db db/conn)
-       number
-       parallel-id
-       language))
+  (db/q '{:find [(pull ?c [:card/id
+                           :card/name
+                           :card/number
+                           :card/category
+                           :card/language
+                           :card/parallel-id
+                           :card/block-icon
+                           :card/play-cost
+                           :card/use-cost
+                           :card/level
+                           :card/dp
+                           :card/effect
+                           :card/inherited-effect
+                           :card/security-effect
+                           :card/form
+                           :card/attribute
+                           :card/type
+                           :card/rarity
+                           :card/color
+                           {:card/digivolution-requirements
+                            [:digivolve/id
+                             :digivolve/cost
+                             :digivolve/color
+                             :digivolve/level
+                             :digivolve/index]}
+                           {:card/image
+                            [:image/id
+                             :image/path]}
+                           {:card/errata
+                            [:errata/id
+                             :errata/date
+                             :errata/error
+                             :errata/correction
+                             :errata/notes]}
+                           {:card/limitation
+                            [:limitation/id
+                             :limitation/type
+                             :limitation/date
+                             :limitation/allowance
+                             :limitation/note]}
+                           {:card/highlights
+                            [:highlight/id
+                             :highlight/type
+                             :highlight/text
+                             :highlight/index
+                             :highlight/field
+                             {:highlight/treat
+                              [:treat/id
+                               :treat/as
+                               :treat/field]}
+                             {:highlight/mention
+                              [:mention/id
+                               :mention/text
+                               {:mention/cards
+                                [:card/id]}]}]}
+                           {:card/mentions
+                            [:mention/id
+                             :mention/text
+                             {:mention/cards
+                              [:card/id]}]}
+                           {:card/releases
+                            [:release/id
+                             :release/date
+                             :release/name
+                             :release/genre
+                             :release/product-uri]}]) .]
+          :in [$ ?number ?parallel-id ?language]
+          :where [[?c :card/language ?language]
+                  [?c :card/number ?number]
+                  [?c :card/parallel-id ?parallel-id]]}
+        number
+        parallel-id
+        language))
 
 (defn init-player
   [player]
@@ -116,7 +107,7 @@
         (fn [cards]
           (->> cards
                (mapcat (fn [{:card/keys [number parallel-id count]
-                             :or {parallel-id 0}}]
+                            :or {parallel-id 0}}]
                          (->> (find-card number
                                          parallel-id
                                          (get deck :deck/language "en"))
@@ -596,7 +587,7 @@
                                           (mapcat :card/color)
                                           (into #{}))]
                   (some (fn [{:card/keys [color play-cost use-cost]
-                              :as card}]
+                             :as card}]
                           (and (= (:card/category card) "Option")
                                (not
                                 (empty?
@@ -815,7 +806,7 @@
                                                    players))]
                                         [:phase/mulligan? (constantly true)]]}
    :phase/mulligan?decline {:handler (fn [{:game/keys [current-turn players]
-                                           :as state} _]
+                                          :as state} _]
                                        (-> state
                                            (assoc-in [:game/players
                                                       current-turn
@@ -857,21 +848,21 @@
                                         (hatch-digi-egg current-turn)))
                          :dispatches [[:phase/main (constantly true)]]}
    :phase/raising?move-to-battle-area {:handler (fn [{:game/keys [current-turn]
-                                                      :as state} _]
+                                                     :as state} _]
                                                   (-> state
                                                       (move-out-of-raising-area
                                                        current-turn)))
                                        :dispatches [[:phase/main
                                                      (constantly true)]]}
    :phase/raising?do-nothing {:handler (fn [{:game/keys [current-turn]
-                                             :as state} _]
+                                            :as state} _]
                                          state)
                               :dispatches [[:phase/main (constantly true)]]}
    :phase/main {:handler main-phase}
    :phase/main.play-digimon {:handler play-from-hand
                              :dispatches [[:phase/end
                                            (fn [{:game/keys [current-turn players]
-                                                 :as state}]
+                                                :as state}]
                                              (neg? (get-in players
                                                            [current-turn
                                                             :player/memory])))]
@@ -925,7 +916,7 @@
                                :phase/main.attack.block?decline})))}
    :phase/main.attack.block?accept
    {:handler (fn [{:game/keys [current-turn moves] :as state}
-                  blocking-slot-id]
+                 blocking-slot-id]
                (let [[attacking-slot-id _]
                      (->> moves
                           reverse
@@ -1018,31 +1009,25 @@
       (step :phase/main.attack [1 nil])
       #_(render/game-board {:player/name "niamu"}))
 
-  (->> (d/q '{:find [[?t ...]]
-              :in [$]
-              :where [[?c :card/highlights ?h]
-                      [?c :card/language "ja"]
-                      [?h :highlight/type :keyword-effect]
-                      [?h :highlight/text ?t]
-                      #_[(first ?t) ?f]
-                      #_[(= ?f (first "＜"))]]}
-            (d/db db/conn))
+  (->> (db/q '{:find [[?t ...]]
+               :where [[?c :card/highlights ?h]
+                       [?c :card/language "ja"]
+                       [?h :highlight/type :keyword-effect]
+                       [?h :highlight/text ?t]
+                       #_[(first ?t) ?f]
+                       #_[(= ?f (first "＜"))]]})
        sort)
 
-  (d/q '{:find [[(pull ?c [:card/number]) ...]]
-         :in [$]
-         :where [[?c :card/highlights ?h]
-                 [?c :card/language "ja"]
-                 [?h :highlight/type :keyword-effect]
-                 [?h :highlight/text "≪進撃≫"]]}
-       (d/db db/conn))
+  (db/q '{:find [[(pull ?c [:card/number]) ...]]
+          :where [[?c :card/highlights ?h]
+                  [?c :card/language "ja"]
+                  [?h :highlight/type :keyword-effect]
+                  [?h :highlight/text "≪進撃≫"]]})
 
-  (->> (d/q '{:find [[?t ...]]
-              :in [$]
-              :where [[?c :card/highlights ?h]
-                      [?c :card/image ?i]
-                      [?i :image/language "en"]
-                      [?h :highlight/type :precondition]
-                      [?h :highlight/text ?t]]}
-            (d/db db/conn))
+  (->> (db/q '{:find [[?t ...]]
+               :where [[?c :card/highlights ?h]
+                       [?c :card/image ?i]
+                       [?i :image/language "en"]
+                       [?h :highlight/type :precondition]
+                       [?h :highlight/text ?t]]})
        sort))

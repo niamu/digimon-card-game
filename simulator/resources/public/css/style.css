@@ -23,7 +23,6 @@
 	--card-width: 430px;
 	--card-gap: 20px;
 	--card-aspect-ratio: var(--card-original-width) / var(--card-original-height);
-	--card-height: calc(var(--card-width) / calc(var(--card-aspect-ratio)));
 }
 
 * {
@@ -81,18 +80,50 @@ button:not([disabled]) {
 	cursor: pointer;
 }
 
+dcg-board {
+	display: block;
+}
+
+horizontal-slider {
+	display: grid;
+	gap: var(--card-gap);
+	padding: var(--card-gap);
+}
+
+dcg-player-perspective {
+	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.125));
+	display: grid;
+	gap: var(--card-gap);
+
+	&:not([data-opponent="true"]) {
+		order: 1;
+	}
+
+	&[data-opponent="true"] {
+		transform: rotate(180deg);
+
+		& dcg-stack,
+		& dcg-area:not(:has(dcg-stack)) dcg-card {
+			transform: rotate(180deg);
+		}
+	}
+
+	& dcg-area[hand] {
+		display: flex;
+		flex-direction: row;
+		justify-content: center;
+	}
+}
+
 dcg-playmat {
 	display: grid;
-	container-type: inline-size;
-	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.125));
 	grid-template-columns: repeat(7, minmax(var(--card-width), 1fr));
 	grid-template-rows: repeat(2, auto);
 	grid-template-areas:
 		"security battle battle deck"
 		"digi-eggs breeding tamer-option trash";
 	gap: var(--card-gap);
-	padding: var(--card-gap);
-	aspect-ratio: 2 / 1;
+/*	aspect-ratio: 2 / 1;*/
 
 	& dcg-area {
 		align-items: center;
@@ -144,19 +175,33 @@ dcg-playmat {
 			grid-column-start: 7;
 			grid-column-end: 8;
 		}
+
+		&[battle],
+		&[tamer-option] {
+			justify-content: center;
+			flex-direction: row;
+			align-items: end;
+		}
 	}
 }
 
 dcg-area {
 	display: flex;
 	flex-direction: column;
+	justify-content: center;
 	gap: var(--card-gap);
+
+	&:has(:popover-open) dcg-card::before,
+	&:has(:popover-open) dcg-card::after {
+		box-shadow: none;
+	}
 
 	&[digi-eggs] {
 		& button {
-			text-indent: -100vh;
+			text-indent: -500vw;
 			border: none;
 			width: 100%;
+			height: 100%;
 			padding: 0;
 			border-radius: inherit;
 			background: transparent;
@@ -165,10 +210,6 @@ dcg-area {
 		& dcg-card {
 			background-image: url("/images/cards/BACK-002.png");
 		}
-	}
-
-	&[hand] {
-		flex-direction: row;
 	}
 
 	&[security] {
@@ -223,11 +264,117 @@ dcg-area {
 		& dcg-card:nth-child(24) { z-index: -23 }
 		& dcg-card:nth-child(25) { z-index: -24 }
 	}
+
+	& :has([popover]) button {
+		text-indent: 0;
+		border: revert;
+		background: revert;
+
+		&::before,
+		&::after {
+			content: none;
+		}
+	}
+
+	& button {
+		text-indent: -500vw;
+		border: none;
+		width: 100%;
+		height: 100%;
+		padding: 0;
+		border-radius: 5.25% / 3.75%;
+		background: transparent;
+
+		&::before,
+		&::after {
+			content: "";
+			display: block;
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			inset-block: 0;
+			border-radius: inherit;
+			pointer-events: none;
+		}
+
+		&::before {
+			box-shadow:
+				0 0 3px -1px #FFF,
+				0 0 3px 1px #fabd4a,
+				0 0 12px 2px #fa9600,
+				0 10px 20px -5px #000,
+				0 0 40px -30px #fa9600,
+				0 0 50px -20px #fa9600;
+		}
+
+		&::after {
+			opacity: 0;
+			box-shadow:
+				0 0 calc(3px * 1.15) -1px #FFF,
+				0 0 calc(3px * 1.15) 1px #fabd4a,
+				0 0 calc(12px * 1.15) 2px #fa9600,
+				0 10px calc(20px * 1.15) -5px #000,
+				0 0 calc(40px * 1.15) -30px #fa9600,
+				0 0 calc(50px * 1.15) -20px #fa9600;
+			animation:
+				2s ease-in-out 0s infinite both running cardGlow;
+		}
+	}
 }
 
 dcg-stack {
+	position: relative;
 	display: flex;
 	flex-direction: column;
+	width: var(--card-width);
+	justify-content: flex-end;
+	--digivolve-offset: 0;
+
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="Digi-Egg"]),
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="Digi-Egg"]),
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="Digi-Egg"]),
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="디지타마"]) {
+		--digivolve-offset: 0.83;
+	}
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="Digimon"]),
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="Digimon"]),
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="Digimon"]),
+	& dcg-card + dcg-card:has(data[itemprop="category"][value="디지몬"]) {
+		--digivolve-offset: 0.865;
+	}
+	& dcg-card + dcg-card {
+		margin-top: calc((var(--card-width) / calc(var(--card-aspect-ratio))) * -1 * var(--digivolve-offset, 0));
+	}
+	& dcg-card:nth-child(2) { z-index: -1 }
+	& dcg-card:nth-child(3) { z-index: -2 }
+	& dcg-card:nth-child(4) { z-index: -3 }
+	& dcg-card:nth-child(5) { z-index: -4 }
+	& dcg-card:nth-child(6) { z-index: -5 }
+	& dcg-card:nth-child(7) { z-index: -6 }
+	& dcg-card:nth-child(8) { z-index: -7 }
+	& dcg-card:nth-child(9) { z-index: -8 }
+	& dcg-card:nth-child(10) { z-index: -9 }
+	& dcg-card:nth-child(11) { z-index: -10 }
+	& dcg-card:nth-child(12) { z-index: -11 }
+	& dcg-card:nth-child(13) { z-index: -12 }
+	& dcg-card:nth-child(14) { z-index: -13 }
+	& dcg-card:nth-child(15) { z-index: -14 }
+	& dcg-card:nth-child(16) { z-index: -15 }
+	& dcg-card:nth-child(17) { z-index: -16 }
+	& dcg-card:nth-child(18) { z-index: -17 }
+	& dcg-card:nth-child(19) { z-index: -18 }
+	& dcg-card:nth-child(20) { z-index: -19 }
+	& dcg-card:nth-child(21) { z-index: -20 }
+	& dcg-card:nth-child(22) { z-index: -21 }
+	& dcg-card:nth-child(23) { z-index: -22 }
+	& dcg-card:nth-child(24) { z-index: -23 }
+	& dcg-card:nth-child(25) { z-index: -24 }
+
+	& form {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+	}
 }
 
 dcg-card > [itemscope],
@@ -352,16 +499,13 @@ dcg-card {
 	perspective: var(--card-perspective);
 	aspect-ratio: var(--card-aspect-ratio);
 	width: var(--card-width);
+	height: calc(var(--card-width) / calc(var(--card-aspect-ratio)));
 	background-position: center;
 	background-size: cover;
 	background-repeat: no-repeat;
 	background-image: url("/images/cards/BACK-001.png");
 	border-radius: 5.25% / 3.75%;
 	transition: scale 0.05s ease-in-out;
-
-	&:hover {
-		z-index: 1;
-	}
 
 	&:has(picture),
 	&[showcase] {
@@ -375,8 +519,7 @@ dcg-card {
 		width: 100%;
 		height: 100%;
 		position: absolute;
-		top: 0;
-		left: 0;
+		inset-block: 0;
 		border-radius: inherit;
 		pointer-events: none;
 	}
@@ -406,7 +549,8 @@ dcg-card {
 		z-index: -1;
 	}
 
-	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::before {
+	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::before,
+	&:has([popover])::before {
 		box-shadow:
 			0 0 3px -1px #FFF,
 			0 0 3px 1px #fabd4a,
@@ -415,19 +559,40 @@ dcg-card {
 			0 0 40px -30px #fa9600,
 			0 0 50px -20px #fa9600;
 	}
+	&:has([popover]:popover-open)::before {
+		box-shadow:
+			0 0 3px -1px #FFF,
+			0 0 3px 1px #fabd4a,
+			0 0 12px 2px #fa9600,
+			0 10px 20px -5px #000,
+			0 0 40px -30px #fa9600,
+			0 0 50px -20px #fa9600
+			!important;
+	}
 
-	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::after {
+	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::after,
+	&:has([popover])::after {
 		opacity: 0;
 		box-shadow:
-			0 0 calc(3px * 1.5) -1px #FFF,
-			0 0 calc(3px * 1.5) 1px #fabd4a,
-			0 0 calc(12px * 1.5) 2px #fa9600,
-			0 10px calc(20px * 1.5) -5px #000,
-			0 0 calc(40px * 1.5) -30px #fa9600,
-			0 0 calc(50px * 1.5) -20px #fa9600;
+			0 0 calc(3px * 1.15) -1px #FFF,
+			0 0 calc(3px * 1.15) 1px #fabd4a,
+			0 0 calc(12px * 1.15) 2px #fa9600,
+			0 10px calc(20px * 1.15) -5px #000,
+			0 0 calc(40px * 1.15) -30px #fa9600,
+			0 0 calc(50px * 1.15) -20px #fa9600;
 		animation:
 			2s ease-in-out 0s infinite both running cardGlow,
 			var(--animation-duration) ease-in-out 0s infinite both running cardIdle;
+	}
+	&:has([popover]:popover-open)::after {
+		box-shadow:
+			0 0 calc(3px * 1.15) -1px #FFF,
+			0 0 calc(3px * 1.15) 1px #fabd4a,
+			0 0 calc(12px * 1.15) 2px #fa9600,
+			0 10px calc(20px * 1.15) -5px #000,
+			0 0 calc(40px * 1.15) -30px #fa9600,
+			0 0 calc(50px * 1.15) -20px #fa9600
+			!important;
 	}
 
 	& picture::before {
@@ -483,8 +648,8 @@ dcg-card {
 		background-position: inherit;
 		background-size: cover;
 		background-repeat: inherit;
-		max-width: 100%;
-		max-height: var(--card-height);
+		width: inherit;
+		height: inherit;
 		aspect-ratio: inherit;
 		transform: translate3d(0px, 0px, 0.01px);
 		box-shadow:
@@ -497,12 +662,11 @@ dcg-card {
 			scale: 1.005;
 			content: "";
 			display: block;
-			width: 100%;
-			height: 100%;
+			width: inherit;
+			height: inherit;
 			max-width: inherit;
 			position: absolute;
-			top: 0;
-			left: 0;
+			inset-block: 0;
 			border-radius: inherit;
 			pointer-events: none;
 		}
@@ -511,7 +675,7 @@ dcg-card {
 			background-position: inherit;
 			background-size: inherit;
 			transform: translate3d(0px, 0px, -0.01px) rotateY(-180deg);
-			backface-visibility: visible;
+			backface-visibility: hidden;
 		}
 
 		&::after {
@@ -521,11 +685,11 @@ dcg-card {
 		& img {
 			scale: 1.005;
 			transform: translate3d(0px, 0px, 0.01px);
-			max-width: inherit;
-			max-height: inherit;
-			height: auto;
+			width: inherit;
+			height: inherit;
 			border-radius: inherit;
 			backface-visibility: hidden;
+			object-fit: cover;
 		}
 	}
 
@@ -542,4 +706,37 @@ dcg-card {
 		animation: inherit;
 		opacity: calc(var(--glare-opacity, 50) / 100);
 	}
+
+	button[popovertarget] {
+		position: absolute;
+		text-indent: -500vw;
+		border: none;
+		width: 100%;
+		height: 100%;
+		padding: 0;
+		border-radius: inherit;
+		background: transparent;
+	}
+}
+
+body:not([inert]):has(dialog[open]),
+body:not([inert]):has(:popover-open) {
+	overflow: hidden;
+
+	&::after {
+		content: "";
+		position: fixed;
+		inset-block: 0;
+		display: block;
+		width: 100%;
+		height: 100%;
+		background: rgba(0,0,0,0.25);
+	}
+}
+
+dialog[open] {
+	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.125));
+	position: fixed;
+	inset-block: 0;
+	z-index: 1;
 }

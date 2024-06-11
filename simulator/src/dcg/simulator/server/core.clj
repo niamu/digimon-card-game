@@ -3,7 +3,7 @@
   (:require
    [clojure.edn :as edn]
    [dcg.db :as db]
-   [dcg.simulator :as-alias simulator]
+   [dcg.simulator]
    [dcg.simulator.player :as-alias player]
    [dcg.simulator.state :as state]
    [dcg.simulator.server.render :as render]
@@ -48,7 +48,8 @@
                                             (get-in [::state/games-by-id
                                                      (UUID/fromString game-id)])
                                             (state/private-state-for-player-id
-                                             (::player/id player)))]
+                                             (or (::player/id player)
+                                                 (random-uuid))))]
                         {:status 200
                          :headers {"Content-Type" "text/html"}
                          :body (render/game game player)}
@@ -62,6 +63,7 @@
                           :as request}]
                        (let [action (edn/read-string action)
                              params (edn/read-string params)]
+
                          (swap! state/state update-in
                                 [::state/games-by-id (UUID/fromString game-id)]
                                 (fn [game]
