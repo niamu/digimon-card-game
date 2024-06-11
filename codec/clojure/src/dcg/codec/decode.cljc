@@ -221,7 +221,7 @@
       (>= version 3)
       (assoc :deck/language (get codec/bits->language language :en)))))
 
-(defn decode-deck-string
+(defn- decode-deck-string
   [deck-code-str]
   (if (string/starts-with? deck-code-str codec/prefix)
     (as-> (codec/base64url (subs deck-code-str (count codec/prefix))) x
