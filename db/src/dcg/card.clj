@@ -257,7 +257,8 @@
                                   dom-tree)
                    first
                    :content)
-        colors (if (get info-top "色")
+        colors (if (or (get info-top "色")
+                       (get info-top "Color"))
                  (->> (select/select (select/descendant
                                       (select/and (select/tag "dd")
                                                   (select/class "cardColor"))
@@ -409,8 +410,8 @@
                           (re-find #"include up to ([0-9]+) copies of")
                           last
                           parse-long)))
-        repair-fn (get-in repair/text-fixes-by-number-by-language
-                          [number language])]
+        repair-fn (-> repair/text-fixes-by-number-by-language
+                      (get-in [number language]))]
     (cond-> {:card/id card-id
              :card/release release
              :card/language language
@@ -561,9 +562,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                      dp rareDegree entryConsumeValue envolutionConsumeTwo
-                      cardLevel effect envolutionEffect safeEffect
-                      imageCover cardGroup]}]
+                       dp rareDegree entryConsumeValue envolutionConsumeTwo
+                       cardLevel effect envolutionEffect safeEffect
+                       imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)
@@ -606,8 +607,8 @@
                                 (re-find #"中可以放入最多([0-9]+)张卡牌编号与此卡")
                                 last
                                 parse-long))
-                  repair-fn (get-in repair/text-fixes-by-number-by-language
-                                    [number language])]
+                  repair-fn (-> repair/text-fixes-by-number-by-language
+                                (get-in [number language]))]
               (cond-> {:card/id card-id
                        :card/release (dissoc release
                                              :release/card-image-language)

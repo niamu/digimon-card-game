@@ -162,6 +162,7 @@ ALL =
     ) | <"each">
 ANY = <#"(?i)any"> <SPACE "number">? <SPACE "of">?
 INFINITE = <"∞">
+number = #"[0-9]+"
 value =
     (
         <(with SPACE)>?
@@ -172,7 +173,7 @@ value =
                 OPERATOR?
                 (
                     (EQ <SPACE>)?
-                    (#"[0-9]+" | INFINITE)
+                    (number | INFINITE)
                     (<SPACE> (<"of"> | such))?
                     / (MIN | MAX)
                 )
@@ -188,7 +189,7 @@ such = <"such"> <SPACE "a">?
 equate-with =
     (
         target <SPACE> field
-    ) / target / zone / number-of-cards
+    ) / target / area / number-of-cards
 among-them = <#"(?i)Among" SPACE ("them" | ("the revealed" SPACE #"cards?") | "it")>
 
 (* COLORS *)
@@ -535,7 +536,7 @@ sum =
     | <"total" (SPACE "worth")?>
     | (<"so that their" SPACE> field <SPACE "total is" SPACE> value)
     | (value <SPACE> field <SPACE "total worth of" SPACE> target)
-    | (value <SPACE "total cards in" SPACE> zone)
+    | (value <SPACE "total cards in" SPACE> area)
 level =
     (
         ((<"a"> | (<"is"> <SPACE "a">?)) <SPACE>)?
@@ -759,7 +760,7 @@ pay-to-treat =
     | play-to-return
 play =
     (
-        ((conditional | choose | ((zone <SPACE "and" SPACE>)? without-paying-memory-cost)) <",">? <SPACE>)?
+        ((conditional | choose | ((area <SPACE "and" SPACE>)? without-paying-memory-cost)) <",">? <SPACE>)?
         (<"and" SPACE>? before <",">? <SPACE>)?
         (duration <",">? <SPACE>)?
         ((optional_mandatory | before) <SPACE>)?
@@ -768,7 +769,7 @@ play =
     ((you | opponent | all-players) <SPACE>)?
     (<#"(?i)play(s|ing)?"> | <#"(?i)us(es?|ing)?">)
     <SPACE>
-    ((target <SPACE "from" SPACE> zone) / target_and-or / target / (<" and ">? target)+ / target_or / sum)
+    ((target <SPACE "from" SPACE> area) / target_and-or / target / (<" and ">? target)+ / target_or / sum)
     (<SPACE> among-them)?
     (<SPACE> without-paying-memory-cost)?
     (<"." SPACE> token-attributes)?
@@ -777,7 +778,7 @@ play =
         <SPACE>
         (
               <"as" SPACE ("a Tamer or" SPACE)? #"(an)?other" SPACE "Digimon">
-            | zone
+            | area
             | keyword-effect
         )
     )?
@@ -830,7 +831,7 @@ for-its-play-cost =
     trash-and-gain_lose
     / (
           trash
-        | trash-zone
+        | trash-area
         | trash-or-play
         | trash-to-activate
         | trash-to-play
@@ -876,7 +877,7 @@ trash =
             (<SPACE> choose)?
             (<SPACE> conditional)?
         )
-        | (zone | remaining_cards)
+        | (area | remaining_cards)
         | (value <SPACE "of" SPACE "them">)
     )
     (<SPACE> among-them)?
@@ -992,9 +993,9 @@ trash-chosen =
     <#"(?i)(delete[sd]?|trash(es|ing)?)" SPACE>
     target
 chosen-requirement = target
-trash-zone =
+trash-area =
     _trash_prelude_
-    zone
+    area
     (<SPACE> without-looking)?
     (
           (<SPACE> (until-there-are | number-of-cards) (<";" SPACE> gain_lose)?)?
@@ -1017,7 +1018,7 @@ deletes-in-battle =
     (target <SPACE>)?
     <in-battle SPACE?>
     survives?
-    (<"," SPACE> (trash-zone | unsuspend))?
+    (<"," SPACE> (trash-area | unsuspend))?
 deleted-outside-battle =
     _trash_prelude_
     <outside-battle>
@@ -1264,7 +1265,7 @@ hatch =
     (
         (
             target
-            <SPACE "to an empty space" SPACE zone>
+            <SPACE "to an empty space" SPACE area>
         )
         | <"in your breeding area">
     )
@@ -1289,8 +1290,8 @@ return =
     <#"(?i)return(ing)?" SPACE>
     target
     (<SPACE> other-than)?
-    (<SPACE> zone)?
-    (<("," | (SPACE "to")) SPACE> zone)?
+    (<SPACE> area)?
+    (<("," | (SPACE "to")) SPACE> area)?
     (<SPACE> order)?
     (<SPACE> until-n-remain)?
     <"," SPACE>?
@@ -1302,7 +1303,7 @@ return =
     trash-those-digivolution-cards?
     (<("." | ", and") SPACE> for-each)?
     (<SPACE> instead)?
-return-from = <"from" SPACE> zone
+return-from = <"from" SPACE> area
 until-n-remain = <"so that" SPACE> value <SPACE "remain">
 return-to-return =
     (conditional <",">? <SPACE>)?
@@ -1354,7 +1355,7 @@ add =
         <SPACE>
         (among-them <SPACE>)?
         <"to" SPACE>?
-        zone
+        area
         <("." SPACE PARENTHESES)>?
     )
     (
@@ -1370,7 +1371,7 @@ add =
     (<SPACE> shuffle)?
     (<","? SPACE> conditional)?
 draw-card =
-    target <SPACE "draw" SPACE> zone
+    target <SPACE "draw" SPACE> area
 
 
 (* TRIGGER *)
@@ -1445,7 +1446,7 @@ if-color-place-otherwise-return =
 add-or-place = add <SPACE "or" SPACE> _place_
 look-at =
     <#"(?i)look at" SPACE>
-    zone
+    area
     (
         (
             (
@@ -1495,8 +1496,8 @@ place =
     (optional_mandatory <",">? <SPACE>)?
     (
           (target <SPACE "place" SPACE> target)
-        / (<"place" SPACE> target <" and "> target <SPACE> zone)
-        / (<"place" SPACE> target <SPACE> zone)
+        / (<"place" SPACE> target <" and "> target <SPACE> area)
+        / (<"place" SPACE> target <SPACE> area)
         / (
             (<"and" SPACE>? before <",">? <SPACE>)?
             (optional_mandatory <",">? <SPACE>)?
@@ -1508,8 +1509,8 @@ place =
             (
                 <SPACE>
                 (
-                    (zone <","? SPACE> zone)
-                    / zone
+                    (area <","? SPACE> area)
+                    / area
                     / location
                 )
                 (<SPACE> order)?
@@ -1550,7 +1551,7 @@ search =
     (conditional <",">? <SPACE>)?
     (optional_mandatory <",">? <SPACE>)?
     <#"(?i)search">
-    <SPACE> zone
+    <SPACE> area
     (<SPACE "for" SPACE> target)?
     (<"," SPACE> reveal)?
     (
@@ -1566,7 +1567,7 @@ search =
 shuffle =
     (target <SPACE>)?
     <#"(?i)shuffles?">
-    <SPACE> (zone | target)
+    <SPACE> (area | target)
 
 
 (* DECLARE *)
@@ -1712,7 +1713,7 @@ target =
         / that
         / card-type
         / target-effect
-        / zone
+        / area
         / number-of-cards
         / revealed-cards
     )
@@ -1724,7 +1725,7 @@ target-if-has-name =
 target_and-or = target <SPACE and-or SPACE> target
 and-or = <"and/or">
 target_or = target <","? " or "> (target / color)
-itself = <#"(?i)This"> (<SPACE> (<"one"> | card-type))?
+itself = <#"(?i)This"> <SPACE (#"(?i)Digimon" | #"(?i)Card")>? (<SPACE> (<"one"> | card-type))?
 that =
     (
         (value <SPACE>)?
@@ -1767,7 +1768,7 @@ you =
             ) / (
                 <#"(?i)Your">
                 (<SPACE> other)?
-                (<SPACE> zone)?
+                (<SPACE> area)?
             )
         )
     )
@@ -1789,7 +1790,7 @@ opponent =
         (<#"(?i)(your |an )?opponent(\'s)?"> / <#"(?i)They">)
         (<SPACE> card-types-count-compared-to)?
         (<SPACE> other)?
-        (<SPACE> zone)?
+        (<SPACE> area)?
         ((<SPACE> does-not)? <SPACE> (<"have"> | <"has">))?
         (
             <SPACE>
@@ -1820,7 +1821,7 @@ all-players =
     (
           (
             <#"(?i)Both" SPACE #"(?i)player\'?s\'?">
-            (<SPACE> (zone | card-type))?
+            (<SPACE> (area | card-type))?
         )
         | <"you or your opponent">
         | <#"(?i)All" SPACE "players">
@@ -1852,7 +1853,7 @@ card-type =
               card-type_and
             / _card-types_
             / any_card-type
-            / zone
+            / area
             / target
             / card-type_and-or
         
@@ -1864,7 +1865,7 @@ card-type =
             <SPACE "is" SPACE>?
             treat-as
         )?
-        (<SPACE> (field / zone / (field <SPACE> zone)))?
+        (<SPACE> (field / area / (field <SPACE> area)))?
         (<SPACE> (is-named / mention / has-attribute))*
         (<SPACE> same-field)?
         (<SPACE> using-effect)?
@@ -1929,7 +1930,7 @@ same-field =
         (<with> | <"of">) <SPACE "the" SPACE ("same" SPACE)?> field (<SPACE ("as" | "of") SPACE> target)?
     )
     | (<with SPACE ("matching" | "an") SPACE> field)
-    | (<"having the" SPACE> field <SPACE "of" SPACE> (zone / target))
+    | (<"having the" SPACE> field <SPACE "of" SPACE> (area / target))
     | same-name
     | same-level
 remaining_cards =
@@ -1998,7 +1999,7 @@ any_card-type =
             <#"(?i)card(\'?s\'?)?">
             (<SPACE> among-them)?
             (<SPACE> field)?
-            (<SPACE> zone)?
+            (<SPACE> area)?
             (<SPACE ("is" | (("that" SPACE)? "are" (SPACE "either")?)) SPACE> color)?
             (<SPACE> mention)?
         ) / (
@@ -2044,7 +2045,7 @@ digimon_card-type =
             digimon-has
             (<SPACE> among-them)?
         ) / (
-            <SPACE with>? <SPACE> zone
+            <SPACE with>? <SPACE> area
         )
     )?
     (
@@ -2104,81 +2105,81 @@ option_card-type =
     (<SPACE> play-cost)?
 
 
-(* ZONES *)
-zone =
+(* AREAS *)
+area =
     (
         <#"(?i)From" SPACE>?
         (location <SPACE>)?
         (
-            (<target SPACE> zone_and-or)
-            / zone_or
+            (<target SPACE> area_and-or)
+            / area_or
             / (
-                zones
+                areas
                 <SPACE "on">?
             ) / (
-                (zones <SPACE>)?
+                (areas <SPACE>)?
                 (value <SPACE>)?
                 <(#"cards?" SPACE)? ("from" | "of" | "in" | "to") SPACE>?
                 (location <SPACE>)?
                 (
-                    (zone_or / zones)
+                    (area_or / areas)
                     /
-                    ((target <SPACE>) (zone_or / zones))
+                    ((target <SPACE>) (area_or / areas))
                     /
-                    ((zone_or / zones) (<SPACE> target))
+                    ((area_or / areas) (<SPACE> target))
                 )
             )
         )
     )
-<zones> =
+<areas> =
     (
-          zone_deck
-        | zone_digi-egg-deck
-        | zone_hand
-        | zone_trash
-        | zone_security
-        | zone_breeding-area
-        | zone_battle-area
+          area_deck
+        | area_digi-egg-deck
+        | area_hand
+        | area_trash
+        | area_security
+        | area_breeding-area
+        | area_battle-area
     )
-    / zone_digivolution-cards
-    / zone_that
-zone_or = zones <","? SPACE "or" SPACE ("from" SPACE)?> zones
-zone_and-or = zones <SPACE and-or SPACE> zones
-zone_that = <"it">
-zone_deck =
+    / area_digivolution-cards
+    / area_that
+area_or = areas <","? SPACE "or" SPACE ("from" SPACE)?> areas
+area_and-or = areas <SPACE and-or SPACE> areas
+area_that = <"it">
+area_deck =
     (value <SPACE>)?
     <#"cards?" SPACE>?
     <("in" | "of") SPACE>?
     (target <SPACE>)?
     <#"decks?">
-zone_digi-egg-deck =
+area_digi-egg-deck =
     (value <SPACE>)?
     <#"cards?" SPACE>?
     <("in" | "of") SPACE>?
     (target <SPACE>)?
     <"Digi-Egg deck">
-zone_hand =
+area_hand =
     (value <SPACE>)?
     <#"cards?" SPACE>?
     <("in" | "of") SPACE>?
     (target <SPACE>)?
     <#"hands?">
-zone_trash =
+area_trash =
     (value <SPACE>)?
     <#"cards?" SPACE>?
     <"is" SPACE>?
     <("in" | "of") SPACE>?
     ((<" and ">? target)+ <SPACE>)?
     <(#"(?i)Trash(es)?" | "recycle bin")>
-zone_security =
+area_security =
     (value <SPACE>)?
     <#"cards?" SPACE>?
     <("in" | "of") SPACE>?
     ((location <SPACE>)? target <SPACE>)?
     <"security" (SPACE (#"stacks?" | "cards"))?>
-    <SPACE "face down">?
+    (<SPACE> face)?
     (<SPACE> (LTE | GTE))?
-zone_breeding-area =
+area_breeding-area =
     (value <SPACE>)?
     <#"cards?" SPACE>?
     <("in" | "of") SPACE>?
@@ -2188,7 +2189,7 @@ zone_breeding-area =
     <"the" SPACE>?
     <(#"(?i)Breeding" | #"(?i)Raising") SPACE #"(?i)Area">
 empty-space = <"an empty space in">
-zone_battle-area =
+area_battle-area =
     (value <SPACE>)?
     <#"cards?" SPACE>?
     <"is" SPACE>?
@@ -2196,7 +2197,7 @@ zone_battle-area =
     (target <SPACE>)?
     <"the" SPACE>?
     (<#"(?i)battle area"> / <"in play">)
-zone_digivolution-cards =
+area_digivolution-cards =
     (
         ((order <SPACE>)? <"as" SPACE ("one of" SPACE)? ("its" | target) SPACE>? (location <SPACE>)?)?
         (<"from" SPACE> target <SPACE>)?
@@ -2218,7 +2219,7 @@ moves-from =
     <SPACE #"move[sd]?" SPACE>
     target
     <SPACE "from" SPACE>
-    zone
+    area
 moves-between =
     (optional_mandatory <",">? <SPACE>)?
     (
@@ -2226,27 +2227,27 @@ moves-between =
             target
             <SPACE "is">?
             <SPACE (#"move[sd]?" | "placed") SPACE "from" SPACE (("the" | "their") SPACE)?>
-            zone <("," | (SPACE ("to" | "at"))) SPACE> zone
+            area <("," | (SPACE ("to" | "at"))) SPACE> area
         ) | (
-            <#"move[sd]?" SPACE> target <SPACE "from" SPACE> zone <SPACE "to" SPACE> zone
+            <#"move[sd]?" SPACE> target <SPACE "from" SPACE> area <SPACE "to" SPACE> area
         )
     )
 
 number-of-cards =
     (
         <"the" (SPACE "total")? SPACE "number of cards in" SPACE>
-        zone
+        area
         (
               (<SPACE> (LTE | GTE))
             | (<("," | (SPACE "to")) SPACE> value)
             | (<SPACE "is" SPACE> value)
         )?
     ) | (
-        <"the number of" SPACE> zone_digivolution-cards
+        <"the number of" SPACE> area_digivolution-cards
     ) | (
-        <"cards in" SPACE> zone
+        <"cards in" SPACE> area
     ) | (
-        <"equal to the total cards in" SPACE> zone
+        <"equal to the total cards in" SPACE> area
     ) | (
         <"equal to the number of cards" SPACE> added-to
     ) | (
@@ -2288,6 +2289,7 @@ choose =
     (optional_mandatory <",">? <SPACE>)?
     (target <SPACE>)?
     ((<#"(?i)Choos(es?|ing)?"> | <#"(?i)Among">) <SPACE>)
+    (value <SPACE>)?
     target
     (<SPACE> without-looking)?
     conditional?
@@ -2416,7 +2418,7 @@ any-effect = <("an" SPACE)? #"(?i)Effects?"> (<SPACE> state)?
 dp-reduced = <"its DP reduced">
 returned-to =
     (can-not <SPACE "be" SPACE>)?
-    <"returned to" SPACE ("its owner's" SPACE)?> zone
+    <"returned to" SPACE ("its owner's" SPACE)?> area
 
 in-battle = <"in battle">
 outside-battle = <"outside of a battle">
@@ -2630,7 +2632,7 @@ disallow-leave-area =
     target <SPACE>
     <can-not SPACE>
     <"leave" SPACE>
-    zone
+    area
     (<SPACE> except-by)?
 except-by =
     except <SPACE "by" SPACE> deleted
@@ -2764,7 +2766,7 @@ location_or = (location <" or "> location)
 location_anywhere = <"is" SPACE>? (placed <SPACE>)? (<"under"> | <"into">) (<SPACE> target)?
 location_bottom =
     (
-        <"face down" SPACE>?
+        (face <SPACE>)?
         <("at" | "as") SPACE>?
         <"to" SPACE>?
         <"from" SPACE>?
@@ -2774,7 +2776,7 @@ location_bottom =
         <SPACE "of">?
     )
 location_top =
-    <"face down" SPACE>?
+    (face <SPACE>)?
     <("at" | "as") SPACE>?
     <"to" SPACE>?
     <"from" SPACE>?
@@ -2782,6 +2784,12 @@ location_top =
     <"the" SPACE>?
     <"top">
     <SPACE "of">?
+
+
+(* FACE SIDE *)
+<face> = <"face" SPACE> (face_up | face_down)
+face_up = <"up">
+face_down = <"down">
 
 
 (* STATE *)
@@ -2877,13 +2885,13 @@ survives = <("and" SPACE)? "survives">
 leave =
     <"leave" SPACE>
     <"the" SPACE>?
-    zone
+    area
 deleted =
     <#"delet(e[sd]?|ion)" | "trashed" | #"remove[ds]">
     <SPACE "as a digivolution card">?
     (<SPACE> (deleted-by / target))?
     (<SPACE> (in-battle | outside-battle))?
-    (<SPACE> zone)?
+    (<SPACE> area)?
 deleted-by =
     (
           (<"by" SPACE> (DP | effect))
@@ -2893,32 +2901,32 @@ deleted-by =
         target
     )
 effect = <("an" SPACE)? "effect">
-returned = <#"return(s|ed)"> (<SPACE> zone)? (<SPACE> using-effect)?
+returned = <#"return(s|ed)"> (<SPACE> area)? (<SPACE> using-effect)?
 revealed =
     <"revealed">
-    (<SPACE "from the" SPACE> zone)?
+    (<SPACE "from the" SPACE> area)?
 added-to =
     <"added">
     (
         (
             (<SPACE> target-effect)?
-            (<SPACE> zone)?
+            (<SPACE> area)?
         ) | (
-            (<SPACE> zone)?
+            (<SPACE> area)?
             (<SPACE> target-effect)?
         )
     )
 placed-to =
-    <"placed" SPACE> zone
+    <"placed" SPACE> area
 checks =
     (("it" | target) <SPACE>)?
     <#"check(s|ed)">
     (<SPACE> target)?
 returns =
     <"returns">
-    <SPACE "to" SPACE> zone
+    <SPACE "to" SPACE> area
 remove-target-from =
-    <"remove" SPACE> target <SPACE> zone
+    <"remove" SPACE> target <SPACE> area
 of-declared-category =
     <"of the declared category">
 adds-digivolution-cards-to =
@@ -2937,7 +2945,7 @@ played-with =
     ) | (
         target <SPACE ("played" | "used")>
     )
-played-from = <"played from" SPACE> zone
+played-from = <"played from" SPACE> area
 
 
 (* CHANGE INTO *)
@@ -3060,7 +3068,7 @@ optionally-dna-digivolve =
         target
         <SPACE>
         <"in play" SPACE>?
-        <"into a Digimon card" SPACE zone SPACE>
+        <"into a Digimon card" SPACE area SPACE>
         <("for" | "by paying")>
         <SPACE "its DNA digivolve cost">
     ) | (
@@ -3173,7 +3181,7 @@ mention =
                     / (token / _mention_)
                 )
                 (<SPACE> different-name)?
-                (<SPACE> zone)?
+                (<SPACE> area)?
             )+
             (<","? SPACE> other-than)?
             (<(SPACE "and")? SPACE> play-cost)?
