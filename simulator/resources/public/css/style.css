@@ -21,7 +21,7 @@
 	--card-original-width: 430;
 	--card-original-height: 600;
 	--card-width: 430px;
-	--card-gap: 20px;
+	--card-gap: var(--font-size-0);
 	--card-aspect-ratio: var(--card-original-width) / var(--card-original-height);
 }
 
@@ -57,8 +57,8 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	margin: 0;
-	width: 100dvw;
-	min-height: 100dvh;
+	width: 100dvi;
+	min-height: 100dvb;
 	display: inline-block;
 
 	& div.wrapper {
@@ -82,16 +82,16 @@ button:not([disabled]) {
 
 dcg-board {
 	display: block;
-}
 
-horizontal-slider {
-	display: grid;
-	gap: var(--card-gap);
-	padding: var(--card-gap);
+	& .scrollable-container {
+		display: grid;
+		gap: var(--card-gap);
+		padding: calc(var(--card-gap) * 1.5);
+	}
 }
 
 dcg-player-perspective {
-	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.125));
+	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.5 * 1.5));
 	display: grid;
 	gap: var(--card-gap);
 
@@ -100,54 +100,45 @@ dcg-player-perspective {
 	}
 
 	&[data-opponent="true"] {
-		transform: rotate(180deg);
-
-		& dcg-stack,
-		& dcg-area:not(:has(dcg-stack)) dcg-card {
-			transform: rotate(180deg);
+		& dcg-playmat {
+			grid-template-areas:
+				"hand hand hand hand hand hand hand"
+				"trash tamer-option tamer-option tamer-option tamer-option breeding digi-eggs"
+				"deck battle battle battle battle battle security";
 		}
-	}
 
-	& dcg-area[hand] {
-		display: flex;
-		flex-direction: row;
-		justify-content: center;
+		& [battle] {
+			margin-left: 0;
+			margin-right: calc(var(--card-width) * 0.15);
+		}
 	}
 }
 
 dcg-playmat {
 	display: grid;
 	grid-template-columns: repeat(7, minmax(var(--card-width), 1fr));
-	grid-template-rows: repeat(2, auto);
+	grid-template-rows: repeat(3, auto);
 	grid-template-areas:
-		"security battle battle deck"
-		"digi-eggs breeding tamer-option trash";
-	gap: var(--card-gap);
+		"security battle battle battle battle battle deck"
+		"digi-eggs breeding tamer-option tamer-option tamer-option tamer-option trash"
+		"hand hand hand hand hand hand hand";
 /*	aspect-ratio: 2 / 1;*/
 
 	& dcg-area {
-		align-items: center;
-		justify-content: end;
+		align-items: end;
 
 		&[security] {
 			grid-area: security;
-			grid-column-start: 1;
-	  		grid-column-end: 2;
-	  		align-items: start;
-	  		width: 140%;
+			align-items: start;
 		}
 
 		&[battle] {
 			grid-area: battle;
-			grid-column-start: 2;
-	  		grid-column-end: 7;
-	  		margin-left: calc(var(--card-width) * 0.4);
+			margin-left: calc(var(--card-width) * 0.15);
 		}
 
 		&[deck] {
 			grid-area: deck;
-			grid-column-start: 7;
-			grid-column-end: 8;
 		}
 
 		&[digi-eggs] {
@@ -165,15 +156,11 @@ dcg-playmat {
 
 		&[tamer-option] {
 			grid-area: tamer-option;
-			grid-column-start: 3;
-	  		grid-column-end: 7;
 		}
 
 		&[trash] {
 			grid-area: trash;
 			justify-content: start;
-			grid-column-start: 7;
-			grid-column-end: 8;
 		}
 
 		&[battle],
@@ -182,23 +169,86 @@ dcg-playmat {
 			flex-direction: row;
 			align-items: end;
 		}
+
+		&[hand] {
+			grid-area: hand;
+			justify-content: center;
+		}
 	}
 }
 
 dcg-area {
-	display: flex;
-	flex-direction: column;
+	display: inline-grid;
+	grid-auto-flow: column;
 	justify-content: center;
 	gap: var(--card-gap);
+
+	&:not(:has(.scrollable-container)) {
+		padding: calc(var(--card-gap) * 1.5);
+	}
 
 	&:has(:popover-open) dcg-card::before,
 	&:has(:popover-open) dcg-card::after {
 		box-shadow: none;
 	}
 
+	& .scrollable-container {
+    	grid-auto-flow: column;
+		scroll-snap-type: x proximity;
+    	scroll-padding: var(--card-gap);
+    	justify-content: start;
+    	max-width: 100%;
+    	overflow-x: auto;
+
+    	& > * {
+    		scroll-snap-align: start;
+    	}
+	}
+
+	&:has(.scrollable-container) {
+		position: relative;
+		grid-auto-flow: column;
+
+		&::before,
+		&::after {
+			content: "";
+			display: inline-block;
+			position: absolute;
+			height: 100%;
+			width: var(--card-gap);
+			z-index: 1;
+		}
+
+		&::before {
+			background: linear-gradient(90deg, #FFF 50%, transparent);
+		}
+
+		&::after {
+			right: 0;
+			background: linear-gradient(-90deg, #FFF 50%, transparent);
+		}
+	}
+
+	&:defined {
+		scrollbar-width: none;
+
+		&::-webkit-scrollbar {
+			display: none;
+		}
+
+		& .scrollable-container {
+			overflow-x: scroll;
+			scrollbar-width: none;
+
+			&::-webkit-scrollbar {
+				display: none;
+			}
+		}
+	}
+
 	&[digi-eggs] {
 		& button {
-			text-indent: -500vw;
+			text-indent: -500vi;
 			border: none;
 			width: 100%;
 			height: 100%;
@@ -213,11 +263,11 @@ dcg-area {
 	}
 
 	&[security] {
+		grid-auto-flow: row;
 		--stack-offset: calc(var(--card-width) / 10);
 
 		& dcg-card {
 			rotate: 90deg;
-			translate: calc((var(--card-width) * 1) - 80%);
 
 			&:has(+ dcg-card) {
 				margin-bottom: calc(
@@ -231,7 +281,7 @@ dcg-area {
 			}
 
 			&:last-of-type {
-				margin-bottom: calc((var(--stack-offset) * 1.85) * -1);
+				margin-bottom: calc((var(--stack-offset) * 0.5) * -1);
 			}
 
 			&:hover {
@@ -277,7 +327,7 @@ dcg-area {
 	}
 
 	& button {
-		text-indent: -500vw;
+		text-indent: -500vi;
 		border: none;
 		width: 100%;
 		height: 100%;
@@ -709,7 +759,7 @@ dcg-card {
 
 	button[popovertarget] {
 		position: absolute;
-		text-indent: -500vw;
+		text-indent: -500vi;
 		border: none;
 		width: 100%;
 		height: 100%;
@@ -731,12 +781,13 @@ body:not([inert]):has(:popover-open) {
 		width: 100%;
 		height: 100%;
 		background: rgba(0,0,0,0.25);
+		z-index: 1;
 	}
 }
 
 dialog[open] {
-	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.125));
+	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.25));
 	position: fixed;
 	inset-block: 0;
-	z-index: 1;
+	z-index: 2;
 }

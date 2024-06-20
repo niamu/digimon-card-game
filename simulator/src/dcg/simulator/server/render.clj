@@ -565,30 +565,31 @@
          {::area/battle ""
           :privacy privacy}
          [:h3.sr-only (format "Battle (%d)" (count stacks))]
-         (list (->> stacks
-                    (map (fn [stack]
-                           (update stack
-                                   ::stack/cards
-                                   (fn [cards]
-                                     (->> cards
-                                          (map (fn [card]
-                                                 (update card
-                                                         ::card/lookup
-                                                         (fn [lookup]
-                                                           (get-in game
-                                                                   lookup))))))))))
-                    (remove (fn [{::stack/keys [cards uuid] :as stack}]
-                              (some (fn [{{:card/keys [category]}
-                                         ::card/lookup}]
-                                      (or (= category "Tamer")
-                                          (= category "테이머")
-                                          (= category "Option")
-                                          (= category "옵션")))
-                                    cards)))
-                    (map (fn [{::stack/keys [cards uuid] :as stack}]
-                           (->> cards
-                                (map card-component)
-                                (into [:dcg-stack]))))))])
+         [:div.scrollable-container
+          (->> stacks
+               (map (fn [stack]
+                      (update stack
+                              ::stack/cards
+                              (fn [cards]
+                                (->> cards
+                                     (map (fn [card]
+                                            (update card
+                                                    ::card/lookup
+                                                    (fn [lookup]
+                                                      (get-in game
+                                                              lookup))))))))))
+               (remove (fn [{::stack/keys [cards uuid] :as stack}]
+                         (some (fn [{{:card/keys [category]}
+                                    ::card/lookup}]
+                                 (or (= category "Tamer")
+                                     (= category "테이머")
+                                     (= category "Option")
+                                     (= category "옵션")))
+                               cards)))
+               (map (fn [{::stack/keys [cards uuid] :as stack}]
+                      (->> cards
+                           (map card-component)
+                           (into [:dcg-stack])))))]])
       ;; Deck
       (let [{::area/keys [privacy cards]} (get areas ::area/deck)]
         [:dcg-area
@@ -628,94 +629,97 @@
          {::area/breeding ""
           :privacy privacy}
          [:h3.sr-only "Breeding Area"]
-         (list (->> stacks
-                    (map (fn [{::stack/keys [cards uuid]
-                              :as stack}]
-                           (->> cards
-                                (map (fn [card]
-                                       (update card
-                                               ::card/lookup
-                                               (fn [lookup]
-                                                 (get-in game lookup)))))
-                                (map card-component)
-                                (into [:dcg-stack
-                                       (when (contains? available-actions
-                                                        [:action/move
-                                                         (::player/id player)
-                                                         nil])
-                                         [:form {:method "POST"}
-                                          [:input
-                                           {:type "hidden"
-                                            :name "__anti-forgery-token"
-                                            :value anti-forgery/*anti-forgery-token*}]
-                                          [:input
-                                           {:type "hidden"
-                                            :name "action"
-                                            :value ":action/move"}]
-                                          [:button
-                                           {:type "submit"}
-                                           "Move to Battle Area"]])]))))))])
+         (list
+          (->> stacks
+               (map (fn [{::stack/keys [cards uuid]
+                         :as stack}]
+                      (->> cards
+                           (map (fn [card]
+                                  (update card
+                                          ::card/lookup
+                                          (fn [lookup]
+                                            (get-in game lookup)))))
+                           (map card-component)
+                           (into [:dcg-stack
+                                  (when (contains? available-actions
+                                                   [:action/move
+                                                    (::player/id player)
+                                                    nil])
+                                    [:form {:method "POST"}
+                                     [:input
+                                      {:type "hidden"
+                                       :name "__anti-forgery-token"
+                                       :value anti-forgery/*anti-forgery-token*}]
+                                     [:input
+                                      {:type "hidden"
+                                       :name "action"
+                                       :value ":action/move"}]
+                                     [:button
+                                      {:type "submit"}
+                                      "Move to Battle Area"]])]))))))])
       ;; Tamer/Option
       (let [{::area/keys [privacy stacks]} (get areas ::area/battle)]
         [:dcg-area
          {"tamer-option" ""
           :privacy privacy}
          [:h3.sr-only (format "Battle (%d)" (count stacks))]
-         (list (->> stacks
-                    (map (fn [stack]
-                           (update stack
-                                   ::stack/cards
-                                   (fn [cards]
-                                     (->> cards
-                                          (map (fn [card]
-                                                 (update card
-                                                         ::card/lookup
-                                                         (fn [lookup]
-                                                           (get-in game
-                                                                   lookup))))))))))
-                    (filter (fn [{::stack/keys [cards uuid] :as stack}]
-                              (some (fn [{{:card/keys [category]}
-                                         ::card/lookup}]
-                                      (or (= category "Tamer")
-                                          (= category "테이머")
-                                          (= category "Option")
-                                          (= category "옵션")))
-                                    cards)))
-                    (map (fn [{::stack/keys [cards uuid] :as stack}]
-                           (->> cards
-                                (map card-component)
-                                (into [:dcg-stack]))))))])
+         [:div.scrollable-container
+          (->> stacks
+               (map (fn [stack]
+                      (update stack
+                              ::stack/cards
+                              (fn [cards]
+                                (->> cards
+                                     (map (fn [card]
+                                            (update card
+                                                    ::card/lookup
+                                                    (fn [lookup]
+                                                      (get-in game
+                                                              lookup))))))))))
+               (filter (fn [{::stack/keys [cards uuid] :as stack}]
+                         (some (fn [{{:card/keys [category]}
+                                    ::card/lookup}]
+                                 (or (= category "Tamer")
+                                     (= category "테이머")
+                                     (= category "Option")
+                                     (= category "옵션")))
+                               cards)))
+               (map (fn [{::stack/keys [cards uuid] :as stack}]
+                      (->> cards
+                           (map card-component)
+                           (into [:dcg-stack])))))]])
       ;; Trash
       (let [{::area/keys [privacy cards]} (get areas ::area/trash)]
         [:dcg-area
          {::area/trash ""
           :privacy privacy}
          [:h3.sr-only "Trash"]
-         (list (map card-component cards))])]
-     [:dcg-area
-      {::area/hand ""
-       :privacy :owner}
-      (let [{::area/keys [privacy cards]} (get-in areas [::area/hand])]
-        (list (->> cards
-                   (map (fn [card]
-                          (let [actions
-                                (->> available-actions
-                                     (filter
-                                      (fn [[_ _ params]]
-                                        (and
-                                         (::card/uuid card)
-                                         (or (= params
-                                                (::card/uuid card))
-                                             (and (vector? params)
-                                                  (= (first params)
-                                                     (::card/uuid card)))))))
-                                     (into #{}))]
-                            (cond-> (update card
-                                            ::card/lookup
-                                            (fn [lookup]
-                                              (get-in game lookup)))
-                              (seq actions) (assoc ::card/actions actions)))))
-                   (map card-component))))]]))
+         (list (map card-component cards))])
+      [:dcg-area
+       {::area/hand ""
+        :privacy :owner}
+       (let [{::area/keys [privacy cards]} (get-in areas [::area/hand])]
+         [:div.scrollable-container
+          (->> cards
+               (map (fn [card]
+                      (let [actions
+                            (->> available-actions
+                                 (filter
+                                  (fn [[_ _ params]]
+                                    (and
+                                     (::card/uuid card)
+                                     (or (= params
+                                            (::card/uuid card))
+                                         (and (vector? params)
+                                              (= (first params)
+                                                 (::card/uuid card)))))))
+                                 (into #{}))]
+                        (cond-> (update card
+                                        ::card/lookup
+                                        (fn [lookup]
+                                          (get-in game lookup)))
+                          (seq actions) (assoc ::card/actions actions)))))
+               (map card-component))])]]]))
 
 (defn prompt
   [{::game/keys [available-actions log players db] :as game} player]
@@ -733,15 +737,16 @@
        [:form {:method "POST"}
         [:div
          [:p [:strong "Re-draw Hand?"]]
-         (list (->> (get-in areas [::area/hand ::area/cards])
-                    (map (fn [card]
-                           (update card
-                                   ::card/lookup
-                                   (fn [lookup]
-                                     (get-in game lookup)))))
-                    (sort-by (comp (juxt :card/category :card/level)
-                                   ::card/lookup))
-                    (map card-component)))]
+         [:dcg-area {::area/hand ""}
+          (->> (get-in areas [::area/hand ::area/cards])
+               (map (fn [card]
+                      (update card
+                              ::card/lookup
+                              (fn [lookup]
+                                (get-in game lookup)))))
+               (sort-by (comp (juxt :card/category :card/level)
+                              ::card/lookup))
+               (map card-component))]]
         [:input
          {:type "hidden"
           :name "__anti-forgery-token"
@@ -844,7 +849,7 @@
                         :game/end))
          [:p "Waiting for opponent..."])
        [:dcg-board
-        [:horizontal-slider
+        [:div.scrollable-container
          (->> players
               (remove (fn [{::player/keys [id]}]
                         (if spectator?
@@ -852,7 +857,7 @@
                           (= id (::player/id player)))))
               (map (fn [opponent]
                      (player-perspective game opponent me))))]
-        [:horizontal-slider
+        [:div.scrollable-container
          (->> players
               (filter (fn [{::player/keys [id]}]
                         (if spectator?
