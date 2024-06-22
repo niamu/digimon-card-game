@@ -1,0 +1,11 @@
+{
+  "name": "dcg-codec",
+  "description": "Digimon Card Game (2020) deck codec",
+  "version": "0.5.0",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=neutral --minify --outfile=dist/dcg-codec.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.21.5"
+  }
+}
