@@ -189,6 +189,19 @@
                  (update accl language (fnil conj #{}) number))
                {})))
 
+(comment
+  ;; Update block-icons.edn resource
+  (spit (io/resource "block-icons.edn")
+        (merge-with (partial merge-with set/union)
+                    (edn/read (PushbackReader.
+                               (io/reader
+                                (io/resource "block-icons.edn"))))
+                    (first
+                     (data/diff (card-block-icons dcg.core/*cards)
+                                (edn/read (PushbackReader.
+                                           (io/reader
+                                            (io/resource "block-icons.edn")))))))))
+
 (defn- card-block-icons
   [cards]
   (let [expected-block-icons {"ST1" nil
@@ -233,7 +246,9 @@
                               "EX6" 3
                               "BT17" 3
                               "ST18" 4
-                              "ST19" 4}
+                              "ST19" 4
+                              "BT18" 4
+                              "EX7" 4}
         block-icons-per-set
         (->> cards
              (filter (fn [{:card/keys [language image]}]
@@ -264,7 +279,8 @@
              {"BT10-099"
               {"card/en_BT10-099_P0" {:timing 3 :keyword-effect 1}
                "card/ja_BT10-099_P0" {:timing 3 :keyword-effect 1}
-               "card/zh-Hans_BT10-099_P0" {:timing 3 :keyword-effect 3}}})
+               "card/zh-Hans_BT10-099_P0" {:timing 3 :keyword-effect 3}
+               "card/ko_BT10-099_P0" {:timing 3 :keyword-effect 1}}})
           "Card highlights differ across languages")
   (assert (empty? (text-fields cards))
           "Card text fields differ across languages")

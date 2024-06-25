@@ -91,8 +91,8 @@
          (assoc card :card/name "Symphony No. 1 <Polyphony>"))}
  "BT1-110"
  {"ko" (fn [{:card/keys [language number]
-             {:image/keys [source]} :card/image
-             :as card}]
+            {:image/keys [source]} :card/image
+            :as card}]
          (cond-> card
            (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/488/001/041bb4f6ddaf7187fd54b44b9aaa7924.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -175,8 +175,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-             {:image/keys [source]} :card/image
-             :as card}]
+            {:image/keys [source]} :card/image
+            :as card}]
          (cond-> card
            (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -1169,7 +1169,13 @@
                       (fn [s]
                         (cond->> s
                           (not effect)
-                          (str "【进化】拥有“Xros Heart”特征的Lv.2 起0")))))}
+                          (str "【进化】拥有“Xros Heart”特征的Lv.2 起0")))))
+  "ko" (fn [{:card/keys [effect] :as card}]
+         (update card :card/effect
+                 (fn [s]
+                   (cond->> s
+                     (not effect)
+                     (str "【진화】「특징으로「크로스하트」를가진LV.2」에서0")))))}
  "BT10-008"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -1331,7 +1337,14 @@
                         (some-> s
                                 (string/replace (re-pattern "^.?数码合体.*") "")
                                 (str "≪数码合体-2≫"
-                                     " “显示屏兽”×“显示屏兽”×“显示屏兽”")))))}
+                                     " “显示屏兽”×“显示屏兽”×“显示屏兽”")))))
+  "ko" (fn [{:card/keys [effect] :as card}]
+         (update card :card/effect
+                 (fn [s]
+                   (cond->> s
+                     (not effect)
+                     (str "≪디지크로스-2≫ 「모니터몬」x「모니터몬」x「모니터몬」\n"
+                          "등장함때,패/배들에어리어에서이카드아래에놓을수있다. 1장마다등장코스트를마이너스한다")))))}
  "BT10-067"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -1404,7 +1417,10 @@
                       (fn [s]
                         (cond->> s
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
-                          (str "【进化】“奥米加兽” 起3")))))}
+                          (str "【进化】“奥米加兽” 起3")))))
+  "ko" (fn [card]
+         (assoc card
+                :card/level 7))}
  "BT10-093"
  {"en" (fn [card]
          (update card :card/effect
@@ -1635,6 +1651,13 @@
                                 (str "\n"
                                      "≪数码合体-2≫ "
                                      "1张记述有《保存》的数码宝贝卡牌")))))}
+ "BT12-038"
+ {"zh-Hans" (fn [card]
+              (assoc card
+                     :card/effect
+                     "【进化】<名称中包含“亚古兽”且拥有“恐龙型”特征的Lv.3>起2\n\n【进化时】当我方的场上不存在“大门大”时,可以从我方的手牌中,不支付费用登场1张“大门大”。"
+                     :card/inherited-effect
+                     "【我方的回合】[每回合1次]当我方的黄色或红色驯兽师转换为休息状态时,本回合中,对方1只数码宝贝的DP-2000。"))}
  "BT12-043"
  {"en" (fn [card]
          (update card :card/effect
@@ -2262,14 +2285,70 @@
               (-> card
                   (assoc :card/security-effect (:card/inherited-effect card))
                   (dissoc :card/inherited-effect)))}
+ "EX6-007"
+ {"ja" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (cond->> s
+                     (not (re-find (re-pattern "^.?進化[】〕]") s))
+                     (str "【進化】「サクットモン」/「カッキンモン」:コスト0")))))}
  "EX6-011"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
                 "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))}
+ "EX6-027"
+ {"en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 3)))
+  "zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
+              (cond-> card
+                (= source
+                   (URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682803EX6-027_02.png"))
+                (assoc :card/block-icon 3)))}
+ "EX6-028"
+ {"en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 3)))
+  "zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
+              (cond-> card
+                (= source
+                   (URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682804EX6-028_02.png"))
+                (assoc :card/block-icon 3)))}
+ "EX6-029"
+ {"en" (fn [card]
+         (assoc card
+                :card/play-cost 7
+                :card/dp 12000))}
+ "EX6-031"
+ {"en" (fn [card]
+         (assoc card
+                :card/level 7))}
  "EX6-035"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
                 "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）"))}
+ "EX7-030"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
+ "EX7-036"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
+ "EX7-059"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
+ "EX7-062"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
  "LM-006"
  {"en" (fn [card]
          (assoc card :card/color
@@ -2470,11 +2549,32 @@
                           (str "〔合步〕红Lv.6+黑Lv.6起0"
                                "将指定的2只数码宝贝重叠,"
                                "以活跃状态进化\n")))))}
+ "ST13-12"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id "color/ST13-12_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id "color/ST13-12_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "ST13-16"
  {"zh-Hans" (fn [card]
               (assoc card :card/type "Legend-Arms"))
   "ko" (fn [card]
-         (assoc card :card/type "Legend-Arms"))}
+         (assoc card
+                :card/type "Legend-Arms"
+                :card/color
+                [{:color/id "color/ST13-16_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id "color/ST13-16_index1"
+                  :color/index 1
+                  :color/color :red}]))}
+ "ST14-02"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/rarity "SR"))}
  "ST14-12"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
@@ -2765,4 +2865,9 @@
          (cond-> card
            (not security-effect)
            (assoc :card/security-effect
-                  "【セキュリティ】このカードの【メイン】効果を発揮する。")))}}
+                  "【セキュリティ】このカードの【メイン】効果を発揮する。")))}
+ "P-152"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 1)
+           (assoc :card/block-icon 4)))}}

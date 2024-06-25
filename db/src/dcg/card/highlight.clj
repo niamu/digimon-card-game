@@ -367,7 +367,8 @@
                        highlight-type (cond
                                         (or (string/includes? text "デジクロス")
                                             (string/includes? text "DigiXros")
-                                            (string/includes? text "数码合体"))
+                                            (string/includes? text "数码合体")
+                                            (string/includes? text "디지크로스"))
                                         :digixros
                                         :else highlight-type)]
                    (conj accl

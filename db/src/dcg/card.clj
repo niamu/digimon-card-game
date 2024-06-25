@@ -217,7 +217,9 @@
                     (map card-utils/text-content))
         number (-> (nth header 0)
                    ;; ko cards sometimes add a "P" suffix to the card number
-                   (string/replace #"P$" ""))
+                   (string/replace #"P$" "")
+                   ;; ko cards sometimes have the name preceeded by a space
+                   (string/replace #"\s.*" ""))
         category (-> (nth header 2)
                      (string/replace "DIgimon" "Digimon")
                      (string/replace "Opiton" "Option"))
