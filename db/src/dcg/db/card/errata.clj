@@ -1,8 +1,8 @@
-(ns dcg.card.errata
+(ns dcg.db.card.errata
   (:require
    [clojure.string :as string]
-   [dcg.card.utils :as card-utils]
-   [dcg.utils :as utils]
+   [dcg.db.card.utils :as card-utils]
+   [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])

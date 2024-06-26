@@ -1,9 +1,9 @@
-(ns dcg.card.release
+(ns dcg.db.card.release
   (:require
    [clojure.data.json :as json]
    [clojure.string :as string]
-   [dcg.card.utils :as card-utils]
-   [dcg.utils :as utils]
+   [dcg.db.card.utils :as card-utils]
+   [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])
@@ -225,7 +225,7 @@
             (as-> #__ products
               (->> products
                    (map (fn [{:strs [id name productImage createTime productType]
-                             :as p}]
+                              :as p}]
                           (let [date-re #"[0-9]{4}\-[0-9]{2}\-[0-9]{2}"
                                 date (-> (SimpleDateFormat. "yyyy-MM-dd")
                                          (.parse (re-find date-re createTime)))

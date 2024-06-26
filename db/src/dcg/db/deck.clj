@@ -1,7 +1,7 @@
-(ns dcg.deck
+(ns dcg.db.deck
   (:require
    [clojure.string :as string]
-   [dcg.utils :as utils]
+   [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging]))

@@ -1,7 +1,7 @@
-(ns dcg.card.highlight
+(ns dcg.db.card.highlight
   (:require
    [clojure.string :as string]
-   [dcg.card.utils :as card-utils]
+   [dcg.db.card.utils :as card-utils]
    [taoensso.timbre :as logging])
   (:import
    [java.util Date]))

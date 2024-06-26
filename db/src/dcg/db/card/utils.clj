@@ -1,4 +1,4 @@
-(ns dcg.card.utils
+(ns dcg.db.card.utils
   (:require
    [clojure.java.io :as io]
    [clojure.string :as string])

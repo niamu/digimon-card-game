@@ -1,9 +1,9 @@
-(ns dcg.card.limitation
+(ns dcg.db.card.limitation
   (:require
    [clojure.string :as string]
-   [dcg.card.cv :as cv]
-   [dcg.card.utils :as card-utils]
-   [dcg.utils :as utils]
+   [dcg.db.card.cv :as cv]
+   [dcg.db.card.utils :as card-utils]
+   [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])
@@ -108,8 +108,8 @@
                       (if-not number
                         (when image
                           (logging/error
-                            (format "Unable to detect card from image: %s"
-                                    image)))
+                           (format "Unable to detect card from image: %s"
+                                   image)))
                         (cond-> {:limitation/id id
                                  :limitation/type limitation-type
                                  :limitation/note note
@@ -297,8 +297,8 @@
                           (if-not number
                             (do (when image
                                   (logging/error
-                                    (format "Unable to detect card from image: %s"
-                                            image)))
+                                   (format "Unable to detect card from image: %s"
+                                           image)))
                                 accl)
                             (conj accl
                                   (cond-> {:limitation/id id

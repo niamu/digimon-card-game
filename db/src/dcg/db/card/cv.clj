@@ -1,9 +1,9 @@
-(ns dcg.card.cv
+(ns dcg.db.card.cv
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.set :as set]
-   [dcg.utils :as utils]
+   [dcg.db.utils :as utils]
    [taoensso.timbre :as logging])
   (:import
    [java.io File]

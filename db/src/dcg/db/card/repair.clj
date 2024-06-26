@@ -1,4 +1,4 @@
-(ns dcg.card.repair
+(ns dcg.db.card.repair
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]

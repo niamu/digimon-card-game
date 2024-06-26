@@ -1,16 +1,16 @@
-(ns dcg.core
+(ns dcg.db.core
   (:gen-class)
   (:require
    [clojure.data.json :as json]
    [clojure.string :as string]
-   [dcg.card :as card]
-   [dcg.card.assertion :as assertion]
-   [dcg.card.errata :as errata]
-   [dcg.card.highlight :as highlight]
-   [dcg.card.limitation :as limitation]
-   [dcg.card.release :as release]
-   [dcg.card.translation :as translation]
-   [dcg.db :as db]))
+   [dcg.db.card :as card]
+   [dcg.db.card.assertion :as assertion]
+   [dcg.db.card.errata :as errata]
+   [dcg.db.card.highlight :as highlight]
+   [dcg.db.card.limitation :as limitation]
+   [dcg.db.card.release :as release]
+   [dcg.db.card.translation :as translation]
+   [dcg.db.db :as db]))
 
 (def origins
   [{:origin/url "https://digimoncard.com"

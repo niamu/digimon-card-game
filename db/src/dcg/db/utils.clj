@@ -1,4 +1,4 @@
-(ns dcg.utils
+(ns dcg.db.utils
   (:require
    [clj-http.client :as client]
    [clj-http.conn-mgr :as conn-mgr]

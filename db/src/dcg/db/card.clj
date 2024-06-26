@@ -1,12 +1,12 @@
-(ns dcg.card
+(ns dcg.db.card
   (:require
    [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.string :as string]
-   [dcg.card.cv :as cv]
-   [dcg.card.repair :as repair]
-   [dcg.card.utils :as card-utils]
-   [dcg.utils :as utils]
+   [dcg.db.card.cv :as cv]
+   [dcg.db.card.repair :as repair]
+   [dcg.db.card.utils :as card-utils]
+   [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
    [taoensso.timbre :as logging])

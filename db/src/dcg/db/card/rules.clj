@@ -1,8 +1,8 @@
-(ns dcg.card.rules
+(ns dcg.db.card.rules
   (:require
    [clojure.java.io :as io]
    [clojure.string :as string]
-   [dcg.db :as db]
+   [dcg.db.db :as db]
    [dcg.simulator.card :as-alias card]
    [dcg.simulator.game :as-alias game]
    [dcg.simulator.game.in :as-alias game-in]

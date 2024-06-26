@@ -1,4 +1,4 @@
-(ns dcg.card.translation
+(ns dcg.db.card.translation
   (:require
    [clojure.string :as string]))
 
