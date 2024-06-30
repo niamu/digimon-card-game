@@ -222,11 +222,10 @@
     (when cupid-script
       (let [[[_ a] [_ b] [_ c]] (re-seq #"=toNumbers\(\"([0-9a-z]+)\"\)"
                                         cupid-script)
-            cupid (aes/decrypt c a b)]
+            cupid (aes/decrypt c a b)
+            http-opts {:headers {"Cookie" (format "CUPID=%s" cupid)}}]
         (let [products (->> (utils/http-get (str url "/products/")
-                                            {:headers
-                                             {"Cookie" (format "CUPID=%s"
-                                                               cupid)}})
+                                            http-opts)
                             hickory/parse
                             hickory/as-hickory
                             (select/select
@@ -237,14 +236,18 @@
                                    (if (string/blank? genre)
                                      (assoc r :release/genre "확장팩")
                                      r))))
-              cardlist-releases (->> (utils/http-get (str url "/cardlist/"))
+              cardlist-releases (->> (utils/http-get (str url "/cardlist/")
+                                                     http-opts)
                                      hickory/parse
                                      hickory/as-hickory
                                      (select/select
                                       (select/descendant (select/id "snaviList")
                                                          (select/tag "li")
                                                          (select/tag "a")))
-                                     (map (partial release origin)))
+                                     (map (comp #(assoc %
+                                                        :release/http-opts
+                                                        http-opts)
+                                                (partial release origin))))
               name-matches? (fn [r p]
                               (let [product-name (-> (:release/name p)
                                                      (string/replace "-0" "-")
@@ -264,7 +267,8 @@
                                                (name-matches? r p)))
                                             last)]
                           (conj accl
-                                (merge r (dissoc p :release/id)))
+                                (merge r
+                                       (dissoc p :release/id)))
                           (conj accl r)))
                       []
                       cardlist-releases)

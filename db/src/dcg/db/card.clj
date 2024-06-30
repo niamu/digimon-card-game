@@ -415,7 +415,7 @@
         repair-fn (-> repair/text-fixes-by-number-by-language
                       (get-in [number language]))]
     (cond-> {:card/id card-id
-             :card/release release
+             :card/release (dissoc release :release/http-opts)
              :card/language language
              :card/number number
              :card/parallel-id parallel-id
@@ -517,8 +517,9 @@
     language))
 
 (defmethod cards-in-release :default
-  [{:release/keys [language cardlist-uri] :as release}]
-  (let [page (->> (utils/http-get (str cardlist-uri))
+  [{:release/keys [language cardlist-uri http-opts] :as release}]
+  (let [page (->> (utils/http-get (str cardlist-uri)
+                                  http-opts)
                   repair/html-encoding-errors
                   hickory/parse
                   hickory/as-hickory)
@@ -542,7 +543,8 @@
     (concat (pmap (partial card release) cards-dom-tree)
             (mapcat (fn [href]
                       (pmap (partial card release)
-                            (->> (utils/http-get href)
+                            (->> (utils/http-get href
+                                                 http-opts)
                                  repair/html-encoding-errors
                                  hickory/parse
                                  hickory/as-hickory
@@ -564,9 +566,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                       dp rareDegree entryConsumeValue envolutionConsumeTwo
-                       cardLevel effect envolutionEffect safeEffect
-                       imageCover cardGroup]}]
+                      dp rareDegree entryConsumeValue envolutionConsumeTwo
+                      cardLevel effect envolutionEffect safeEffect
+                      imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)

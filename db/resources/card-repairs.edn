@@ -175,8 +175,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -1307,6 +1307,24 @@
                         (cond->> s
                           (not (re-find (re-pattern "^.?进化") s))
                           (str "【进化】“伽马兽” 起2")))))}
+ "BT10-055"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/BT10-055_index0"
+                  :color/index 0
+                  :color/color :green}
+                 {:color/id "color/BT10-055_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
+ "BT10-059"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/BT10-059_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id "color/BT10-059_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT10-060"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -1427,7 +1445,9 @@
                  (fn [s]
                    (string/replace s
                                    "[Your Turn][Once Per Turn]"
-                                   "[Your turn] [Once per turn]"))))}
+                                   "[Your turn] [Once per turn]"))))
+  "ko" (fn [card]
+         (assoc card :card/type "제너럴/바그라군"))}
  "BT10-094"
  {"en" (fn [card]
          (assoc card :card/use-cost 1))}
@@ -1944,6 +1964,50 @@
            (not security-effect)
            (assoc :card/security-effect
                   "【セキュリティ】自分の手札か/トラッシュから、名称に「大門大」/「リズム」を含むカード1枚をコストを支払わずに登場できる。その後、このカードをバトルエリアに置く。")))}
+ "BT18-040"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
+ "BT18-071"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
+ "BT18-083"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
+ "BT18-087"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 4))}
+ "BT18-088"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 5))}
+ "BT18-089"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 4))}
+ "BT18-090"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 4))}
+ "BT18-091"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 4))}
+ "BT18-092"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 4))}
+ "BT18-093"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 4))}
+ "BT18-094"
+ {"ja" (fn [card]
+         (assoc card :card/play-cost 4))}
+ "BT18-102"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 4)))}
  "EX1-005"
  {"zh-Hans" (fn [card]
               (update card :card/effect

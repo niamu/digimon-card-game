@@ -254,7 +254,7 @@
              (filter (fn [{:card/keys [language image]}]
                        (= language (:image/language image))))
              (reduce (fn [accl {:card/keys [id number parallel-id block-icon]
-                                :as card}]
+                               :as card}]
                        (update-in accl [(string/replace number #"\-[0-9]+" "")
                                         block-icon]
                                   (fnil conj #{})
