@@ -2,6 +2,7 @@
   (:require
    [clojure.data.json :as json]
    [clojure.string :as string]
+   [dcg.db.aes :as aes]
    [dcg.db.card.utils :as card-utils]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
@@ -44,8 +45,8 @@
                          (string/replace "RELEASE " "")
                          (string/replace "\u2010" "-")
                          (string/replace "\uFF65" "\u30FB")
-                         (string/replace #"(.*?BOOSTER)?" "")
-                         (string/replace #"(.*?ースター)?" "")
+                         (string/replace #"(.*?BOOSTER(?!\s*\[))?" "")
+                         (string/replace #"(.*?ースター(?!\s*【))?" "")
                          (string/replace #"(.*?부스터)?" "")
                          (string/replace #"(.*?덱)?" "")
                          #_(string/replace "BTK-1.0" "BTK-10")
@@ -206,6 +207,73 @@
                       (contains? merged-product-uris product-uri))
                     products))))
 
+(defmethod releases "ko"
+  [{:origin/keys [url] :as origin}]
+  (let [cupid-script (some->> (utils/http-get (str url "/products/"))
+                              hickory/parse
+                              hickory/as-hickory
+                              (select/select
+                               (select/descendant
+                                (select/follow-adjacent (select/tag "script")
+                                                        (select/tag "script"))))
+                              first
+                              :content
+                              first)]
+    (when cupid-script
+      (let [[[_ a] [_ b] [_ c]] (re-seq #"=toNumbers\(\"([0-9a-z]+)\"\)"
+                                        cupid-script)
+            cupid (aes/decrypt c a b)]
+        (let [products (->> (utils/http-get (str url "/products/")
+                                            {:headers
+                                             {"Cookie" (format "CUPID=%s"
+                                                               cupid)}})
+                            hickory/parse
+                            hickory/as-hickory
+                            (select/select
+                             (select/descendant (select/id "maincontent")
+                                                (select/tag "article")))
+                            (pmap (partial product origin))
+                            (map (fn [{:release/keys [genre] :as r}]
+                                   (if (string/blank? genre)
+                                     (assoc r :release/genre "확장팩")
+                                     r))))
+              cardlist-releases (->> (utils/http-get (str url "/cardlist/"))
+                                     hickory/parse
+                                     hickory/as-hickory
+                                     (select/select
+                                      (select/descendant (select/id "snaviList")
+                                                         (select/tag "li")
+                                                         (select/tag "a")))
+                                     (map (partial release origin)))
+              name-matches? (fn [r p]
+                              (let [product-name (-> (:release/name p)
+                                                     (string/replace "-0" "-")
+                                                     string/lower-case)
+                                    release-name (-> (:release/name r)
+                                                     (string/replace "-0" "-")
+                                                     string/lower-case)]
+                                (or (string/includes? release-name
+                                                      product-name)
+                                    (string/includes? product-name
+                                                      release-name))))
+              merged
+              (reduce (fn [accl r]
+                        (if-let [p (some->> products
+                                            (filter
+                                             (fn [p]
+                                               (name-matches? r p)))
+                                            last)]
+                          (conj accl
+                                (merge r (dissoc p :release/id)))
+                          (conj accl r)))
+                      []
+                      cardlist-releases)
+              merged-product-uris (set (map :release/product-uri merged))]
+          (concat merged
+                  (remove (fn [{:release/keys [product-uri]}]
+                            (contains? merged-product-uris product-uri))
+                          products)))))))
+
 (defmethod releases "zh-Hans"
   [{:origin/keys [url language card-image-language] :as origin}]
   (let [origin-uri (new URI url)
@@ -225,7 +293,7 @@
             (as-> #__ products
               (->> products
                    (map (fn [{:strs [id name productImage createTime productType]
-                              :as p}]
+                             :as p}]
                           (let [date-re #"[0-9]{4}\-[0-9]{2}\-[0-9]{2}"
                                 date (-> (SimpleDateFormat. "yyyy-MM-dd")
                                          (.parse (re-find date-re createTime)))
@@ -235,9 +303,15 @@
                                                  "/info"
                                                  (format "id=%d" id)
                                                  nil)
+                                genre productType
                                 release-name
                                 (-> name
-                                    (string/replace #".?数码宝贝卡牌对战.?\s*"
+                                    (string/replace #".?数码宝贝卡牌对战》?\s*"
+                                                    "")
+                                    (string/replace #"\h+" " ")
+                                    (string/replace "START DECK" "")
+                                    (string/replace (re-pattern
+                                                     (format "(.*?%s)?" genre))
                                                     "")
                                     string/trim)
                                 card-image-language (or card-image-language
@@ -245,7 +319,7 @@
                             {:release/id (format "release_%s_%s"
                                                  language id)
                              :release/name release-name
-                             :release/genre productType
+                             :release/genre genre
                              :release/date date
                              :release/language language
                              :release/image-uri (URI. productImage)

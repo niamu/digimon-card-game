@@ -27,7 +27,9 @@
 
 (def releases-per-origin
   (memoize (fn []
-             (pmap release/releases origins))))
+             (let [r (pmap release/releases origins)]
+               (assert (every? seq r) "Not every origin has releases")
+               r))))
 
 (defn process-cards
   []
