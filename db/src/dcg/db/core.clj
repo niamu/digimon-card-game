@@ -10,7 +10,8 @@
    [dcg.db.card.limitation :as limitation]
    [dcg.db.card.release :as release]
    [dcg.db.card.translation :as translation]
-   [dcg.db.db :as db]))
+   [dcg.db.db :as db]
+   [taoensso.timbre :as logging]))
 
 (def origins
   [{:origin/url "https://digimoncard.com"
@@ -161,10 +162,12 @@
 
 (defn -main
   [& args]
+  (logging/info "DB Ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
        db/save-to-file!
-       db/import!))
+       db/import!)
+  (logging/info "DB Ingestion completed."))
 
 (comment
   (def *cards (time (process-cards)))

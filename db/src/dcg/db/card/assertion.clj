@@ -189,19 +189,6 @@
                  (update accl language (fnil conj #{}) number))
                {})))
 
-(comment
-  ;; Update block-icons.edn resource
-  (spit (io/resource "block-icons.edn")
-        (merge-with (partial merge-with set/union)
-                    (edn/read (PushbackReader.
-                               (io/reader
-                                (io/resource "block-icons.edn"))))
-                    (first
-                     (data/diff (card-block-icons dcg.core/*cards)
-                                (edn/read (PushbackReader.
-                                           (io/reader
-                                            (io/resource "block-icons.edn")))))))))
-
 (defn- card-block-icons
   [cards]
   (let [expected-block-icons {"ST1" nil
@@ -254,7 +241,7 @@
              (filter (fn [{:card/keys [language image]}]
                        (= language (:image/language image))))
              (reduce (fn [accl {:card/keys [id number parallel-id block-icon]
-                               :as card}]
+                                :as card}]
                        (update-in accl [(string/replace number #"\-[0-9]+" "")
                                         block-icon]
                                   (fnil conj #{})
@@ -311,3 +298,17 @@
                      "BT9-073"}})
           "Card errata not accounted for")
   cards)
+
+(comment
+  ;; Update block-icons.edn resource
+  (spit (io/resource "block-icons.edn")
+        (merge-with (partial merge-with set/union)
+                    (edn/read (PushbackReader.
+                               (io/reader
+                                (io/resource "block-icons.edn"))))
+                    (first
+                     (data/diff (card-block-icons dcg.db.core/*cards)
+                                (edn/read
+                                 (PushbackReader.
+                                  (io/reader
+                                   (io/resource "block-icons.edn")))))))))
