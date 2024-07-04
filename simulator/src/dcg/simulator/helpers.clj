@@ -1,7 +1,7 @@
 (ns dcg.simulator.helpers
   (:require
    [clojure.spec.alpha :as s]
-   [dcg.db :as db]
+   [dcg.db.db :as db]
    [dcg.simulator :as-alias simulator]
    [dcg.simulator.area :as-alias area]
    [dcg.simulator.card :as-alias card]

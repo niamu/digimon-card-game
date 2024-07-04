@@ -153,6 +153,15 @@
           {battle ::area/stacks} ::area/battle} ::player/areas
          :as player} (get-in game [::game/players turn-idx])
         available-memory (+ memory 10)
+        colors-in-battle-area
+        (->> battle
+             (mapcat (fn [{::stack/keys [cards]}]
+                       (->> cards
+                            (map (fn [{::card/keys [lookup]}]
+                                   (let [{{color :color/color} :card/color
+                                          :as card} (get-in game lookup)]
+                                     color))))))
+             (into #{}))
         playable-cards
         (->> cards-in-hand
              (filter (fn [{::card/keys [lookup uuid]}]
@@ -164,9 +173,12 @@
         usable-cards
         (->> cards-in-hand
              (filter (fn [{::card/keys [lookup uuid]}]
-                       (let [{:card/keys [use-cost]} (get-in game lookup)]
+                       (let [{:card/keys [use-cost]
+                              {color :color/color} :card/color
+                              :as card} (get-in game lookup)]
                          (when use-cost
-                           (<= use-cost available-memory)))))
+                           (and (<= use-cost available-memory)
+                                (set/subset? color colors-in-battle-area))))))
              (map (fn [{::card/keys [uuid]}]
                     [:action/use turn [uuid]])))
         digivolve-actions
