@@ -12,7 +12,7 @@
       :cljs [cljs.test :as t :include-macros true])))
 
 (def st1-deck
-  {:deck/language :en
+  {:deck/language "en"
    :deck/digi-eggs [{:card/number "ST1-01", :card/count 4}],
    :deck/deck [{:card/number "ST1-02", :card/count 4}
                {:card/number "ST1-03", :card/count 4}
@@ -36,7 +36,7 @@
        "IFtTVC0xXQ"))
 
 (def digi-bros-deck
-  {:deck/language :en
+  {:deck/language "en"
    :deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
                     {:card/number "ST1-01", :card/count 1}]
    :deck/deck [{:card/number "BT1-009", :card/count 1}
@@ -59,7 +59,7 @@
    :deck/name "Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)"})
 
 (def deck-with-sideboard
-  {:deck/language :en
+  {:deck/language "en"
    :deck/digi-eggs [{:card/number "BT2-001", :card/count 4}
                     {:card/number "ST1-01", :card/count 1}]
    :deck/deck [{:card/number "BT1-009", :card/count 1}
@@ -92,7 +92,7 @@
 
 (def ja-deck
   (assoc st1-deck
-         :deck/language :ja
+         :deck/language "ja"
          :deck/name "予算の赤いデッキ"))
 
 (def invalid-deck
@@ -190,7 +190,7 @@
   (t/testing "Deck encoding of v5 deck is stable"
     (t/is (= (with-redefs [dcg.codec.common/version 5]
                (encode/encode (assoc deck-with-sideboard-and-icon
-                                     :deck/language :zh)))
+                                     :deck/language "zh")))
              (str "DCGUsC_h4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
                   "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCUJBQ0stMDAxX19fX19fX"
                   "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
@@ -289,7 +289,7 @@
                               (update :deck/deck clean-deck)
                               (update :deck/sideboard clean-deck))
                           (-> deck
-                              (update :deck/language #(if (nil? %) :en %))
+                              (update :deck/language #(if (nil? %) "en" %))
                               (update :deck/digi-eggs clean-deck)
                               (update :deck/deck clean-deck)
                               (update :deck/sideboard clean-deck))))

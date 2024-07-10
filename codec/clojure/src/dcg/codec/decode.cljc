@@ -219,7 +219,7 @@
                           (and icon? (>= version 4))
                           (as-> n (string/trim (string/join (take 8 n))))))
       (>= version 3)
-      (assoc :deck/language (get codec/bits->language language :en)))))
+      (assoc :deck/language (get codec/bits->language language "en")))))
 
 (defn- decode-deck-string
   [deck-code-str]

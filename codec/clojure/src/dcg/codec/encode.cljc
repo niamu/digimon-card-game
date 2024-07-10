@@ -37,7 +37,7 @@
   (let [byte-buffer (atom [])
         version (if (<= 3 codec/version 4)
                   (bit-or (bit-shift-left codec/version 4)
-                          (bit-shift-left (if (= language :ja) 0 1) 3)
+                          (bit-shift-left (if (= language "ja") 0 1) 3)
                           (bit-and (count digi-eggs) 0x07))
                   (bit-or (bit-shift-left codec/version 4)
                           (bit-and (count digi-eggs) 0x0F)))
@@ -71,7 +71,7 @@
                                      (>= codec/version 5)
                                      (bit-or
                                       (bit-shift-left (get codec/language->bits
-                                                           (or language :en))
+                                                           (or language "en"))
                                                       6))))
     (when (>= codec/version 2)
       ;; sideboard count
