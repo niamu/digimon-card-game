@@ -2,7 +2,8 @@
   (:gen-class)
   (:require
    [clojure.edn :as edn]
-   [dcg.db :as db]
+   [clojure.string :as string]
+   [dcg.db.db :as db]
    [dcg.simulator]
    [dcg.simulator.player :as-alias player]
    [dcg.simulator.state :as state]
@@ -63,7 +64,6 @@
                           :as request}]
                        (let [action (edn/read-string action)
                              params (edn/read-string params)]
-
                          (swap! state/state update-in
                                 [::state/games-by-id (UUID/fromString game-id)]
                                 (fn [game]
@@ -157,7 +157,7 @@
                                     card-number))})}}]])
 
 (defonce ^:private store-key
-  (.getBytes (subs (clojure.string/replace (random-uuid) "-" "") 0 16)))
+  (.getBytes (subs (string/replace (random-uuid) "-" "") 0 16)))
 
 (def route-handler
   (ring/ring-handler

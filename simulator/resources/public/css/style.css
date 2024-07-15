@@ -87,6 +87,7 @@ dcg-board {
 		display: grid;
 		gap: var(--card-gap);
 		padding: calc(var(--card-gap) * 1.5);
+		align-items: end;
 	}
 }
 
@@ -246,14 +247,15 @@ dcg-area {
 		}
 	}
 
-	&[digi-eggs] {
-		& button {
+	&[digi-eggs],
+	&[battle] dcg-stack {
+		& > button {
 			text-indent: -500vi;
 			border: none;
 			width: 100%;
 			height: 100%;
 			padding: 0;
-			border-radius: inherit;
+			border-radius: 5.25% / 3.75%;
 			background: transparent;
 		}
 
@@ -315,7 +317,7 @@ dcg-area {
 		& dcg-card:nth-child(25) { z-index: -24 }
 	}
 
-	& :has([popover]) button {
+	& [popover] button {
 		text-indent: 0;
 		border: revert;
 		background: revert;
@@ -420,7 +422,8 @@ dcg-stack {
 	& dcg-card:nth-child(24) { z-index: -23 }
 	& dcg-card:nth-child(25) { z-index: -24 }
 
-	& form {
+	&:not(:has([popover])) form,
+	& > button {
 		position: absolute;
 		width: 100%;
 		height: 100%;
@@ -790,4 +793,9 @@ dialog[open] {
 	position: fixed;
 	inset-block: 0;
 	z-index: 2;
+}
+
+dcg-card:has([popover]:popover-open),
+dcg-stack:has([popover]:popover-open) {
+	z-index: 3;
 }

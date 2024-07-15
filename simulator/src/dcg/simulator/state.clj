@@ -151,12 +151,13 @@
                           #{}
                           actions)))
         (assoc ::game/players players)
-        (assoc ::game/db (->> visible-cards
-                              (reduce (fn [accl {::card/keys [lookup]}]
-                                        (assoc-in accl
-                                                  (into [] (rest lookup))
-                                                  (get-in game lookup)))
-                                      {}))))))
+        (assoc ::game/db
+               (->> visible-cards
+                    (reduce (fn [accl {::card/keys [lookup]}]
+                              (assoc-in accl
+                                        (into [] (rest lookup))
+                                        (get-in game lookup)))
+                            {}))))))
 
 (defn initialize-player
   [seed {::player/keys [deck-code id] :as player}]
@@ -210,7 +211,13 @@
         instant (Instant/now)
         players (->> players
                      (helpers/shuffle-with-seed game-id)
-                     (mapv (partial initialize-player game-id)))
+                     (map-indexed
+                      (fn [idx player]
+                        (initialize-player game-id
+                                           (assoc player
+                                                  ::player/turn-index
+                                                  idx))))
+                     (into []))
         turn (-> players first ::player/id)
         db (helpers/load-cards (->> players
                                     (mapcat
@@ -262,6 +269,11 @@
    :action/use #'action/play
    :action/play #'action/play
    :action/digivolve #'action/digivolve
+   :action/attack.declare #'action/declare-attack
+   :action/attack.counter #'action/counter-attack
+   :action/attack.block #'action/block-attack
+   :action/attack.digimon #'action/digimon-attack
+   :action/attack.security #'action/security-attack
    :action/pass #'action/pass
    ;; Phases
    :phase/unsuspend #'phase/unsuspend
@@ -290,37 +302,7 @@
                            (-> (update ::game/available-actions disj action)
                                (update ::game/log conj action)))))]
     (cond-> game
-      (= (count available-actions) 1)
+      (and (= (count available-actions) 1)
+           (not= (last (first available-actions))
+                 :require-input))
       (flow (first available-actions)))))
-
-(comment
-  (let [game (initialize [{::player/name "niamu"
-                           ::player/deck-code "DCGAREdU1QxIEHBU1QxIE_CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ"}
-                          {::player/name "AI"
-                           ::player/deck-code "DCGARMhU1QyIEHBU1QyIE_CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0"}] nil)
-        player-by-turn-idx (->> (get-in game [::game/players])
-                                (reduce (fn [accl {::player/keys [id]}]
-                                          (assoc accl (count accl) id))
-                                        {}))]
-    (-> game
-        (flow [:action/re-draw? (get player-by-turn-idx 0) false])
-        (flow [:action/re-draw? (get player-by-turn-idx 1) true])
-        (flow [:action/hatch (get player-by-turn-idx 0) nil])
-        #_(flow [:action/use
-                 (get player-by-turn-idx 0)
-                 #uuid "4a1509d5-ef0a-4a08-ad1d-2f3b0f5043b5"])
-        #_(flow [:action/hatch (get player-by-turn-idx 1) nil])
-        #_(flow [:action/play
-                 (get player-by-turn-idx 1)
-                 #uuid "43f173f0-3a55-4e9c-b774-390e21a9fbb3"])
-
-        ;; examine game state
-        (private-state-for-player-id (get player-by-turn-idx 1))
-        #_(get-in [::game/db])
-        #_(get-in [::game/players 0 ::player/areas])
-        (get-in [::game/players 1 ::player/uuid->lookup])
-        #_(get-in [::game/players 1 ::player/memory])
-        ;; private player views
-        #_(private-state-for-player-id (get player-by-turn-idx 0))))
-
-  )

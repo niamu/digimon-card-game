@@ -551,6 +551,26 @@
         [:button
          {:type "submit"}
          "Pass Turn"]])
+     (when (contains? available-actions
+                      [:action/attack.counter
+                       (::player/id player)
+                       :require-input])
+       [:form {:method "POST"}
+        [:input
+         {:type "hidden"
+          :name "__anti-forgery-token"
+          :value anti-forgery/*anti-forgery-token*}]
+        [:input
+         {:type "hidden"
+          :name "action"
+          :value ":action/attack.counter"}]
+        [:input
+         {:type "hidden"
+          :name "params"
+          :value ":require-input"}]
+        [:button
+         {:type "submit"}
+         "No Counter"]])
      [:dcg-playmat
       ;; Security
       (let [{::area/keys [privacy cards]} (get areas ::area/security)]
@@ -586,10 +606,47 @@
                                      (= category "Option")
                                      (= category "옵션")))
                                cards)))
-               (map (fn [{::stack/keys [cards uuid] :as stack}]
-                      (->> cards
-                           (map card-component)
-                           (into [:dcg-stack])))))]])
+               (map (fn [{::stack/keys [cards uuid suspended?] :as stack}]
+                      (let [actions (->> available-actions
+                                         (filter
+                                          (fn [[_ _ params]]
+                                            (and uuid
+                                                 (or (= params uuid)
+                                                     (and (vector? params)
+                                                          (= (first params)
+                                                             uuid))))))
+                                         (into #{}))]
+                        [:dcg-stack
+                         (str "UUID: " uuid)
+                         (str "Suspended: " suspended?)
+                         (when (seq actions)
+                           (list [:button {:popovertarget (str uuid "-actions")}
+                                  "See actions"]
+                                 [:ul {:popover true
+                                       :id (str uuid "-actions")}
+                                  (for [[action-key _ params :as action] actions]
+                                    (case action-key
+                                      :action/attack.declare
+                                      [:li
+                                       [:form {:method "POST"}
+                                        [:input
+                                         {:type "hidden"
+                                          :name "__anti-forgery-token"
+                                          :value anti-forgery/*anti-forgery-token*}]
+                                        [:input
+                                         {:type "hidden"
+                                          :name "action"
+                                          :value (pr-str action-key)}]
+                                        [:input
+                                         {:type "hidden"
+                                          :name "params"
+                                          :value (pr-str params)}]
+                                        [:button {:type "submit"}
+                                         (format "Attack %s"
+                                                 (last params))]]]
+                                      [:li (pr-str action)]))]))
+                         (->> cards
+                              (map card-component))]))))]])
       ;; Deck
       (let [{::area/keys [privacy cards]} (get areas ::area/deck)]
         [:dcg-area
@@ -694,7 +751,28 @@
          {::area/trash ""
           :privacy privacy}
          [:h3.sr-only "Trash"]
-         (list (map card-component cards))])
+         ;; TODO: Trash can be opened to see all cards publicly
+         (list (->> cards
+                    (take 1)
+                    (map (fn [card]
+                           (let [actions
+                                 (->> available-actions
+                                      (filter
+                                       (fn [[_ _ params]]
+                                         (and
+                                          (::card/uuid card)
+                                          (or (= params
+                                                 (::card/uuid card))
+                                              (and (vector? params)
+                                                   (= (first params)
+                                                      (::card/uuid card)))))))
+                                      (into #{}))]
+                             (cond-> (update card
+                                             ::card/lookup
+                                             (fn [lookup]
+                                               (get-in game lookup)))
+                               (seq actions) (assoc ::card/actions actions)))))
+                    (map card-component)))])
       [:dcg-area
        {::area/hand ""
         :privacy :owner}

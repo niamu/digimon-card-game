@@ -12,8 +12,8 @@
    [dcg.simulator.stack :as-alias stack]))
 
 (defn unsuspend
-  [{::game/keys [log players] {::game-in/keys [turn]} ::game/in
-    :as game} [state-id player-id _ :as action]]
+  [{::game/keys [players] {::game-in/keys [turn]} ::game/in
+    :as game} action]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
@@ -34,6 +34,8 @@
                                            (mapv (fn [stack]
                                                    (assoc stack
                                                           ::stack/suspended?
+                                                          false
+                                                          ::stack/summoned?
                                                           false))
                                                  stacks))))
                           player))
@@ -46,24 +48,14 @@
 
 (defn draw
   [{::game/keys [turn-counter players] {::game-in/keys [turn]} ::game/in
-    :as game} [state-id player-id _ :as action]]
+    :as game} action]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game game)]}
-  (let [turn-idx (-> (reduce (fn [accl {::player/keys [id]}]
-                               (assoc accl id (count accl)))
-                             {}
-                             players)
-                     (get turn))
-        next-turn-idx (-> turn-idx
-                          inc
-                          (mod (count players)))
-        next-player-id (get-in players [next-turn-idx ::player/id])
-        deck-has-cards? (pos? (count (get-in players
-                                             [turn-idx
-                                              ::player/areas
-                                              ::area/deck
-                                              ::area/cards])))]
+  (let [{{{deck-cards ::area/cards} ::area/deck} ::player/areas
+         :as current-player} (helpers/current-player game)
+        {next-player-id ::player/id} (helpers/next-player game)
+        deck-has-cards? (pos? (count deck-cards))]
     (cond-> game
       (and (not (and (= turn-counter 1)
                      (= turn (-> players first ::player/id))))
@@ -74,7 +66,7 @@
                         (cond-> player
                           (= id turn)
                           (update-in [::player/areas]
-                                     (fn [{::area/keys [hand deck] :as areas}]
+                                     (fn [{::area/keys [deck] :as areas}]
                                        (-> areas
                                            (update-in [::area/deck
                                                        ::area/cards]
@@ -107,31 +99,17 @@
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [turn-idx (-> (reduce (fn [accl {::player/keys [id]}]
-                               (assoc accl id (count accl)))
-                             {}
-                             players)
-                     (get turn))]
+  (let [{{{digi-eggs ::area/cards} ::area/digi-eggs
+          {breeding ::area/stacks} ::area/breeding} ::player/areas
+         :as player} (helpers/current-player game)]
     (assoc game
            ::game/available-actions
            (cond-> #{[:phase/main turn nil]}
-             (and (empty? (get-in (helpers/players-by-id players)
-                                  [turn
-                                   ::player/areas
-                                   ::area/breeding
-                                   ::area/stacks]))
-                  (seq (get-in (helpers/players-by-id players)
-                               [turn
-                                ::player/areas
-                                ::area/digi-eggs
-                                ::area/cards])))
+             (and (empty? breeding)
+                  (seq digi-eggs))
              (conj [:action/hatch turn nil])
-             (when-let [stacks (get-in (helpers/players-by-id players)
-                                       [turn
-                                        ::player/areas
-                                        ::area/breeding
-                                        ::area/stacks])]
-               (some->> stacks first ::stack/cards first ::card/lookup
+             (when breeding
+               (some->> breeding first ::stack/cards first ::card/lookup
                         (get-in game)
                         :card/dp))
              (conj [:action/move turn nil])))))
@@ -142,16 +120,11 @@
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [turn-idx (-> (reduce (fn [accl {::player/keys [id]}]
-                               (assoc accl id (count accl)))
-                             {}
-                             players)
-                     (get turn))
-        {::player/keys [memory]
+  (let [{::player/keys [memory]
          {{cards-in-hand ::area/cards} ::area/hand
           {breeding ::area/stacks} ::area/breeding
           {battle ::area/stacks} ::area/battle} ::player/areas
-         :as player} (get-in game [::game/players turn-idx])
+         :as player} (helpers/current-player game)
         available-memory (+ memory 10)
         colors-in-battle-area
         (->> battle
@@ -181,6 +154,48 @@
                                 (set/subset? color colors-in-battle-area))))))
              (map (fn [{::card/keys [uuid]}]
                     [:action/use turn [uuid]])))
+        aggressor-stacks
+        (->> battle
+             (filter (fn [{::stack/keys [suspended? summoned? cards]}]
+                       (and (not suspended?)
+                            (not summoned?)
+                            (-> (first cards)
+                                (update ::card/lookup
+                                        (fn [lookup]
+                                          (get-in game lookup)))
+                                ::card/lookup
+                                :card/dp)))))
+        attackable-players
+        (->> players
+             (remove (fn [{::player/keys [id]}]
+                       (= id turn))))
+        attackable-stacks
+        (->> players
+             (remove (fn [{::player/keys [id]}]
+                       (= id turn)))
+             (mapcat (fn [{{{battle ::area/stacks} ::area/battle} ::player/areas}]
+                       (->> battle
+                            (filter (fn [{::stack/keys [suspended? cards]}]
+                                      (and suspended?
+                                           (-> (first cards)
+                                               (update ::card/lookup
+                                                       (fn [lookup]
+                                                         (get-in game lookup)))
+                                               ::card/lookup
+                                               :card/dp))))))))
+        attack-actions
+        (->> aggressor-stacks
+             (mapcat (fn [{::stack/keys [uuid]}]
+                       (concat (map (fn [{attackable-uuid ::stack/uuid}]
+                                      [:action/attack.declare turn
+                                       [uuid
+                                        attackable-uuid]])
+                                    attackable-stacks)
+                               (map (fn [{player-id ::player/id}]
+                                      [:action/attack.declare turn
+                                       [uuid
+                                        player-id]])
+                                    attackable-players)))))
         digivolve-actions
         (let [the-area (->> (concat breeding battle)
                             (map (fn [{::stack/keys [cards]}]
@@ -236,8 +251,10 @@
                    (seq digivolve-actions)
                    (as-> #__ available-actions
                      (apply conj available-actions digivolve-actions))
+                   (seq attack-actions)
+                   (as-> #__ available-actions
+                     (apply conj available-actions attack-actions))
                    ;; TODO
-                   ;; - Attack
                    ;; - Activate a [Main] timing effect
                    )))
         (assoc-in [::game/in ::game-in/state-id]
@@ -249,15 +266,7 @@
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [next-turn-idx (-> (reduce (fn [accl {::player/keys [id]}]
-                                    (assoc accl id (count accl)))
-                                  {}
-                                  players)
-                          (get turn)
-                          inc
-                          (mod (count players)))
-        next-player (get-in game [::game/players next-turn-idx])
-        next-player-id (::player/id next-player)]
+  (let [{next-player-id ::player/id} (helpers/next-player game)]
     (-> game
         (assoc ::game/available-actions
                #{[:phase/unsuspend next-player-id nil]})

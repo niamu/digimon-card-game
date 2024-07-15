@@ -3,6 +3,7 @@
    [clojure.spec.alpha :as s]
    [dcg.codec.common :as codec-common]
    [dcg.codec.decode :as codec-decode]
+   [dcg.simulator.attack :as-alias attack]
    [dcg.simulator.area :as-alias area]
    [dcg.simulator.card :as-alias card]
    [dcg.simulator.effect :as-alias effect]
@@ -13,6 +14,7 @@
 
 (s/def ::player
   (s/keys :req [::player/id
+                ::player/turn-index
                 ::player/name
                 ::player/deck-code
                 ::player/language
@@ -22,6 +24,8 @@
           :opt [::player/uuid->lookup]))
 
 (s/def ::player/id uuid?)
+(s/def ::player/turn-index (s/or :zero zero?
+                                 :pos-int pos-int?))
 (s/def ::player/name string?)
 (s/def ::player/deck-code (fn [s]
                             (try (codec-decode/decode s)
@@ -76,7 +80,8 @@
                 ::game/pending-effects
                 ::game/available-actions
                 ::game/in]
-          :opt [::game/constraint-code]))
+          :opt [::game/constraint-code
+                ::game/attack]))
 
 (s/def ::game/id uuid?)
 (s/def ::game/instant inst?)
@@ -86,7 +91,7 @@
                                            (try (codec-decode/decode s)
                                                 (catch Exception _ false)))))
 (s/def ::game/log (s/coll-of ::action))
-(s/def ::game/players (s/coll-of :dcg.simulator/player
+(s/def ::game/players (s/coll-of ::player
                                  :distinct true
                                  :min-count 2))
 (s/def ::game/active-effects (s/map-of ::effect pos-int?))
@@ -98,6 +103,18 @@
 
 (s/def ::game-in/turn ::player/id)
 (s/def ::game-in/state-id keyword?)
+
+(s/def ::game/attack (s/keys :req [::attack/attacker
+                                   ::attack/attacking]))
+
+(s/def ::attack/attacker uuid?)
+(s/def ::attack/attacking uuid?)
+(s/def ::attack/state #{:declare
+                        :counter
+                        :block
+                        :security-check
+                        :battle
+                        :end})
 
 (s/def ::areas
   (s/keys :req [::area/digi-eggs
@@ -156,8 +173,9 @@
                             (= privacy :owner))))
 
 (s/def ::stack (s/keys :req [::stack/uuid
-                             ::stack/cards]
-                       :opt [::stack/suspended?]))
+                             ::stack/cards
+                             ::stack/suspended?
+                             ::stack/summoned?]))
 
 (s/def ::stack/uuid uuid?)
 
@@ -165,6 +183,7 @@
                                 :distinct true))
 
 (s/def ::stack/suspended? boolean?)
+(s/def ::stack/summoned? boolean?)
 
 (s/def ::card
   (s/nilable (s/keys :req [::card/uuid
