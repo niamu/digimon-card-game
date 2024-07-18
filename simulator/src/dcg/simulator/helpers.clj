@@ -8,16 +8,7 @@
    [dcg.simulator.game :as-alias game]
    [dcg.simulator.game.in :as-alias game-in]
    [dcg.simulator.player :as-alias player]
-   [dcg.simulator.stack :as-alias stack])
-  (:import
-   [java.util ArrayList Collection Collections Random]))
-
-(defn shuffle-with-seed
-  [seed ^Collection coll]
-  (let [al (ArrayList. coll)
-        rng (Random. (hash seed))]
-    (Collections/shuffle al rng)
-    (clojure.lang.RT/vector (.toArray al))))
+   [dcg.simulator.stack :as-alias stack]))
 
 (defn players-by-id
   [players]
@@ -26,27 +17,17 @@
           {}
           players))
 
-(defn current-player
-  [{::game/keys [players] {::game-in/keys [turn]} ::game/in
-    :as game}]
-  (let [turn-idx (-> (reduce (fn [accl {::player/keys [id]}]
-                               (assoc accl id (count accl)))
-                             {}
-                             players)
-                     (get turn))]
-    (get-in game [::game/players turn-idx])))
-
 (defn next-player
-  [{::game/keys [players] {::game-in/keys [turn]} ::game/in
-    :as game}]
-  (let [next-turn-idx (-> (reduce (fn [accl {::player/keys [id]}]
+  [{::game/keys [db players] {::game-in/keys [turn]} ::game/in :as game}]
+  (let [next-turn-idx (-> (reduce (fn [accl [_ id]]
                                     (assoc accl id (count accl)))
                                   {}
                                   players)
                           (get turn)
                           inc
-                          (mod (count players)))]
-    (get-in game [::game/players next-turn-idx])))
+                          (mod (count players)))
+        [_ next-player-id] (nth players next-turn-idx)]
+    (get-in db [::player/id next-player-id])))
 
 (defn load-cards
   [card-ids languages]

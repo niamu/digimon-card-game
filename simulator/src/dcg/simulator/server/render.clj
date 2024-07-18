@@ -44,7 +44,7 @@
 (defn card-component
   [{::card/keys [uuid actions]
     {:card/keys [id category number color rarity image language]
-     :as card} ::card/lookup}]
+     :as card} ::card/card}]
   (if id
     [:dcg-card {:lang language}
      [:div
@@ -587,20 +587,9 @@
          [:h3.sr-only (format "Battle (%d)" (count stacks))]
          [:div.scrollable-container
           (->> stacks
-               (map (fn [stack]
-                      (update stack
-                              ::stack/cards
-                              (fn [cards]
-                                (->> cards
-                                     (map (fn [card]
-                                            (update card
-                                                    ::card/lookup
-                                                    (fn [lookup]
-                                                      (get-in game
-                                                              lookup))))))))))
                (remove (fn [{::stack/keys [cards uuid] :as stack}]
                          (some (fn [{{:card/keys [category]}
-                                    ::card/lookup}]
+                                    ::card/card}]
                                  (or (= category "Tamer")
                                      (= category "테이머")
                                      (= category "Option")
@@ -611,14 +600,13 @@
                                          (filter
                                           (fn [[_ _ params]]
                                             (and uuid
-                                                 (or (= params uuid)
+                                                 (or (= params
+                                                        [::stack/uuid uuid])
                                                      (and (vector? params)
                                                           (= (first params)
-                                                             uuid))))))
+                                                             [::stack/uuid uuid]))))))
                                          (into #{}))]
                         [:dcg-stack
-                         (str "UUID: " uuid)
-                         (str "Suspended: " suspended?)
                          (when (seq actions)
                            (list [:button {:popovertarget (str uuid "-actions")}
                                   "See actions"]
@@ -691,11 +679,6 @@
                (map (fn [{::stack/keys [cards uuid]
                          :as stack}]
                       (->> cards
-                           (map (fn [card]
-                                  (update card
-                                          ::card/lookup
-                                          (fn [lookup]
-                                            (get-in game lookup)))))
                            (map card-component)
                            (into [:dcg-stack
                                   (when (contains? available-actions
@@ -722,20 +705,9 @@
          [:h3.sr-only (format "Battle (%d)" (count stacks))]
          [:div.scrollable-container
           (->> stacks
-               (map (fn [stack]
-                      (update stack
-                              ::stack/cards
-                              (fn [cards]
-                                (->> cards
-                                     (map (fn [card]
-                                            (update card
-                                                    ::card/lookup
-                                                    (fn [lookup]
-                                                      (get-in game
-                                                              lookup))))))))))
                (filter (fn [{::stack/keys [cards uuid] :as stack}]
                          (some (fn [{{:card/keys [category]}
-                                    ::card/lookup}]
+                                    ::card/card}]
                                  (or (= category "Tamer")
                                      (= category "테이머")
                                      (= category "Option")
@@ -767,10 +739,7 @@
                                                    (= (first params)
                                                       (::card/uuid card)))))))
                                       (into #{}))]
-                             (cond-> (update card
-                                             ::card/lookup
-                                             (fn [lookup]
-                                               (get-in game lookup)))
+                             (cond-> card
                                (seq actions) (assoc ::card/actions actions)))))
                     (map card-component)))])
       [:dcg-area
@@ -792,15 +761,12 @@
                                               (= (first params)
                                                  (::card/uuid card)))))))
                                  (into #{}))]
-                        (cond-> (update card
-                                        ::card/lookup
-                                        (fn [lookup]
-                                          (get-in game lookup)))
+                        (cond-> card
                           (seq actions) (assoc ::card/actions actions)))))
                (map card-component))])]]]))
 
 (defn prompt
-  [{::game/keys [available-actions log players db] :as game} player]
+  [{::game/keys [available-actions log players] :as game} player]
   (let [{::player/keys [memory areas] :as me} (get (helpers/players-by-id players)
                                                    (::player/id player))
         dialog-actions (filter (fn [[action-state-id _ _]]
@@ -817,13 +783,6 @@
          [:p [:strong "Re-draw Hand?"]]
          [:dcg-area {::area/hand ""}
           (->> (get-in areas [::area/hand ::area/cards])
-               (map (fn [card]
-                      (update card
-                              ::card/lookup
-                              (fn [lookup]
-                                (get-in game lookup)))))
-               (sort-by (comp (juxt :card/category :card/level)
-                              ::card/lookup))
                (map card-component))]]
         [:input
          {:type "hidden"
@@ -885,13 +844,13 @@
       (map (fn [c]
              [:div
               [:div
-               (card-component {::card/lookup c})]
+               (card-component {::card/card c})]
               (compact-card-component c)
               [:p (:card/category c)]])
            cards)]]))
 
 (defn game
-  [{::game/keys [available-actions log players db] :as game} player]
+  [{::game/keys [available-actions log players] :as game} player]
   (let [spectator? (not (contains? (->> players
                                         (map ::player/id)
                                         (into #{}))
@@ -910,17 +869,12 @@
        [:h1 [:a {:href "/"} "Heroicc"]]
        [:h2 (::player/name me)]
        memory
-       (when (and (not spectator?))
-         #_[:pre
+       #_(when (and (not spectator?))
+           [:pre
             [:code
-             (->> log
+             (->> available-actions
                   pprint/pprint
-                  with-out-str)]]
-         [:pre
-          [:code
-           (->> available-actions
-                pprint/pprint
-                with-out-str)]])
+                  with-out-str)]])
        (when (and (not spectator?)
                   (empty? available-actions)
                   (not= (get-in game [::game/in ::game-in/state-id])

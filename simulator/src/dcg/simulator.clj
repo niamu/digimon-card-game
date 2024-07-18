@@ -10,7 +10,9 @@
    [dcg.simulator.game :as-alias game]
    [dcg.simulator.game.in :as-alias game-in]
    [dcg.simulator.player :as-alias player]
-   [dcg.simulator.stack :as-alias stack]))
+   [dcg.simulator.stack :as-alias stack])
+  (:import
+   [java.util Random]))
 
 (s/def ::player
   (s/keys :req [::player/id
@@ -72,17 +74,20 @@
 (s/def ::effect/available-actions ::game/available-actions)
 
 (s/def ::game
-  (s/keys :req [::game/id
+  (s/keys :req [::game/random
+                ::game/id
                 ::game/instant
                 ::game/turn-counter
                 ::game/log
                 ::game/players
                 ::game/pending-effects
                 ::game/available-actions
-                ::game/in]
+                ::game/in
+                ::game/db]
           :opt [::game/constraint-code
                 ::game/attack]))
 
+(s/def ::game/random #(instance? Random %))
 (s/def ::game/id uuid?)
 (s/def ::game/instant inst?)
 (s/def ::game/turn-counter (s/or :zero zero?
@@ -91,7 +96,10 @@
                                            (try (codec-decode/decode s)
                                                 (catch Exception _ false)))))
 (s/def ::game/log (s/coll-of ::action))
-(s/def ::game/players (s/coll-of ::player
+(s/def ::game/players (s/coll-of (s/tuple #{::player/id
+                                            ::stack/uuid
+                                            ::card/uuid}
+                                          uuid?)
                                  :distinct true
                                  :min-count 2))
 (s/def ::game/active-effects (s/map-of ::effect pos-int?))
@@ -104,11 +112,30 @@
 (s/def ::game-in/turn ::player/id)
 (s/def ::game-in/state-id keyword?)
 
-(s/def ::game/attack (s/keys :req [::attack/attacker
-                                   ::attack/attacking]))
+(s/def ::game/db (s/map-of #{:card-uuids-by-language
+                             ::player/id
+                             ::stack/uuid
+                             ::card/uuid}
+                           (s/or :idents
+                                 (s/map-of uuid?
+                                           (s/or :player ::player
+                                                 :stack ::stack
+                                                 :card map?))
+                                 :card-lookup
+                                 (s/map-of string?
+                                           (s/map-of
+                                            (s/tuple string?
+                                                     (s/or :zero zero?
+                                                           :pos-int pos-int?))
+                                            map?)))))
 
-(s/def ::attack/attacker uuid?)
-(s/def ::attack/attacking uuid?)
+(s/def ::game/attack (s/keys :req [::attack/attacker
+                                   ::attack/attacking
+                                   ::attack/player]))
+
+(s/def ::attack/attacker (s/tuple keyword? uuid?))
+(s/def ::attack/attacking (s/tuple keyword? uuid?))
+(s/def ::attack/player (s/tuple keyword? uuid?))
 (s/def ::attack/state #{:declare
                         :counter
                         :block
@@ -131,7 +158,7 @@
                         :owner
                         :public})
 
-(s/def ::area/cards (s/coll-of ::card
+(s/def ::area/cards (s/coll-of (s/tuple #{::card/uuid} uuid?)
                                :distinct true))
 
 (s/def ::area/stacks (s/* ::stack))
@@ -186,11 +213,10 @@
 (s/def ::stack/summoned? boolean?)
 
 (s/def ::card
-  (s/nilable (s/keys :req [::card/uuid
-                           ::card/number
+  (s/nilable (s/keys :req [::card/uuid]
+                     :opt [::card/number
                            ::card/parallel-id
-                           ::card/lookup]
-                     :opt [::card/actions
+                           ::card/actions
                            ::card/privacy])))
 
 (s/def ::card/uuid uuid?)
