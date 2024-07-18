@@ -115,8 +115,8 @@
           {battle ::area/stacks} ::area/battle} ::player/areas
          :as player} (get-in db [::player/id turn])
         available-memory (+ memory 10)
-        colors-in-battle-area
-        (->> battle
+        colors-in-the-area
+        (->> (concat breeding battle)
              (map #(get-in db %))
              (mapcat (fn [{::stack/keys [cards]}]
                        (->> cards
@@ -137,7 +137,7 @@
                              (when use-cost
                                (and (<= use-cost available-memory)
                                     (set/subset? (into #{} (map :color/color color))
-                                                 colors-in-battle-area))))
+                                                 colors-in-the-area))))
                            #(get-in db %)))
              (map (fn [[_ uuid]]
                     [:action/use turn [uuid]])))
