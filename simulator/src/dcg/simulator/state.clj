@@ -53,7 +53,7 @@
           cards))
 
 (defn private-state-for-player-id
-  [{::game/keys [players db]
+  [{::game/keys [available-actions players db]
     {::game-in/keys [turn]} ::game/in
     :as game} player-id]
   {:pre [(s/valid? ::simulator/game game)
@@ -66,88 +66,103 @@
                          (get-in db [:card-uuids-by-language
                                      player-language
                                      [number parallel-id]]))
-        visible-cards-by-uuid
-        (->> players
-             (mapcat
-              (fn [{::player/keys [id areas]}]
-                (reduce-kv
-                 (fn [accl area {::area/keys [privacy cards stacks]}]
-                   (concat accl
-                           (->> (or (some->> cards
-                                             (map (fn [[_ uuid :as lookup]]
-                                                    {::card/uuid uuid
-                                                     ::card/card
-                                                     (-> (get-in db lookup)
-                                                         card-lookup-fn)})))
-                                    (some->> stacks
-                                             (map #(get-in db %))
-                                             (mapcat (comp (fn [cards]
-                                                             (map (fn [[_ uuid :as lookup]]
-                                                                    {::card/uuid uuid
-                                                                     ::card/card
-                                                                     (-> (get-in db lookup)
-                                                                         card-lookup-fn)})
-                                                                  cards))
-                                                           ::stack/cards))))
-                                (filter (fn [card]
-                                          (let [privacy (get card
+        available-actions (reduce (fn [accl [_ [_ id] _ :as action]]
+                                    (cond-> accl
+                                      (= id player-id)
+                                      (conj action)))
+                                  #{}
+                                  available-actions)
+        visible-cards
+        (reduce (fn [accl {::player/keys [id areas]}]
+                  (->> areas
+                       (mapcat (fn [[_ {::area/keys [privacy cards stacks]}]]
+                                 (->> (or cards
+                                          (mapcat (fn [stack]
+                                                    (-> (get-in db stack)
+                                                        ::stack/cards))
+                                                  stacks))
+                                      (filter (fn [card]
+                                                (let [p (get card
                                                              ::card/privacy
                                                              privacy)]
-                                            (or (= privacy :public)
-                                                (and (= privacy :owner)
-                                                     (= id player-id)))))))))
-                 []
-                 areas)))
-             (reduce (fn [accl {::card/keys [uuid card]
-                               :as x}]
-                       (assoc accl uuid card))
-                     {}))
-        update-cards-fn (fn [cards]
-                          (mapv (fn [[_ uuid]]
-                                  (when-let [card (visible-cards-by-uuid uuid)]
-                                    {::card/uuid uuid
-                                     ::card/card card}))
-                                cards))
-        update-stacks-fn (fn [stacks]
-                           (->> stacks
-                                (mapv (comp (fn [{::stack/keys [cards] :as stack}]
-                                              (update stack
-                                                      ::stack/cards
-                                                      update-cards-fn))
-                                            #(get-in db %)))))
+                                                  (or (= p :public)
+                                                      (and (= id player-id)
+                                                           (= p :owner)))))))))
+                       (concat accl)
+                       (into #{})))
+                #{}
+                players)
+        actions-by-ident
+        (reduce (fn [accl [_ _ params :as action]]
+                  (let [expanded-params
+                        (when (vector? params)
+                          (mapv (fn [k]
+                                  (if-let [[t uuid] (and (vector? k) k)]
+                                    (case t
+                                      ::card/uuid
+                                      (let [card (get-in db k)]
+                                        {::card/uuid uuid
+                                         ::card/card card})
+                                      ::stack/uuid
+                                      (let [{::stack/keys [cards]
+                                             :as stack} (get-in db k)]
+                                        (update stack
+                                                ::stack/cards
+                                                (fn [cards]
+                                                  (mapv (fn [card]
+                                                          {::card/uuid uuid
+                                                           ::card/card
+                                                           (get-in db card)})
+                                                        cards))))
+                                      ::player/id
+                                      (get-in db k))
+                                    k))
+                                params))]
+                    (cond-> accl
+                      (vector? params)
+                      (update (first params) conj
+                              {:action/action action
+                               :action/params expanded-params}))))
+                {}
+                available-actions)
+        update-card (fn [[_ uuid :as lookup]]
+                      (when (contains? visible-cards lookup)
+                        (let [card (get-in db lookup)
+                              actions (get actions-by-ident lookup)]
+                          (cond-> {::card/uuid uuid
+                                   ::card/card card}
+                            actions
+                            (assoc ::card/actions actions)))))
+        update-cards (fn [cards]
+                       (mapv update-card cards))
+        update-stack (fn [[_ uuid :as lookup]]
+                       (let [{::stack/keys [cards]
+                              :as stack} (get-in db lookup)
+                             actions (get actions-by-ident lookup)]
+                         (cond-> (update stack ::stack/cards update-cards)
+                           actions
+                           (assoc ::stack/actions actions))))
+        update-stacks (fn [stacks]
+                        (mapv update-stack stacks))
         players-by-id
         (->> players
              (reduce (fn [accl {::player/keys [id] :as player}]
                        (assoc accl id
-                              (-> player
-                                  (update-in [::player/areas
-                                              ::area/battle
-                                              ::area/stacks]
-                                             update-stacks-fn)
-                                  (update-in [::player/areas
-                                              ::area/breeding
-                                              ::area/stacks]
-                                             update-stacks-fn)
-                                  (update-in [::player/areas
-                                              ::area/deck
-                                              ::area/cards]
-                                             update-cards-fn)
-                                  (update-in [::player/areas
-                                              ::area/digi-eggs
-                                              ::area/cards]
-                                             update-cards-fn)
-                                  (update-in [::player/areas
-                                              ::area/hand
-                                              ::area/cards]
-                                             update-cards-fn)
-                                  (update-in [::player/areas
-                                              ::area/security
-                                              ::area/cards]
-                                             update-cards-fn)
-                                  (update-in [::player/areas
-                                              ::area/trash
-                                              ::area/cards]
-                                             update-cards-fn))))
+                              (update player ::player/areas
+                                      (fn [areas]
+                                        (reduce-kv
+                                         (fn [accl k {::area/keys [cards stacks]
+                                                     :as area}]
+                                           (assoc accl k
+                                                  (cond-> area
+                                                    cards
+                                                    (update ::area/cards
+                                                            update-cards)
+                                                    stacks
+                                                    (update ::area/stacks
+                                                            update-stacks))))
+                                         {}
+                                         areas)))))
                      {}))]
     (-> game
         (dissoc ::game/random
@@ -157,14 +172,7 @@
                                  (mapv (fn [[_ id]]
                                          (players-by-id id))
                                        players)))
-        (update ::game/available-actions
-                (fn [actions]
-                  (reduce (fn [accl [_ id _ :as action]]
-                            (cond-> accl
-                              (= id player-id)
-                              (conj action)))
-                          #{}
-                          actions))))))
+        (assoc ::game/available-actions available-actions))))
 
 (defn initialize-player
   [^Random r {::player/keys [deck-code id] :as player}]
@@ -268,50 +276,36 @@
      ::game/instant instant
      ::game/turn-counter 0
      ::game/constraint-code constraint-code
-     ::game/log [[:phase/pre-game game-id [constraint-code]]]
+     ::game/log [[:phase/pre-game [::game/id game-id] [constraint-code]]]
      ::game/pending-effects clojure.lang.PersistentQueue/EMPTY
-     ::game/available-actions #{[:action/re-draw? turn true]
-                                [:action/re-draw? turn false]}
+     ::game/available-actions #{[:action/re-draw? [::player/id turn] true]
+                                [:action/re-draw? [::player/id turn] false]}
      ::game/in {::game-in/turn turn
                 ::game-in/state-id :phase/pre-game}
      ::game/players (mapv (fn [{::player/keys [id]}]
                             [::player/id id])
                           players)
      ::game/db (merge {:card-uuids-by-language card-uuids-by-language}
-                      (reduce (fn [accl {::player/keys [id] :as player}]
-                                (assoc-in accl
-                                          [::player/id id]
-                                          (-> player
-                                              (update-in [::player/areas
-                                                          ::area/battle
-                                                          ::area/stacks]
-                                                         update-stacks-fn)
-                                              (update-in [::player/areas
-                                                          ::area/breeding
-                                                          ::area/stacks]
-                                                         update-stacks-fn)
-                                              (update-in [::player/areas
-                                                          ::area/deck
-                                                          ::area/cards]
-                                                         update-cards-fn)
-                                              (update-in [::player/areas
-                                                          ::area/digi-eggs
-                                                          ::area/cards]
-                                                         update-cards-fn)
-                                              (update-in [::player/areas
-                                                          ::area/hand
-                                                          ::area/cards]
-                                                         update-cards-fn)
-                                              (update-in [::player/areas
-                                                          ::area/security
-                                                          ::area/cards]
-                                                         update-cards-fn)
-                                              (update-in [::player/areas
-                                                          ::area/trash
-                                                          ::area/cards]
-                                                         update-cards-fn))))
-                              {}
-                              players)
+                      (reduce
+                       (fn [accl {::player/keys [id areas] :as player}]
+                         (-> accl
+                             (assoc-in [::player/id id] player)
+                             (assoc-in [::player/id id ::player/areas]
+                                       (reduce-kv
+                                        (fn [accl k {::area/keys [cards stacks]
+                                                    :as area}]
+                                          (assoc accl k
+                                                 (cond-> area
+                                                   cards
+                                                   (update ::area/cards
+                                                           update-cards-fn)
+                                                   stacks
+                                                   (update ::area/stacks
+                                                           update-stacks-fn))))
+                                        {}
+                                        areas))))
+                       {}
+                       players)
                       (reduce (fn [accl {{::area/keys [battle breeding]}
                                         ::player/areas
                                         :as player}]
@@ -372,7 +366,6 @@
 
 (defn flow
   [{::game/keys [available-actions log players]
-    {::game-in/keys [turn state-id]} ::game/in
     :as game} [action-state-id _ _ :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]

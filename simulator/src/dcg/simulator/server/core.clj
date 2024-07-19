@@ -69,7 +69,7 @@
                                 (fn [game]
                                   (state/flow game
                                               [action
-                                               (::player/id player)
+                                               [::player/id (::player/id player)]
                                                params])))
                          (response/redirect (str "/game/" game-id))))}}]
    ["/card/:card-number"

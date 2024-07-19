@@ -36,7 +36,7 @@
 (defn re-draw?
   [{::game/keys [random log players]
     {::game-in/keys [turn]} ::game/in
-    :as game} [_ player-id re-draw? :as action]]
+    :as game} [_ [_ player-id] re-draw? :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
@@ -72,20 +72,23 @@
                                             (into #{}))]
                      (cond-> #{}
                        (not (contains? already-drawn next-player-id))
-                       (conj [:action/re-draw? next-player-id true]
-                             [:action/re-draw? next-player-id false])))))]
+                       (conj [:action/re-draw?
+                              [::player/id next-player-id] true]
+                             [:action/re-draw?
+                              [::player/id next-player-id] false])))))]
     (cond-> game
       (= (conj (->> log
                     (filter (fn [[state-id _ _]]
                               (= state-id :action/re-draw?)))
-                    (map second)
+                    (map (fn [[_ [_ id] _]]
+                           id))
                     (into #{}))
                player-id)
          (->> players
               (map second)
               (into #{})))
       (-> (assoc ::game/available-actions
-                 #{[:phase/unsuspend turn nil]})
+                 #{[:phase/unsuspend [::player/id turn] nil]})
           (assoc-in [::game/in ::game-in/state-id]
                     :phase/unsuspend)))))
 
@@ -117,7 +120,7 @@
                    ::stack/summoned? false
                    ::stack/suspended? false})
         (assoc ::game/available-actions
-               #{[:phase/main turn nil]})
+               #{[:phase/main [::player/id turn] nil]})
         (assoc-in [::game/in ::game-in/state-id]
                   :phase/main))))
 
@@ -137,17 +140,17 @@
                                   breeding)
                        (assoc-in [::area/breeding ::area/stacks] []))))
       (assoc ::game/available-actions
-             #{[:phase/main turn nil]})
+             #{[:phase/main [::player/id turn] nil]})
       (assoc-in [::game/in ::game-in/state-id]
                 :phase/main)))
 
 (defn play
   [{::game/keys [random db] {::game-in/keys [turn]} ::game/in
-    :as game} [_ _ [card-uuid & [override]] :as action]]
+    :as game} [_ _ [card & [override]] :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{:card/keys [play-cost use-cost]} (get-in db [::card/uuid card-uuid])
+  (let [{:card/keys [play-cost use-cost]} (get-in db card)
         stack-uuid (random/uuid random)]
     (-> game
         (update-memory - (or (:cost override)
@@ -158,8 +161,8 @@
                          (update-in [::area/hand ::area/cards]
                                     (fn [cards]
                                       (->> cards
-                                           (remove (fn [[_ uuid]]
-                                                     (= uuid card-uuid)))
+                                           (remove (fn [xcard]
+                                                     (= xcard card)))
                                            (into []))))
                          (update-in [::area/battle ::area/stacks] conj
                                     [::stack/uuid stack-uuid]))))
@@ -167,13 +170,13 @@
                   {::stack/uuid stack-uuid
                    ::stack/summoned? true
                    ::stack/suspended? false
-                   ::stack/cards [[::card/uuid card-uuid]]})
+                   ::stack/cards [card]})
         (assoc ::game/available-actions
-               #{[:phase/main turn nil]}))))
+               #{[:phase/main [::player/id turn] nil]}))))
 
 (defn digivolve
   [{::game/keys [db players] {::game-in/keys [turn]} ::game/in
-    :as game} [_ _ [card-uuid digivolve-idx onto-stack] :as action]]
+    :as game} [_ _ [card digivolve-idx onto-stack] :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
@@ -181,8 +184,7 @@
           {deck-cards ::area/cards} ::area/deck} ::player/areas
          :as current-player} (get-in db [::player/id turn])
         deck-has-cards? (pos? (count deck-cards))
-        {:card/keys [digivolution-requirements]
-         :as card} (get-in db [::card/uuid card-uuid])]
+        {:card/keys [digivolution-requirements]} (get-in db card)]
     (-> game
         (update-memory - (get-in digivolution-requirements
                                  [digivolve-idx :digivolve/cost]))
@@ -194,8 +196,8 @@
                     ::area/cards]
                    (fn [cards]
                      (->> cards
-                          (remove (fn [[_ uuid]]
-                                    (= uuid card-uuid)))
+                          (remove (fn [xcard]
+                                    (= xcard card)))
                           (into []))))
         (update-in (->> (concat [::game/db] onto-stack)
                         (into []))
@@ -204,7 +206,7 @@
                              ::stack/cards
                              (fn [cards]
                                (->> cards
-                                    (concat [[::card/uuid card-uuid]])
+                                    (concat [card])
                                     (into []))))))
         ;; Draw on digivolve
         (cond-> #__
@@ -217,7 +219,7 @@
                           ::area/deck ::area/cards]
                          (comp #(into [] %) rest))))
         (assoc ::game/available-actions
-               #{[:phase/main turn nil]}))))
+               #{[:phase/main [::player/id turn] nil]}))))
 
 (defn declare-attack
   [{::game/keys [db]
@@ -249,7 +251,9 @@
                 ::attack/attacking target
                 ::attack/player [::player/id opponent-id]}
                ::game/available-actions
-               #{[:action/attack.counter opponent-id :require-input]})))
+               #{[:action/attack.counter
+                  [::player/id opponent-id]
+                  :require-input]})))
   ;; TODO: [When Attacking] and "when a Digimon attacks" effects trigger
   )
 
@@ -260,16 +264,15 @@
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [[_ opponent-id] player]
-    (-> game
-        (assoc ::game/available-actions
-               (cond-> #{(if (= (first attacking)
-                                ::player/id)
-                           [:action/attack.security opponent-id nil]
-                           [:action/attack.digimon opponent-id nil])}
-                 ;; TODO: enumerate all possible blocks
-                 #_(conj [:action/attack.block opponent-id stack-uuid])
-                 ))))
+  (-> game
+      (assoc ::game/available-actions
+             (cond-> #{(if (= (first attacking)
+                              ::player/id)
+                         [:action/attack.security player nil]
+                         [:action/attack.digimon player nil])}
+               ;; TODO: enumerate all possible blocks
+               #_(conj [:action/attack.block player stack-uuid])
+               )))
   ;; TODO: Opponent's "When an opponent's Digimon attacks" effects activate.
   )
 
@@ -283,7 +286,7 @@
   (-> game
       (assoc-in [::game/attack ::attack/attacking] target)
       (assoc ::game/available-actions
-             #{[:action/attack.digimon turn nil]})))
+             #{[:action/attack.digimon [::player/id turn] nil]})))
 
 (defn digimon-attack
   [{::game/keys [db players]
@@ -345,8 +348,8 @@
       true
       (assoc ::game/available-actions
              (if false ;; TODO: if attacker has piercing and survived
-               #{[:action/attack.security turn nil]}
-               #{[:phase/main turn nil]})))))
+               #{[:action/attack.security [::player/id turn] nil]}
+               #{[:phase/main [::player/id turn] nil]})))))
 
 (defn security-attack
   [{::game/keys [db players]
@@ -374,7 +377,7 @@
           (assoc ::game/available-actions #{})
           (assoc-in [::game/in ::game-in/state-id] :game/end)
           (update-in [::game/log] conj
-                     [:game/end turn turn]))
+                     [:game/end [::player/id turn] [::player/id turn]]))
       (cond-> game
         (<= attacker-dp attacking-dp)
         ;; TODO: On deletion effect
@@ -407,7 +410,7 @@
         (assoc ::game/available-actions
                (if false ;; TODO: if attacker has security attack +N
                  #{[:action/attack.security turn nil]}
-                 #{[:phase/main turn nil]}))))))
+                 #{[:phase/main [::player/id turn] nil]}))))))
 
 (defn pass
   [{{::game-in/keys [turn]} ::game/in :as game} action]
@@ -418,7 +421,7 @@
     (-> game
         (set-memory -3)
         (assoc ::game/available-actions
-               #{[:phase/unsuspend turn nil]})
+               #{[:phase/unsuspend [::player/id turn] nil]})
         (assoc-in [::game/in ::game-in/turn] next-player-id)
         (assoc-in [::game/in ::game-in/state-id]
                   :phase/unsuspend))))

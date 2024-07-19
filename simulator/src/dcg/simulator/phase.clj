@@ -41,7 +41,7 @@
                                   {}
                                   stacks))))
         (update ::game/available-actions conj
-                [:phase/draw turn nil])
+                [:phase/draw [::player/id turn] nil])
         (assoc-in [::game/in ::game-in/state-id]
                   :phase/draw))))
 
@@ -69,19 +69,21 @@
                                   (first deck-cards)))))
       deck-has-cards?
       (-> (assoc ::game/available-actions
-                 #{[:phase/breeding turn nil]})
+                 #{[:phase/breeding [::player/id turn] nil]})
           (assoc-in [::game/in ::game-in/state-id]
                     :phase/breeding))
       (not deck-has-cards?)
       (-> (assoc ::game/available-actions #{})
           (assoc-in [::game/in ::game-in/state-id] :game/end)
           (update-in [::game/log] conj
-                     [:game/end turn next-player-id])))))
+                     [:game/end
+                      [::player/id turn]
+                      [::player/id next-player-id]])))))
 
 (defn breeding
   [{::game/keys [db]
     {::game-in/keys [turn]} ::game/in
-    :as game} [state-id player-id _ :as action]]
+    :as game} action]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
@@ -90,10 +92,10 @@
          :as player} (get-in db [::player/id turn])]
     (assoc game
            ::game/available-actions
-           (cond-> #{[:phase/main turn nil]}
+           (cond-> #{[:phase/main [::player/id turn] nil]}
              (and (empty? breeding)
                   (seq digi-eggs))
-             (conj [:action/hatch turn nil])
+             (conj [:action/hatch [::player/id turn] nil])
              (when breeding
                (some->> (first breeding)
                         (get-in db)
@@ -101,7 +103,7 @@
                         first
                         (get-in db)
                         :card/dp))
-             (conj [:action/move turn nil])))))
+             (conj [:action/move [::player/id turn] nil])))))
 
 (defn main
   [{::game/keys [db players] {::game-in/keys [turn]} ::game/in
@@ -129,8 +131,8 @@
                                             (when play-cost
                                               (<= play-cost available-memory)))
                                           #(get-in db %)))
-                            (map (fn [[_ uuid]]
-                                   [:action/play turn [uuid]])))
+                            (map (fn [card]
+                                   [:action/play [::player/id turn] [card]])))
         usable-cards
         (->> cards-in-hand
              (filter (comp (fn [{:card/keys [color use-cost]}]
@@ -139,8 +141,8 @@
                                     (set/subset? (into #{} (map :color/color color))
                                                  colors-in-the-area))))
                            #(get-in db %)))
-             (map (fn [[_ uuid]]
-                    [:action/use turn [uuid]])))
+             (map (fn [card]
+                    [:action/use [::player/id turn] [card]])))
         aggressor-stacks
         (filter (comp (fn [{::stack/keys [uuid suspended? summoned? cards]}]
                         (let [{:card/keys [dp]} (->> (first cards)
@@ -177,11 +179,13 @@
         (->> aggressor-stacks
              (mapcat (fn [stack]
                        (concat (map (fn [attackable-stack]
-                                      [:action/attack.declare turn
+                                      [:action/attack.declare
+                                       [::player/id turn]
                                        [stack attackable-stack]])
                                     attackable-stacks)
                                (map (fn [player]
-                                      [:action/attack.declare turn
+                                      [:action/attack.declare
+                                       [::player/id turn]
                                        [stack player]])
                                     attackable-players)))))
         digivolve-actions
@@ -212,10 +216,8 @@
                                         (fn [{{:card/keys [color level]}
                                              ::card/card
                                              :as area-card}]
-                                          (and (<= cost
-                                                   available-memory)
-                                               (= level
-                                                  digivolve-level)
+                                          (and (<= cost available-memory)
+                                               (= level digivolve-level)
                                                (seq (set/intersection
                                                      (->> color
                                                           (map :color/color)
@@ -223,8 +225,10 @@
                                                      (->> digivolve-color
                                                           (into #{})))))))
                                        (map (fn [card]
-                                              [:action/digivolve turn
-                                               [uuid index
+                                              [:action/digivolve
+                                               [::player/id turn]
+                                               [[::card/uuid uuid]
+                                                index
                                                 [::stack/uuid
                                                  (::card/stack card)]]]))))
                                 digivolution-requirements)]
@@ -236,8 +240,8 @@
         (dissoc ::game/attack)
         (assoc ::game/available-actions
                (if (< memory 0)
-                 #{[:phase/end-turn turn nil]}
-                 (cond-> #{[:action/pass turn nil]}
+                 #{[:phase/end-turn [::player/id turn] nil]}
+                 (cond-> #{[:action/pass [::player/id turn] nil]}
                    (seq playable-cards)
                    (as-> #__ available-actions
                      (apply conj available-actions playable-cards))
@@ -265,7 +269,7 @@
   (let [{next-player-id ::player/id} (helpers/next-player game)]
     (-> game
         (assoc ::game/available-actions
-               #{[:phase/unsuspend next-player-id nil]})
+               #{[:phase/unsuspend [::player/id next-player-id] nil]})
         (assoc-in [::game/in ::game-in/turn]
                   next-player-id)
         (assoc-in [::game/in ::game-in/state-id]

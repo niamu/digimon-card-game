@@ -117,7 +117,7 @@
               "See actions"]
              [:ul {:popover true
                    :id (str uuid "-actions")}
-              (for [[action-key _ params :as action] actions]
+              (for [{[action-key _ params :as action] :action/action} actions]
                 (case action-key
                   :action/play [:li
                                 [:form {:method "POST"}
@@ -519,10 +519,9 @@
                                                                   [0 ::player/id])))
                                                (str (not= (::player/id player)
                                                           (::player/id me))))}
-     (when (contains? available-actions
-                      [:phase/main
-                       (::player/id player)
-                       nil])
+     (when (contains? available-actions [:phase/main
+                                         [::player/id (::player/id player)]
+                                         nil])
        [:form {:method "POST"}
         [:input
          {:type "hidden"
@@ -537,7 +536,7 @@
          "Move to Main Phase"]])
      (when (contains? available-actions
                       [:action/pass
-                       (::player/id player)
+                       [::player/id (::player/id player)]
                        nil])
        [:form {:method "POST"}
         [:input
@@ -553,7 +552,7 @@
          "Pass Turn"]])
      (when (contains? available-actions
                       [:action/attack.counter
-                       (::player/id player)
+                       [::player/id (::player/id player)]
                        :require-input])
        [:form {:method "POST"}
         [:input
@@ -595,46 +594,38 @@
                                      (= category "Option")
                                      (= category "옵션")))
                                cards)))
-               (map (fn [{::stack/keys [cards uuid suspended?] :as stack}]
-                      (let [actions (->> available-actions
-                                         (filter
-                                          (fn [[_ _ params]]
-                                            (and uuid
-                                                 (or (= params
-                                                        [::stack/uuid uuid])
-                                                     (and (vector? params)
-                                                          (= (first params)
-                                                             [::stack/uuid uuid]))))))
-                                         (into #{}))]
-                        [:dcg-stack
-                         (when (seq actions)
-                           (list [:button {:popovertarget (str uuid "-actions")}
-                                  "See actions"]
-                                 [:ul {:popover true
-                                       :id (str uuid "-actions")}
-                                  (for [[action-key _ params :as action] actions]
-                                    (case action-key
-                                      :action/attack.declare
-                                      [:li
-                                       [:form {:method "POST"}
-                                        [:input
-                                         {:type "hidden"
-                                          :name "__anti-forgery-token"
-                                          :value anti-forgery/*anti-forgery-token*}]
-                                        [:input
-                                         {:type "hidden"
-                                          :name "action"
-                                          :value (pr-str action-key)}]
-                                        [:input
-                                         {:type "hidden"
-                                          :name "params"
-                                          :value (pr-str params)}]
-                                        [:button {:type "submit"}
-                                         (format "Attack %s"
-                                                 (last params))]]]
-                                      [:li (pr-str action)]))]))
-                         (->> cards
-                              (map card-component))]))))]])
+               (map (fn [{::stack/keys [actions cards uuid suspended?]
+                         :as stack}]
+                      [:dcg-stack
+                       (when (seq actions)
+                         (list [:button {:popovertarget (str uuid "-actions")}
+                                "See actions"]
+                               [:ul {:popover true
+                                     :id (str uuid "-actions")}
+                                (for [{[action-key _ params :as action]
+                                       :action/action} actions]
+                                  (case action-key
+                                    :action/attack.declare
+                                    [:li
+                                     [:form {:method "POST"}
+                                      [:input
+                                       {:type "hidden"
+                                        :name "__anti-forgery-token"
+                                        :value anti-forgery/*anti-forgery-token*}]
+                                      [:input
+                                       {:type "hidden"
+                                        :name "action"
+                                        :value (pr-str action-key)}]
+                                      [:input
+                                       {:type "hidden"
+                                        :name "params"
+                                        :value (pr-str params)}]
+                                      [:button {:type "submit"}
+                                       (format "Attack %s"
+                                               (last params))]]]
+                                    [:li (pr-str action)]))]))
+                       (->> cards
+                            (map card-component))])))]])
       ;; Deck
       (let [{::area/keys [privacy cards]} (get areas ::area/deck)]
         [:dcg-area
@@ -651,7 +642,7 @@
          [:h3.sr-only (format "Digi-Eggs (%d)" (count cards))]
          (if (contains? available-actions
                         [:action/hatch
-                         (::player/id player)
+                         [::player/id (::player/id player)]
                          nil])
            [:form {:method "POST"}
             [:input
@@ -683,7 +674,8 @@
                            (into [:dcg-stack
                                   (when (contains? available-actions
                                                    [:action/move
-                                                    (::player/id player)
+                                                    [::player/id
+                                                     (::player/id player)]
                                                     nil])
                                     [:form {:method "POST"}
                                      [:input
@@ -726,44 +718,13 @@
          ;; TODO: Trash can be opened to see all cards publicly
          (list (->> cards
                     (take 1)
-                    (map (fn [card]
-                           (let [actions
-                                 (->> available-actions
-                                      (filter
-                                       (fn [[_ _ params]]
-                                         (and
-                                          (::card/uuid card)
-                                          (or (= params
-                                                 (::card/uuid card))
-                                              (and (vector? params)
-                                                   (= (first params)
-                                                      (::card/uuid card)))))))
-                                      (into #{}))]
-                             (cond-> card
-                               (seq actions) (assoc ::card/actions actions)))))
                     (map card-component)))])
       [:dcg-area
        {::area/hand ""
         :privacy :owner}
        (let [{::area/keys [privacy cards]} (get-in areas [::area/hand])]
          [:div.scrollable-container
-          (->> cards
-               (map (fn [card]
-                      (let [actions
-                            (->> available-actions
-                                 (filter
-                                  (fn [[_ _ params]]
-                                    (and
-                                     (::card/uuid card)
-                                     (or (= params
-                                            (::card/uuid card))
-                                         (and (vector? params)
-                                              (= (first params)
-                                                 (::card/uuid card)))))))
-                                 (into #{}))]
-                        (cond-> card
-                          (seq actions) (assoc ::card/actions actions)))))
-               (map card-component))])]]]))
+          (map card-component cards)])]]]))
 
 (defn prompt
   [{::game/keys [available-actions log players] :as game} player]
@@ -809,7 +770,7 @@
       [:dialog {:open true}
        [:form {:method "dialog"}
         [:button {:autofocus true} "Close"]]
-       (let [[_ _ turn] (last log)]
+       (let [[_ _ [_ turn]] (last log)]
          (if (get (helpers/players-by-id players) (get player ::player/id))
            (str "You "
                 (if (= turn (get player ::player/id))
@@ -855,8 +816,8 @@
                                         (map ::player/id)
                                         (into #{}))
                                    (::player/id player)))
-        {::player/keys [memory areas] :as me} (get (helpers/players-by-id players)
-                                                   (::player/id player))]
+        {::player/keys [memory] :as me} (get (helpers/players-by-id players)
+                                             (::player/id player))]
     (page/html5 {:mode :html
                  :lang "en"}
       [:head

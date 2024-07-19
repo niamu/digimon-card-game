@@ -105,7 +105,10 @@
 (s/def ::game/active-effects (s/map-of ::effect pos-int?))
 (s/def ::game/pending-effects #(instance? clojure.lang.PersistentQueue %))
 
-(s/def ::action (s/tuple ::game-in/state-id ::player/id any?))
+(s/def ::action (s/tuple ::game-in/state-id
+                         (s/tuple #{::game/id
+                                    ::player/id} uuid?)
+                         any?))
 (s/def ::game/in (s/keys :req [::game-in/turn
                                ::game-in/state-id]))
 
