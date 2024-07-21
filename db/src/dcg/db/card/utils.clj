@@ -54,6 +54,7 @@
     "、" nil
     "ー" nil
     "－" nil
+    "―" nil
     "-" nil
     (-> s
         (string/replace "１" "1")

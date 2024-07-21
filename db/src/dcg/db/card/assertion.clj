@@ -262,17 +262,26 @@
   [cards]
   (assert (empty? (card-values cards))
           "JA card values differ across languages")
+  (assert (empty? (text-fields cards))
+          "Card text fields differ across languages")
+  (assert (empty? (card-categories cards))
+          "Card categories differ across languages")
   (assert (= (highlights cards)
              {"BT10-099"
               {"card/en_BT10-099_P0" {:timing 3 :keyword-effect 1}
                "card/ja_BT10-099_P0" {:timing 3 :keyword-effect 1}
                "card/zh-Hans_BT10-099_P0" {:timing 3 :keyword-effect 3}
-               "card/ko_BT10-099_P0" {:timing 3 :keyword-effect 1}}})
+               "card/ko_BT10-099_P0" {:timing 3 :keyword-effect 1}}
+              "EX3-064"
+              {"card/en_EX3-064_P0" {:timing 2}
+               "card/en_EX3-064_P1" {:timing 2}
+               "card/ja_EX3-064_P0" {:timing 2}
+               "card/ja_EX3-064_P1" {:timing 2}
+               "card/ko_EX3-064_P0" {:keyword-effect 1 :timing 2}
+               "card/ko_EX3-064_P1" {:keyword-effect 1 :timing 2}
+               "card/zh-Hans_EX3-064_P0" {:timing 2}
+               "card/zh-Hans_EX3-064_P1" {:timing 2}}})
           "Card highlights differ across languages")
-  (assert (empty? (text-fields cards))
-          "Card text fields differ across languages")
-  (assert (empty? (card-categories cards))
-          "Card categories differ across languages")
   (assert (empty? (first
                    (data/diff (card-block-icons cards)
                               (edn/read (PushbackReader.
