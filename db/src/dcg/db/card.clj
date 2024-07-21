@@ -16,14 +16,17 @@
 
 (defn- download-image!
   [{:image/keys [id path language source] :as image}]
-  (let [number (-> id
+  (let [http-opts (utils/cupid-headers (str (.getScheme source)
+                                            "://"
+                                            (.getHost source)))
+        number (-> id
                    (string/replace #"image/(.*?)_" "")
                    (string/replace #"_P([0-9]+)" ""))
         parallel-id (last (re-find #"_P([0-9]+)" id))
         filename (str "resources" path)]
     (when-not (.exists (io/file filename))
       (let [image-bytes (-> (str source)
-                            utils/as-bytes
+                            (utils/as-bytes http-opts)
                             card-utils/trim-transparency!)]
         (.mkdirs (io/file (.getParent (io/file filename))))
         (with-open [in (io/input-stream image-bytes)
@@ -48,8 +51,7 @@
     (when (and (= parallel-id "0")
                (not (.exists (io/file filename))))
       (when-let [image-bytes (try (-> image-uri
-                                      utils/as-bytes
-                                      card-utils/trim-transparency!)
+                                      utils/as-bytes)
                                   (catch Exception _ nil))]
         (.mkdirs (io/file (.getParent (io/file filename))))
         (with-open [in (io/input-stream image-bytes)

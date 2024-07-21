@@ -59,7 +59,7 @@
   (logging/info (format "CV Query for URL: %s" url))
   (let [temp-file (File/createTempFile "temp" "")
         temp-path (.getPath temp-file)
-        url-bytes (utils/as-bytes url)
+        url-bytes (utils/as-bytes url {})
         _ (with-open [in (io/input-stream url-bytes)
                       out (io/output-stream temp-path)]
             (io/copy in out))

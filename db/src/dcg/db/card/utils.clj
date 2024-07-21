@@ -156,7 +156,8 @@
 
 (defn- bytes->buffered-image
   [bs]
-  (ImageIO/read (ByteArrayInputStream. bs)))
+  (with-open [is (io/input-stream bs)]
+    (ImageIO/read is)))
 
 (defn- buffered-image->bytes
   [^BufferedImage image]

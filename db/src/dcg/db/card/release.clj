@@ -2,7 +2,6 @@
   (:require
    [clojure.data.json :as json]
    [clojure.string :as string]
-   [dcg.db.aes :as aes]
    [dcg.db.card.utils :as card-utils]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
@@ -209,74 +208,60 @@
 
 (defmethod releases "ko"
   [{:origin/keys [url] :as origin}]
-  (let [cupid-script (some->> (utils/http-get (str url "/products/"))
-                              hickory/parse
-                              hickory/as-hickory
-                              (select/select
-                               (select/descendant
-                                (select/follow-adjacent (select/tag "script")
-                                                        (select/tag "script"))))
-                              first
-                              :content
-                              first)]
-    (when cupid-script
-      (let [[[_ a] [_ b] [_ c]] (re-seq #"=toNumbers\(\"([0-9a-z]+)\"\)"
-                                        cupid-script)
-            cupid (aes/decrypt c a b)
-            http-opts {:headers {"Cookie" (format "CUPID=%s" cupid)}}]
-        (let [products (->> (utils/http-get (str url "/products/")
-                                            http-opts)
-                            hickory/parse
-                            hickory/as-hickory
-                            (select/select
-                             (select/descendant (select/id "maincontent")
-                                                (select/tag "article")))
-                            (pmap (partial product origin))
-                            (map (fn [{:release/keys [genre] :as r}]
-                                   (if (string/blank? genre)
-                                     (assoc r :release/genre "확장팩")
-                                     r))))
-              cardlist-releases (->> (utils/http-get (str url "/cardlist/")
-                                                     http-opts)
-                                     hickory/parse
-                                     hickory/as-hickory
-                                     (select/select
-                                      (select/descendant (select/id "snaviList")
-                                                         (select/tag "li")
-                                                         (select/tag "a")))
-                                     (map (comp #(assoc %
-                                                        :release/http-opts
-                                                        http-opts)
-                                                (partial release origin))))
-              name-matches? (fn [r p]
-                              (let [product-name (-> (:release/name p)
-                                                     (string/replace "-0" "-")
-                                                     string/lower-case)
-                                    release-name (-> (:release/name r)
-                                                     (string/replace "-0" "-")
-                                                     string/lower-case)]
-                                (or (string/includes? release-name
-                                                      product-name)
-                                    (string/includes? product-name
-                                                      release-name))))
-              merged
-              (reduce (fn [accl r]
-                        (if-let [p (some->> products
-                                            (filter
-                                             (fn [p]
-                                               (name-matches? r p)))
-                                            last)]
-                          (conj accl
-                                (merge r
-                                       (dissoc p :release/id)))
-                          (conj accl r)))
-                      []
-                      cardlist-releases)
-              merged-product-uris (set (map :release/product-uri merged))]
-          (concat merged
-                  (remove (fn [{:release/keys [product-uri]}]
-                            (contains? merged-product-uris product-uri))
-                          products)))))))
+  (let [http-opts (utils/cupid-headers (str url "/products/"))
+        products (->> (utils/http-get (str url "/products/")
+                                      http-opts)
+                      hickory/parse
+                      hickory/as-hickory
+                      (select/select
+                       (select/descendant (select/id "maincontent")
+                                          (select/tag "article")))
+                      (pmap (partial product origin))
+                      (map (fn [{:release/keys [genre] :as r}]
+                             (if (string/blank? genre)
+                               (assoc r :release/genre "확장팩")
+                               r))))
+        cardlist-releases (->> (utils/http-get (str url "/cardlist/")
+                                               http-opts)
+                               hickory/parse
+                               hickory/as-hickory
+                               (select/select
+                                (select/descendant (select/id "snaviList")
+                                                   (select/tag "li")
+                                                   (select/tag "a")))
+                               (map (comp #(assoc %
+                                                  :release/http-opts
+                                                  http-opts)
+                                          (partial release origin))))
+        name-matches? (fn [r p]
+                        (let [product-name (-> (:release/name p)
+                                               (string/replace "-0" "-")
+                                               string/lower-case)
+                              release-name (-> (:release/name r)
+                                               (string/replace "-0" "-")
+                                               string/lower-case)]
+                          (or (string/includes? release-name
+                                                product-name)
+                              (string/includes? product-name
+                                                release-name))))
+        merged
+        (reduce (fn [accl r]
+                  (if-let [p (some->> products
+                                      (filter
+                                       (fn [p]
+                                         (name-matches? r p)))
+                                      last)]
+                    (conj accl
+                          (merge r
+                                 (dissoc p :release/id)))
+                    (conj accl r)))
+                []
+                cardlist-releases)
+        merged-product-uris (set (map :release/product-uri merged))]
+    (concat merged
+            (remove (fn [{:release/keys [product-uri]}]
+                      (contains? merged-product-uris product-uri))
+                    products))))
 
 (defmethod releases "zh-Hans"
   [{:origin/keys [url language card-image-language] :as origin}]
