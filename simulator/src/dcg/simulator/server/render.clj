@@ -13,33 +13,86 @@
    [hiccup.page :as page]
    [ring.middleware.anti-forgery :as anti-forgery]))
 
-(defn memory-guage
-  [memory]
-  [:section.memory
-   [:h2 "Memory"]
-   [:memory-guage
-    [:ul
-     [:ul
-      (map (fn [n]
-             [:li
-              n
-              (when (= memory n)
-                [:memory-counter
-                 {:aria-label (format "%d available memory" memory)}])])
-           (range 10 0 -1))]
-     [:li 0
-      (when (zero? memory)
-        [:memory-counter
-         {:aria-label (format "%d available memory" memory)}])]
-     [:ul
-      (map (fn [n]
-             [:li
-              [:span.sr-only "-"]
-              (* n -1)
-              (when (= memory n)
-                [:memory-counter
-                 {:aria-label (format "%d available memory" memory)}])])
-           (range -1 -11 -1))]]]])
+(declare stack)
+
+(defn action
+  [{[action-key _ original-params :as original-action] :action/action :as action
+    params :action/params}]
+  (let [params-lookup (zipmap original-params params)]
+    [:li
+     [:form {:method "POST"}
+      [:input
+       {:type "hidden"
+        :name "__anti-forgery-token"
+        :value anti-forgery/*anti-forgery-token*}]
+      [:input
+       {:type "hidden"
+        :name "action"
+        :value (pr-str action-key)}]
+      [:input
+       {:type "hidden"
+        :name "params"
+        :value (pr-str original-params)}]
+      (case action-key
+        :action/play
+        [:button {:type "submit"}
+         (format "Play for a cost of %d"
+                 (get-in params
+                         [0
+                          ::card/card
+                          :card/play-cost]))]
+        :action/use
+        [:button {:type "submit"}
+         (format "Use for a cost of %d"
+                 (get-in params
+                         [0
+                          ::card/card
+                          :card/use-cost]))]
+        :action/digivolve
+        (let [stack-uuid (-> original-params last last)]
+          (list
+           [:style
+            (format
+             (str "dcg-board:has(button[data-stack=\"%s\"]:hover) "
+                  "dcg-stack[data-stack=\"%s\"] {"
+                  " box-shadow: var(--card-glow-small), var(--card-glow-large);"
+                  "}")
+             stack-uuid
+             stack-uuid)]
+           [:button
+            {:type "submit"
+             :data-stack stack-uuid}
+            (format "Digivolve for a cost of %d"
+                    (get-in params
+                            [0
+                             ::card/card
+                             :card/digivolution-requirements
+                             (second params)
+                             :digivolve/cost]))
+            (stack (last params))]))
+        :action/move
+        [:button {:type "submit"}
+         "Move to Battle Area"]
+        :action/attack.declare
+        (let [attack-stack (-> original-params last last)]
+          (list
+           [:style
+            (format
+             (str "dcg-board:has(button[data-stack=\"%s\"]:hover) "
+                  "dcg-stack[data-stack=\"%s\"] {"
+                  " box-shadow: var(--card-glow-small), var(--card-glow-large);"
+                  "}")
+             attack-stack
+             attack-stack)]
+           [:button
+            {:type "submit"
+             :data-stack attack-stack}
+            "Attack"
+            (if (= (-> original-params last first)
+                   ::player/id)
+              (str " " (-> params last ::player/name))
+              (stack (last params)))]))
+        [:li (pr-str action-key)])]]))
 
 (defn card-component
   [{::card/keys [uuid actions]
@@ -117,65 +170,19 @@
               "See actions"]
              [:ul {:popover true
                    :id (str uuid "-actions")}
-              (for [{[action-key _ params :as action] :action/action} actions]
-                (case action-key
-                  :action/play [:li
-                                [:form {:method "POST"}
-                                 [:input
-                                  {:type "hidden"
-                                   :name "__anti-forgery-token"
-                                   :value anti-forgery/*anti-forgery-token*}]
-                                 [:input
-                                  {:type "hidden"
-                                   :name "action"
-                                   :value (pr-str action-key)}]
-                                 [:input
-                                  {:type "hidden"
-                                   :name "params"
-                                   :value (pr-str params)}]
-                                 [:button {:type "submit"}
-                                  (format "Play for a cost of %d"
-                                          (get-in card [:card/play-cost]))]]]
-                  :action/use [:li
-                               [:form {:method "POST"}
-                                [:input
-                                 {:type "hidden"
-                                  :name "__anti-forgery-token"
-                                  :value anti-forgery/*anti-forgery-token*}]
-                                [:input
-                                 {:type "hidden"
-                                  :name "action"
-                                  :value (pr-str action-key)}]
-                                [:input
-                                 {:type "hidden"
-                                  :name "params"
-                                  :value (pr-str params)}]
-                                [:button {:type "submit"}
-                                 (format "Use for a cost of %d"
-                                         (get-in card [:card/use-cost]))]]]
-                  :action/digivolve [:li
-                                     [:form {:method "POST"}
-                                      [:input
-                                       {:type "hidden"
-                                        :name "__anti-forgery-token"
-                                        :value anti-forgery/*anti-forgery-token*}]
-                                      [:input
-                                       {:type "hidden"
-                                        :name "action"
-                                        :value (pr-str action-key)}]
-                                      [:input
-                                       {:type "hidden"
-                                        :name "params"
-                                        :value (pr-str params)}]
-                                      [:button {:type "submit"}
-                                       (format "Digivolve onto %s for a cost of %d"
-                                               (last params)
-                                               (get-in card
-                                                       [:card/digivolution-requirements
-                                                        (second params)
-                                                        :digivolve/cost]))]]]
-                  [:li (pr-str action)]))]))]
+              (map action actions)]))]
     [:dcg-card]))
+
+(defn stack
+  [{::stack/keys [actions cards uuid suspended?] :as stack}]
+  [:dcg-stack {:data-stack uuid}
+   (when (seq actions)
+     (list [:button {:popovertarget (str uuid "-actions")}
+            "See actions"]
+           [:ul {:popover true
+                 :id (str uuid "-actions")}
+            (map action actions)]))
+   (map card-component cards)])
 
 (def card-color
   {:red     "#E90022"
@@ -594,38 +601,7 @@
                                      (= category "Option")
                                      (= category "옵션")))
                                cards)))
-               (map (fn [{::stack/keys [actions cards uuid suspended?]
-                         :as stack}]
-                      [:dcg-stack
-                       (when (seq actions)
-                         (list [:button {:popovertarget (str uuid "-actions")}
-                                "See actions"]
-                               [:ul {:popover true
-                                     :id (str uuid "-actions")}
-                                (for [{[action-key _ params :as action]
-                                       :action/action} actions]
-                                  (case action-key
-                                    :action/attack.declare
-                                    [:li
-                                     [:form {:method "POST"}
-                                      [:input
-                                       {:type "hidden"
-                                        :name "__anti-forgery-token"
-                                        :value anti-forgery/*anti-forgery-token*}]
-                                      [:input
-                                       {:type "hidden"
-                                        :name "action"
-                                        :value (pr-str action-key)}]
-                                      [:input
-                                       {:type "hidden"
-                                        :name "params"
-                                        :value (pr-str params)}]
-                                      [:button {:type "submit"}
-                                       (format "Attack %s"
-                                               (last params))]]]
-                                    [:li (pr-str action)]))]))
-                       (->> cards
-                            (map card-component))])))]])
+               (map stack))]])
       ;; Deck
       (let [{::area/keys [privacy cards]} (get areas ::area/deck)]
         [:dcg-area
@@ -665,30 +641,7 @@
          {::area/breeding ""
           :privacy privacy}
          [:h3.sr-only "Breeding Area"]
-         (list
-          (->> stacks
-               (map (fn [{::stack/keys [cards uuid]
-                         :as stack}]
-                      (->> cards
-                           (map card-component)
-                           (into [:dcg-stack
-                                  (when (contains? available-actions
-                                                   [:action/move
-                                                    [::player/id
-                                                     (::player/id player)]
-                                                    nil])
-                                    [:form {:method "POST"}
-                                     [:input
-                                      {:type "hidden"
-                                       :name "__anti-forgery-token"
-                                       :value anti-forgery/*anti-forgery-token*}]
-                                     [:input
-                                      {:type "hidden"
-                                       :name "action"
-                                       :value ":action/move"}]
-                                     [:button
-                                      {:type "submit"}
-                                      "Move to Battle Area"]])]))))))])
+         (list (map stack stacks))])
       ;; Tamer/Option
       (let [{::area/keys [privacy stacks]} (get areas ::area/battle)]
         [:dcg-area
@@ -705,10 +658,7 @@
                                      (= category "Option")
                                      (= category "옵션")))
                                cards)))
-               (map (fn [{::stack/keys [cards uuid] :as stack}]
-                      (->> cards
-                           (map card-component)
-                           (into [:dcg-stack])))))]])
+               (map stack))]])
       ;; Trash
       (let [{::area/keys [privacy cards]} (get areas ::area/trash)]
         [:dcg-area
@@ -829,7 +779,7 @@
       [:body
        [:h1 [:a {:href "/"} "Heroicc"]]
        [:h2 (::player/name me)]
-       memory
+       [:p "Memory: " memory]
        #_(when (and (not spectator?))
            [:pre
             [:code
@@ -872,7 +822,6 @@
      [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
     [:body
      [:h1 [:a {:href "/"} "Heroicc"]]
-     [:p (pr-str player)]
      (if (state/player-in-queue? player)
        [:p "Waiting for another player..."]
        [:form {:method "POST" :action "/queue"}

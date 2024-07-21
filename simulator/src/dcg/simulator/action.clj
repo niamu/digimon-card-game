@@ -126,18 +126,15 @@
 
 (defn move
   [{::game/keys [db] {::game-in/keys [turn]} ::game/in
-    :as game} action]
+    :as game} [_ _ [stack] :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
   (-> game
       (update-in [::game/db ::player/id turn ::player/areas]
-                 (fn [{{breeding ::area/stacks} ::area/breeding :as areas}]
+                 (fn [areas]
                    (-> areas
-                       (update-in [::area/battle
-                                   ::area/stacks]
-                                  (comp #(into [] %) concat)
-                                  breeding)
+                       (update-in [::area/battle ::area/stacks] conj stack)
                        (assoc-in [::area/breeding ::area/stacks] []))))
       (assoc ::game/available-actions
              #{[:phase/main [::player/id turn] nil]})

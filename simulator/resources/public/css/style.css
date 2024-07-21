@@ -21,8 +21,27 @@
 	--card-original-width: 430;
 	--card-original-height: 600;
 	--card-width: 430px;
-	--card-gap: var(--font-size-0);
+	--card-gap: 1cqi;
 	--card-aspect-ratio: var(--card-original-width) / var(--card-original-height);
+
+	--card-glow-small:
+		0 0 calc(0.3cqb / 1.5) calc(-0.1cqb / 1.5) #FFF,
+		0 0 calc(0.3cqb / 1.5) calc(0.1cqb / 1.5) #fabd4a,
+		0 0 calc(0.6cqb / 1.5) calc(0.15cqb / 1.5) #fa9600,
+		0 calc(0.8cqb / 1.5) calc(0.8cqb / 1.5) calc(-0.5cqb / 1.5) #000,
+		0 0 calc(4cqb / 1.5) calc(-3cqb / 1.5) #fa9600,
+		0 0 calc(3cqb / 1.5) calc(-3cqb / 1.5) #fa9600;
+	--card-glow-large:
+		0 0 0.3cqb -0.1cqb #FFF,
+		0 0 0.3cqb 0.1cqb #fabd4a,
+		0 0 0.6cqb 0.15cqb #fa9600,
+		0 0.8cqb 0.8cqb -0.5cqb #000,
+		0 0 4cqb -3cqb #fa9600,
+		0 0 3cqb -3cqb #fa9600;
+	--card-shadow:
+		0 0 3px -1px #FFF,
+		0 0 3px 1px rgba(0, 0, 0, 0.25),
+		0 0 6px 1px rgba(0, 0, 0, 0.25);
 }
 
 * {
@@ -86,13 +105,36 @@ dcg-board {
 	& .scrollable-container {
 		display: grid;
 		gap: var(--card-gap);
-		padding: calc(var(--card-gap) * 1.5);
+		padding: var(--card-gap);
 		align-items: end;
+	}
+
+	&:has([popover]:popover-open) dcg-stack:has([popover])::before,
+	&:has([popover]:popover-open) dcg-card:has([popover])::before,
+	&:has([popover]:popover-open) button::before {
+		box-shadow: var(--card-shadow);
+	}
+	&:has([popover]:popover-open) dcg-stack:has([popover])::after,
+	&:has([popover]:popover-open) dcg-card:has([popover])::after,
+	&:has([popover]:popover-open) button::after {
+		box-shadow: none;
+	}
+	& dcg-stack:has([popover]:popover-open)::before,
+	& dcg-card:has([popover]:popover-open)::before,
+	& dcg-stack:has([popover]:popover-open) > button::before,
+	& dcg-card:has([popover]:popover-open) > button::before {
+		box-shadow: var(--card-glow-small);
+	}
+	& dcg-stack:has([popover]:popover-open)::after,
+	& dcg-card:has([popover]:popover-open)::after,
+	& dcg-stack:has([popover]:popover-open) > button::after,
+	& dcg-card:has([popover]:popover-open) > button::after {
+		box-shadow: var(--card-glow-large);
 	}
 }
 
 dcg-player-perspective {
-	--card-width: calc((100cqi / 7) - (var(--card-gap) * 1.5 * 1.5));
+	--card-width: calc((100cqi / 7) - (var(--card-gap) * (7 / 2)));
 	display: grid;
 	gap: var(--card-gap);
 
@@ -152,7 +194,6 @@ dcg-playmat {
 
 		&[breeding] {
 			grid-area: breeding;
-			justify-content: end;
 		}
 
 		&[tamer-option] {
@@ -161,7 +202,6 @@ dcg-playmat {
 
 		&[trash] {
 			grid-area: trash;
-			justify-content: start;
 		}
 
 		&[battle],
@@ -185,7 +225,7 @@ dcg-area {
 	gap: var(--card-gap);
 
 	&:not(:has(.scrollable-container)) {
-		padding: calc(var(--card-gap) * 1.5);
+		padding: var(--card-gap);
 	}
 
 	&:has(:popover-open) dcg-card::before,
@@ -209,25 +249,7 @@ dcg-area {
 	&:has(.scrollable-container) {
 		position: relative;
 		grid-auto-flow: column;
-
-		&::before,
-		&::after {
-			content: "";
-			display: inline-block;
-			position: absolute;
-			height: 100%;
-			width: var(--card-gap);
-			z-index: 1;
-		}
-
-		&::before {
-			background: linear-gradient(90deg, #FFF 50%, transparent);
-		}
-
-		&::after {
-			right: 0;
-			background: linear-gradient(-90deg, #FFF 50%, transparent);
-		}
+		mask-image: linear-gradient(90deg, transparent 0%, #000 var(--card-gap), #000 calc(100% - var(--card-gap)), transparent 100%);
 	}
 
 	&:defined {
@@ -350,24 +372,12 @@ dcg-area {
 		}
 
 		&::before {
-			box-shadow:
-				0 0 3px -1px #FFF,
-				0 0 3px 1px #fabd4a,
-				0 0 12px 2px #fa9600,
-				0 10px 20px -5px #000,
-				0 0 40px -30px #fa9600,
-				0 0 50px -20px #fa9600;
+			box-shadow: var(--card-glow-small);
 		}
 
 		&::after {
 			opacity: 0;
-			box-shadow:
-				0 0 calc(3px * 1.15) -1px #FFF,
-				0 0 calc(3px * 1.15) 1px #fabd4a,
-				0 0 calc(12px * 1.15) 2px #fa9600,
-				0 10px calc(20px * 1.15) -5px #000,
-				0 0 calc(40px * 1.15) -30px #fa9600,
-				0 0 calc(50px * 1.15) -20px #fa9600;
+			box-shadow: var(--card-glow-large);
 			animation:
 				2s ease-in-out 0s infinite both running cardGlow;
 		}
@@ -380,6 +390,8 @@ dcg-stack {
 	flex-direction: column;
 	width: var(--card-width);
 	justify-content: flex-end;
+	border-radius: 5.25% / 3.75%;
+	z-index: 1;
 	--digivolve-offset: 0;
 
 	& dcg-card + dcg-card:has(data[itemprop="category"][value="Digi-Egg"]),
@@ -578,10 +590,7 @@ dcg-card {
 	}
 
 	&:not(:has(picture))::before {
-		box-shadow:
-			0 0 3px -1px #FFF,
-			0 0 3px 1px rgba(0, 0, 0, 0.25),
-			0 0 6px 1px rgba(0, 0, 0, 0.25);
+		box-shadow: var(--card-shadow);
 	}
 
 	&[showcase]::before,
@@ -604,48 +613,16 @@ dcg-card {
 
 	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::before,
 	&:has([popover])::before {
-		box-shadow:
-			0 0 3px -1px #FFF,
-			0 0 3px 1px #fabd4a,
-			0 0 12px 2px #fa9600,
-			0 10px 20px -5px #000,
-			0 0 40px -30px #fa9600,
-			0 0 50px -20px #fa9600;
-	}
-	&:has([popover]:popover-open)::before {
-		box-shadow:
-			0 0 3px -1px #FFF,
-			0 0 3px 1px #fabd4a,
-			0 0 12px 2px #fa9600,
-			0 10px 20px -5px #000,
-			0 0 40px -30px #fa9600,
-			0 0 50px -20px #fa9600
-			!important;
+		box-shadow: var(--card-glow-small);
 	}
 
 	&[showcase]:has(data[itemprop="parallel-id"]:not([value="0"]))::after,
 	&:has([popover])::after {
 		opacity: 0;
-		box-shadow:
-			0 0 calc(3px * 1.15) -1px #FFF,
-			0 0 calc(3px * 1.15) 1px #fabd4a,
-			0 0 calc(12px * 1.15) 2px #fa9600,
-			0 10px calc(20px * 1.15) -5px #000,
-			0 0 calc(40px * 1.15) -30px #fa9600,
-			0 0 calc(50px * 1.15) -20px #fa9600;
+		box-shadow: var(--card-glow-large);
 		animation:
 			2s ease-in-out 0s infinite both running cardGlow,
 			var(--animation-duration) ease-in-out 0s infinite both running cardIdle;
-	}
-	&:has([popover]:popover-open)::after {
-		box-shadow:
-			0 0 calc(3px * 1.15) -1px #FFF,
-			0 0 calc(3px * 1.15) 1px #fabd4a,
-			0 0 calc(12px * 1.15) 2px #fa9600,
-			0 10px calc(20px * 1.15) -5px #000,
-			0 0 calc(40px * 1.15) -30px #fa9600,
-			0 0 calc(50px * 1.15) -20px #fa9600
-			!important;
 	}
 
 	& picture::before {
@@ -705,10 +682,7 @@ dcg-card {
 		height: inherit;
 		aspect-ratio: inherit;
 		transform: translate3d(0px, 0px, 0.01px);
-		box-shadow:
-			0 0 3px -1px #FFF,
-			0 0 3px 1px rgba(0, 0, 0, 0.25),
-			0 0 6px 1px rgba(0, 0, 0, 0.25);
+		box-shadow: var(--card-shadow);
 
 		&::before,
 		&::after {
@@ -769,22 +743,6 @@ dcg-card {
 		padding: 0;
 		border-radius: inherit;
 		background: transparent;
-	}
-}
-
-body:not([inert]):has(dialog[open]),
-body:not([inert]):has(:popover-open) {
-	overflow: hidden;
-
-	&::after {
-		content: "";
-		position: fixed;
-		inset-block: 0;
-		display: block;
-		width: 100%;
-		height: 100%;
-		background: rgba(0,0,0,0.25);
-		z-index: 1;
 	}
 }
 

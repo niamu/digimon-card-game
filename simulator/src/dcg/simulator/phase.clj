@@ -103,7 +103,7 @@
                         first
                         (get-in db)
                         :card/dp))
-             (conj [:action/move [::player/id turn] nil])))))
+             (conj [:action/move [::player/id turn] [(first breeding)]])))))
 
 (defn main
   [{::game/keys [db players] {::game-in/keys [turn]} ::game/in
