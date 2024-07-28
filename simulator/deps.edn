@@ -1,6 +1,5 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure                   {:mvn/version "1.11.1"}
-        org.clojure/data.json                 {:mvn/version "2.5.0"}
         com.niamu/dcg-codec                   {:local/root "../codec/clojure/"}
         com.niamu/dcg-db                      {:local/root "../db/"}
         hiccup/hiccup                         {:mvn/version "2.0.0-RC2"}

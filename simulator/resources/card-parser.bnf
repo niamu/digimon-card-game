@@ -17,13 +17,26 @@ EFFECT =
                     (
                         <SPACE>?
                         (timing | precondition)
-                        (<SPACE>? keyword-effect)?
                         <SPACE>?
                     )+
                     | timing_dna-digivolve
                 )
                 <SPACE>?
-            )*
+            )+
+            (
+                (
+                    <SPACE>? keyword-effect
+                ) / (
+                    <"."? (","? SPACE (then | "and"))? SPACE>?
+                    TOP_LEVEL_EFFECTS
+                ) / (
+                    <"."? (","? SPACE (then | "and"))? SPACE>?
+                    TOP_LEVEL_EFFECTS
+                )+
+            )
+        )
+        /
+        (
             (
                 (
                     <"."? (","? SPACE (then | "and"))? SPACE>?
@@ -162,7 +175,7 @@ ALL =
     ) | <"each">
 ANY = <#"(?i)any"> <SPACE "number">? <SPACE "of">?
 INFINITE = <"∞">
-number = #"[0-9]+"
+number = #"[\+\-]?[0-9]+"
 value =
     (
         <(with SPACE)>?
@@ -458,7 +471,7 @@ gain_lose =
     (<"and" SPACE>? before <",">? <SPACE>)?
     (duration <",">? <SPACE>?)?
     (
-          lose
+          lose-memory
         | (gain / (gain <" and "> trigger))
         | gain-state-by
     )+
@@ -469,24 +482,19 @@ gain_lose =
     (<SPACE> duration (<SPACE> conditional)?)?
     (<SPACE> instead)?
     (<("."? SPACE)>? PARENTHESES)?
-lose =
-    <#",?( and )?">?
-    <SPACE>?
-    (target <SPACE>)?
-    <(#"(?i)(loses?|decreasing your)") SPACE>
+lose-memory =
     (
-        <("," SPACE?)? (SPACE "and" SPACE)?>?
         (
-              DP
-            | keyword-effect
-            | memory
-            | attack
-            | disallow
-            | returned-to
-            | target-effect
-            | ((<"the following effect" SPACE> duration <":">? <SPACE>)? <OPEN_QUOTE> EFFECT <CLOSE_QUOTE>)
+            <#"(?i)lose">
+            <SPACE>
+            number
+            <SPACE "memory">
+        ) | (
+            <#"(?i)decreasing your memory by">
+            <SPACE>
+            number
         )
-    )+
+    )
 gain =
     <("," SPACE?)? (SPACE "and" SPACE)?>?
     <SPACE>?

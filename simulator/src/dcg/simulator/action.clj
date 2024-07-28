@@ -27,9 +27,9 @@
 (defn update-memory
   [{::game/keys [db]
     {::game-in/keys [turn]} ::game/in
-    :as game} op value]
+    :as game} [_ player-id [op value]]]
   (let [{turn-idx ::player/turn-index} (get-in db [::player/id turn])
-        memory (-> (get-in db [::player/id turn ::player/memory])
+        memory (-> (get-in db [::player/id player-id ::player/memory])
                    (op value))]
     (set-memory game memory)))
 
@@ -147,11 +147,13 @@
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{:card/keys [play-cost use-cost]} (get-in db card)
+  (let [{{:card/keys [play-cost use-cost]} ::card/card} (get-in db card)
         stack-uuid (random/uuid random)]
     (-> game
-        (update-memory - (or (:cost override)
-                             play-cost use-cost))
+        (update-memory [:action/update-memory
+                        turn
+                        [- (or (:cost override)
+                               play-cost use-cost)]])
         (update-in [::game/db ::player/id turn ::player/areas]
                    (fn [{::area/keys [hand battle] :as areas}]
                      (-> areas
@@ -181,10 +183,12 @@
           {deck-cards ::area/cards} ::area/deck} ::player/areas
          :as current-player} (get-in db [::player/id turn])
         deck-has-cards? (pos? (count deck-cards))
-        {:card/keys [digivolution-requirements]} (get-in db card)]
+        {{:card/keys [digivolution-requirements]} ::card/card} (get-in db card)]
     (-> game
-        (update-memory - (get-in digivolution-requirements
-                                 [digivolve-idx :digivolve/cost]))
+        (update-memory [:action/update-memory
+                        turn
+                        [- (get-in digivolution-requirements
+                                   [digivolve-idx :digivolve/cost])]])
         (update-in [::game/db
                     ::player/id
                     turn
@@ -300,15 +304,14 @@
                         (-> (get-in db (-> attacker-stack
                                            ::stack/cards
                                            first))
-                            (get :card/dp 0)))
+                            (get-in [::card/card :card/dp] 0)))
         {{{opponent-battle-stacks ::area/stacks} ::area/battle}
          ::player/areas} (get-in db player)
         attacking-stack (get-in db attacking)
-        attacking-dp (or (-> attacking-stack ::stack/dp)
-                         (-> (get-in db (-> attacking-stack
-                                            ::stack/cards
-                                            first))
-                             (get :card/dp 0)))]
+        attacking-dp (-> (get-in db (-> attacking-stack
+                                        ::stack/cards
+                                        first))
+                         (get-in [::card/card :card/dp] 0))]
     (cond-> game
       (<= attacker-dp attacking-dp)
       ;; TODO: On deletion effect
@@ -363,12 +366,12 @@
                         (-> (get-in db (-> attacker-stack
                                            ::stack/cards
                                            first))
-                            (get :card/dp 0)))
+                            (get-in [::card/card :card/dp] 0)))
         {{{opponent-security ::area/cards} ::area/security}
          ::player/areas} (get-in db player)
         attacking-card (first opponent-security)
         attacking-dp (-> (get-in db attacking-card)
-                         (get :card/dp 0))]
+                         (get-in [::card/card :card/dp] 0))]
     (if (zero? (count opponent-security))
       (-> game
           (assoc ::game/available-actions #{})
@@ -422,3 +425,17 @@
         (assoc-in [::game/in ::game-in/turn] next-player-id)
         (assoc-in [::game/in ::game-in/state-id]
                   :phase/unsuspend))))
+
+(defn unsuspend-stack
+  [stack cards]
+  (assoc stack
+         ::stack/suspended? false
+         ::stack/summoned? false))
+
+(defn unsuspend
+  [{::game/keys [db] :as game}
+   [_ _ [[_ stack-uuid]] :as action]]
+  (update-in game [::game/db ::stack/uuid stack-uuid]
+             (fn [{cards ::stack/cards :as stack}]
+               (unsuspend-stack stack
+                                (map #(get-in db %) cards)))))

@@ -3,6 +3,7 @@
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [dcg.simulator :as-alias simulator]
+   [dcg.simulator.action :as action]
    [dcg.simulator.area :as-alias area]
    [dcg.simulator.card :as-alias card]
    [dcg.simulator.game :as-alias game]
@@ -32,12 +33,12 @@
           (seq stack-uuids)
           (update-in [::game/db ::stack/uuid]
                      (fn [stacks]
-                       (reduce-kv (fn [accl uuid stack]
+                       (reduce-kv (fn [accl uuid {cards ::stack/cards :as stack}]
                                     (assoc accl uuid
                                            (cond-> stack
                                              (contains? stack-uuids uuid)
-                                             (assoc ::stack/suspended? false
-                                                    ::stack/summoned? false))))
+                                             (action/unsuspend-stack
+                                              (map #(get-in db %) cards)))))
                                   {}
                                   stacks))))
         (update ::game/available-actions conj
@@ -102,6 +103,7 @@
                         ::stack/cards
                         first
                         (get-in db)
+                        ::card/card
                         :card/dp))
              (conj [:action/move [::player/id turn] [(first breeding)]])))))
 
@@ -122,12 +124,14 @@
              (map #(get-in db %))
              (mapcat (fn [{::stack/keys [cards]}]
                        (->> cards
-                            (mapcat (comp (fn [{:card/keys [color]}]
+                            (mapcat (comp (fn [{{:card/keys [color]}
+                                               ::card/card}]
                                             (map :color/color color))
                                           #(get-in db %))))))
              (into #{}))
         playable-cards (->> cards-in-hand
-                            (filter (comp (fn [{:card/keys [play-cost]}]
+                            (filter (comp (fn [{{:card/keys [play-cost]}
+                                               ::card/card}]
                                             (when play-cost
                                               (<= play-cost available-memory)))
                                           #(get-in db %)))
@@ -135,18 +139,19 @@
                                    [:action/play [::player/id turn] [card]])))
         usable-cards
         (->> cards-in-hand
-             (filter (comp (fn [{:card/keys [color use-cost]}]
+             (filter (comp (fn [{{:card/keys [color use-cost]} ::card/card}]
                              (when use-cost
                                (and (<= use-cost available-memory)
-                                    (set/subset? (into #{} (map :color/color color))
+                                    (set/subset? (into #{} (map :color/color
+                                                                color))
                                                  colors-in-the-area))))
                            #(get-in db %)))
              (map (fn [card]
                     [:action/use [::player/id turn] [card]])))
         aggressor-stacks
         (filter (comp (fn [{::stack/keys [uuid suspended? summoned? cards]}]
-                        (let [{:card/keys [dp]} (->> (first cards)
-                                                     (get-in db))]
+                        (let [{{:card/keys [dp]} ::card/card} (->> (first cards)
+                                                                   (get-in db))]
                           (and (not suspended?)
                                (not summoned?)
                                dp)))
@@ -172,6 +177,7 @@
                                                   (and suspended?
                                                        (->> (first cards)
                                                             (get-in db)
+                                                            ::card/card
                                                             :card/dp)))
                                                 #(get-in db %)))))))
                         []))
@@ -193,19 +199,16 @@
                             (map (comp (fn [{::stack/keys [cards uuid]
                                             :as stack}]
                                          (let [[_ card-uuid] (first cards)]
-                                           {::card/stack uuid
-                                            ::card/uuid card-uuid
-                                            ::card/card (->> (first cards)
-                                                             (get-in db))}))
+                                           (assoc (get-in db (first cards))
+                                                  ::card/stack uuid)))
                                        #(get-in db %))))]
           (->> cards-in-hand
-               (map (fn [[_ uuid :as lookup]]
-                      {::card/uuid uuid
-                       ::card/card (get-in db lookup)}))
-               (reduce (fn [accl {::card/keys [uuid]
-                                 {:card/keys [digivolution-requirements]}
-                                 ::card/card
-                                 :as card}]
+               (map (fn [card]
+                      (get-in db card)))
+               (reduce (fn [accl
+                           {::card/keys [uuid]
+                            {:card/keys [digivolution-requirements]} ::card/card
+                            :as card}]
                          (let [digivolvable
                                (mapcat
                                 (fn [{:digivolve/keys [index cost]

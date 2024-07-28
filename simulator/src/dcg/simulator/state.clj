@@ -100,9 +100,7 @@
                                   (if-let [[t uuid] (and (vector? k) k)]
                                     (case t
                                       ::card/uuid
-                                      (let [card (get-in db k)]
-                                        {::card/uuid uuid
-                                         ::card/card card})
+                                      (get-in db k)
                                       ::stack/uuid
                                       (let [{::stack/keys [cards]
                                              :as stack} (get-in db k)]
@@ -110,9 +108,7 @@
                                                 ::stack/cards
                                                 (fn [cards]
                                                   (mapv (fn [card]
-                                                          {::card/uuid uuid
-                                                           ::card/card
-                                                           (get-in db card)})
+                                                          (get-in db card))
                                                         cards))))
                                       ::player/id
                                       (get-in db k))
@@ -129,8 +125,7 @@
                       (when (contains? visible-cards lookup)
                         (let [card (get-in db lookup)
                               actions (get actions-by-ident lookup)]
-                          (cond-> {::card/uuid uuid
-                                   ::card/card card}
+                          (cond-> card
                             actions
                             (assoc ::card/actions actions)))))
         update-cards (fn [cards]
@@ -183,21 +178,14 @@
                                (mapv (fn [{::card/keys [number parallel-id]
                                           :as card}]
                                        (assoc card
-                                              ::card/uuid (random/uuid r)
-                                              ::card/lookup
-                                              [:card-uuids-by-language
-                                               language
-                                               [number parallel-id]]))))
+                                              ::card/uuid (random/uuid r)))))
         [initial-hand initial-deck]
         (->> (decoded->deck deck)
              (random/shuffle r)
              (mapv (fn [{::card/keys [number parallel-id]
                         :as card}]
                      (assoc card
-                            ::card/uuid (random/uuid r)
-                            ::card/lookup [:card-uuids-by-language
-                                           language
-                                           [number parallel-id]])))
+                            ::card/uuid (random/uuid r))))
              (split-at 5)
              (map #(into [] %)))
         cards (concat initial-digi-eggs
@@ -322,8 +310,11 @@
                       (reduce (fn [accl {::card/keys [uuid number parallel-id]}]
                                 (assoc-in accl
                                           [::card/uuid uuid]
-                                          (get-in card-uuids-by-language
-                                                  ["en" [number parallel-id]])))
+                                          {::card/uuid uuid
+                                           ::card/card
+                                           (get-in card-uuids-by-language
+                                                   ["en"
+                                                    [number parallel-id]])}))
                               {}
                               cards))}))
 
@@ -357,6 +348,7 @@
    :action/attack.digimon #'action/digimon-attack
    :action/attack.security #'action/security-attack
    :action/pass #'action/pass
+   :action/update-memory #'action/update-memory
    ;; Phases
    :phase/unsuspend #'phase/unsuspend
    :phase/draw #'phase/draw
