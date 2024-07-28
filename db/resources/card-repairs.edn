@@ -2046,6 +2046,26 @@
                    (string/replace s
                                    "with can"
                                    "with ＜Retaliation＞ can"))))}
+ "EX1-063"
+ {"en" (fn [{{:image/keys [source]} :card/image :as card}]
+         (cond-> card
+           (= source (URI. "https://world.digimoncard.com/images/cardlist/card/EX1-063_P2.png"))
+           (-> (dissoc :card/block-icon)
+               (assoc :card/number "P-020"
+                      :card/parallel-id 1
+                      :card/play-cost 11
+                      :card/dp 11000
+                      :card/color [{:color/id "color/P-020_index0",
+                                    :color/index 0,
+                                    :color/color :purple}]
+                      :card/digivolution-requirements
+                      [{:digivolve/id "digivolve/P-020_index0",
+                        :digivolve/index 0
+                        :digivolve/cost 4
+                        :digivolve/level 5
+                        :digivolve/color #{:purple}}]
+                      :card/effect "[On Deletion] You may play a purple Digimon Card with a level of 4 or less from your trash without paying its memory cost. Any [On Play] effects on Digimon played with this effect don't activate."
+                      :card/rarity "P"))))}
  "EX1-066"
  {"zh-Hans" (fn [card]
               (assoc card :card/security-effect
