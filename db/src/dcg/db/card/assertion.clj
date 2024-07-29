@@ -261,11 +261,14 @@
 (defn card-assertions
   [cards]
   (assert (empty? (card-values cards))
-          "JA card values differ across languages")
+          (format "JA card values differ across languages:\n%s"
+                  (card-values cards)))
   (assert (empty? (text-fields cards))
-          "Card text fields differ across languages")
+          (format "Card text fields differ across languages:\n%s"
+                  (text-fields cards)))
   (assert (empty? (card-categories cards))
-          "Card categories differ across languages")
+          (format "Card categories differ across languages:\n%s"
+                  (card-categories cards)))
   (assert (= (highlights cards)
              {"BT10-099"
               {"card/en_BT10-099_P0" {:timing 3 :keyword-effect 1}
@@ -281,17 +284,22 @@
                "card/ko_EX3-064_P1" {:keyword-effect 1 :timing 2}
                "card/zh-Hans_EX3-064_P0" {:timing 2}
                "card/zh-Hans_EX3-064_P1" {:timing 2}}})
-          "Card highlights differ across languages")
-  (assert (empty? (first
-                   (data/diff (card-block-icons cards)
-                              (edn/read (PushbackReader.
-                                         (io/reader
-                                          (io/resource "block-icons.edn")))))))
-          "Card block icons do not match expected output")
+          (format "Card highlights differ across languages:\n%s"
+                  (highlights cards)))
+  (let [missing-block-icons
+        (first
+         (data/diff (card-block-icons cards)
+                    (edn/read (PushbackReader.
+                               (io/reader
+                                (io/resource "block-icons.edn"))))))]
+    (assert (empty? missing-block-icons)
+            (format "Card block icons do not match expected output:\n%s"
+                    missing-block-icons)))
   (assert (every? (fn [[_ rarities]]
                     (= rarities #{"C" "U" "R" "SR" "SEC" "P"}))
                   (card-rarities cards))
-          "Card rarity fields across languages do not amount to 6")
+          (format "Card rarity fields across languages do not amount to 6:\n%s"
+                  (card-rarities cards)))
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
                      "BT4-041"
@@ -305,7 +313,8 @@
                      "BT7-055"
                      "BT7-083"
                      "BT9-073"}})
-          "Card errata not accounted for")
+          (format "Card errata not accounted for:\n%s"
+                  (card-errata cards)))
   cards)
 
 (comment
