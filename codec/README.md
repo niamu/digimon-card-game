@@ -6,6 +6,7 @@ This directory hosts multiple library implementations for encoding and decoding 
 - [TypeScript](/codec/typescript)
 - [Rust](/codec/rust)
 - [Go](/codec/go)
+- [Gleam](/codec/gleam)
 - [Python](/codec/python)
 - [PHP](/codec/php)
 
