@@ -1,7 +1,7 @@
-import common
-import common/card.{type Card, Card}
-import common/deck.{type Deck, Deck}
-import common/language
+import codec/common
+import codec/common/card.{type Card, Card}
+import codec/common/deck.{type Deck, Deck}
+import codec/common/language
 import gleam/bit_array
 import gleam/int
 import gleam/list
@@ -173,7 +173,7 @@ fn parse_cards_in_group(
     <> int.to_string(prev_card_number)
     |> string.pad_left(to: card_set_padding, with: "0")
   let card =
-    Card(number: card_number, parallel_id: parallel_id, count: card_count)
+    Card(number: card_number, parallel_id: Some(parallel_id), count: card_count)
   let cards = list.append(cards, [card])
   case list.length(cards) < cards_in_group {
     True ->
@@ -255,7 +255,7 @@ fn parse_deck(deck_bytes: BitArray) -> Deck {
       )
   }
   let language = case version >= 3 {
-    True -> language.deserialize(language_number)
+    True -> language.from_int(language_number)
     False -> None
   }
 
@@ -313,7 +313,7 @@ fn parse_deck(deck_bytes: BitArray) -> Deck {
     name: deck_name,
     digi_eggs: digi_eggs,
     deck: deck,
-    sideboard: sideboard,
+    sideboard: Some(sideboard),
     language: language,
     icon: icon,
   )
