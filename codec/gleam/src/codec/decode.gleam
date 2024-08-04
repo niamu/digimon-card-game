@@ -49,7 +49,7 @@ fn read_encoded_int_with_carry(
         read_bits_from_byte(
           next_byte,
           bits_in_a_byte - 1,
-          shift_bits - 1,
+          shift_bits,
           base_value,
         )
       read_encoded_int_with_carry(
@@ -70,7 +70,7 @@ fn read_encoded_int(
   shift_bits: Int,
 ) -> #(Int, BitArray) {
   let is_carry = is_carry_bit(current_byte, shift_bits - 1)
-  case shift_bits == 0 || is_carry {
+  case shift_bits - 1 == 0 || is_carry {
     True -> {
       read_encoded_int_with_carry(
         deck_bytes,

@@ -86,9 +86,12 @@ pub fn encode(deck: Deck, version: Int) -> String {
   let assert Ok(deck_name_bytes) =
     deck_name_bytes
     |> bit_array.slice(0, int.min(0x3F, bit_array.byte_size(deck_name_bytes)))
-  let deck_name_length =
-    int.bitwise_shift_left(language_number, 6)
-    |> int.bitwise_or(bit_array.byte_size(deck_name_bytes))
+  let deck_name_length = case version >= 5 {
+    True ->
+      int.bitwise_shift_left(language_number, 6)
+      |> int.bitwise_or(bit_array.byte_size(deck_name_bytes))
+    False -> bit_array.byte_size(deck_name_bytes)
+  }
 
   let deck_bytes = bit_array.append(<<>>, <<deck_name_length>>)
 
