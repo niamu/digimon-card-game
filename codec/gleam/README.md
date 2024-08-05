@@ -11,9 +11,9 @@ gleam add dcg_codec@1
 ### Decode
 
 ```gleam
-import dcg_codec/codec
+import dcg_codec/codec/decode
 
-codec.decode("DCGApQzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiEUCRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp")
+decode.decode("DCGApQzQlQyIIHBU1QxIEEBQlQxIIQFAsYCQU0QQlQyIIHEBEJUMyCGxALFAYNCwYUNU1QxIEbCwYMBiEUCRGlnaSBCcm9zOiBSYWduYWxvYXJkbW9uIFJlZCAoeW91dHUuYmUvbzBLb1cyd3doUjQp")
 
 // {"name":"Digi Bros: Ragnaloardmon Red (youtu.be/o0KoW2wwhR4)","digi-eggs":[{"number":"BT2-001","count":4},{"number":"ST1-01","count":1}],"deck":[{"number":"BT1-005","count":1},{"number":"BT1-011","count":4},{"number":"BT1-012","count":2},{"number":"BT1-045","count":2,"parallel-id":1},{"number":"BT2-008","count":4},{"number":"BT3-004","count":4},{"number":"BT3-007","count":4},{"number":"BT3-010","count":3},{"number":"BT3-012","count":2},{"number":"BT3-013","count":4},{"number":"BT3-040","count":3},{"number":"ST1-02","count":4},{"number":"ST1-03","count":4},{"number":"ST1-06","count":3},{"number":"ST1-07","count":1},{"number":"ST1-07","count":3,"parallel-id":1},{"number":"ST1-12","count":2}]}
 ```
