@@ -7,6 +7,7 @@ This directory hosts multiple library implementations for encoding and decoding 
 - [Rust](/codec/rust)
 - [Go](/codec/go)
 - [Gleam](/codec/gleam)
+- [Elixir](/codec/elixir)
 - [Python](/codec/python)
 - [PHP](/codec/php)
 

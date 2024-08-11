@@ -203,6 +203,7 @@ pub fn encode(deck: Deck, version: Int) -> String {
   let deck_bytes = {
     let assert Ok(bytes_to_checksum) =
       bit_array.slice(deck_bytes, 1, bit_array.byte_size(deck_bytes) - 1)
+
     let computed_checksum =
       common.compute_checksum(
         bytes_to_checksum,
