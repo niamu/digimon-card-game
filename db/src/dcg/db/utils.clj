@@ -13,18 +13,21 @@
 
 (defn as-bytes
   [url options]
-  (-> (client/get url
-                  (merge options
-                         {:as :byte-array
-                          :cookie-policy :standard
-                          :retry-handler (fn [ex try-count _]
-                                           (if (> try-count 2)
-                                             (logging/error
-                                               (format "Failed downloading: %s %s after %d attempts"
-                                                       url
-                                                       try-count))
-                                             true))}))
-      :body))
+  (let [response (client/get url
+                             (merge options
+                                    {:as :byte-array
+                                     :cookie-policy :standard
+                                     :retry-handler (fn [ex try-count _]
+                                                      (if (> try-count 2)
+                                                        (logging/error
+                                                         (format "Failed downloading: %s %s after %d attempts"
+                                                                 url
+                                                                 try-count))
+                                                        true))
+                                     :throw-exceptions? false}))]
+    (if (= (:status response) 200)
+      (:body response)
+      (logging/error (format "Error downloading: %s" url)))))
 
 (defonce http-get*
   (memoize (fn [url options]
@@ -38,10 +41,10 @@
                                     (fn [ex try-count _]
                                       (if (> try-count 2)
                                         (do (logging/error
-                                              (format "Failed GET: %s %s after %d attempts"
-                                                      url
-                                                      (pr-str options)
-                                                      try-count))
+                                             (format "Failed GET: %s %s after %d attempts"
+                                                     url
+                                                     (pr-str options)
+                                                     try-count))
                                             false)
                                         true))))
                  :body))))

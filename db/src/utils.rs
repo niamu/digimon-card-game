@@ -3,6 +3,7 @@ use std::os::raw::c_char;
 
 use opencv::{
     self as cv,
+    boxed_ref::BoxedRef,
     core::{Mat, Point},
     prelude::MatTraitConst,
 };
@@ -29,7 +30,7 @@ pub struct Coords {
     pub y: i32,
 }
 
-pub fn template_match(template: &Mat, image: &Mat) -> MatchResult {
+pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult {
     let mut alpha = Mat::default();
     let mut mask = Mat::default();
     let mut template_prep = template.clone();
@@ -37,7 +38,8 @@ pub fn template_match(template: &Mat, image: &Mat) -> MatchResult {
     let mut result_ccorr = Mat::default();
     let mut result_sqdiff = Mat::default();
     let mut result: f64;
-    let mut image_prep = image.clone();
+    let mut image_prep = Mat::default();
+    cv::imgproc::cvt_color(&image, &mut image_prep, cv::imgproc::COLOR_BGRA2GRAY, 0).unwrap();
     let mut coords = Coords { x: 0, y: 0 };
     if template.channels() > 3 {
         cv::core::extract_channel(&template, &mut alpha, 3).unwrap();
@@ -52,12 +54,11 @@ pub fn template_match(template: &Mat, image: &Mat) -> MatchResult {
         cv::imgproc::cvt_color(
             &template,
             &mut template_prep,
-            cv::imgproc::COLOR_BGRA2BGR,
+            cv::imgproc::COLOR_BGRA2GRAY,
             0,
         )
         .unwrap();
     } else {
-        cv::imgproc::cvt_color(&image, &mut image_prep, cv::imgproc::COLOR_BGR2GRAY, 0).unwrap();
         cv::imgproc::cvt_color(
             &template,
             &mut template_prep,
@@ -69,16 +70,16 @@ pub fn template_match(template: &Mat, image: &Mat) -> MatchResult {
     cv::imgproc::match_template(
         &image_prep,
         &template_prep,
-        &mut result_ccoeff,
-        cv::imgproc::TM_CCOEFF_NORMED,
+        &mut result_ccorr,
+        cv::imgproc::TM_CCORR_NORMED,
         &mask,
     )
     .unwrap();
     cv::imgproc::match_template(
         &image_prep,
         &template_prep,
-        &mut result_ccorr,
-        cv::imgproc::TM_CCORR_NORMED,
+        &mut result_ccoeff,
+        cv::imgproc::TM_CCOEFF_NORMED,
         &mask,
     )
     .unwrap();

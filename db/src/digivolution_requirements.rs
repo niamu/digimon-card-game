@@ -7,6 +7,7 @@ use std::os::raw::c_char;
 
 use opencv::{
     self as cv,
+    boxed_ref::BoxedRef,
     core::{Mat, Rect, Size, Vec3b, Vector},
     prelude::MatTraitConst,
 };
@@ -76,7 +77,7 @@ fn color_difference(rgb1: RGB, rgb2: RGB) -> f64 {
     (result.sqrt() / max_distance) * 100.0
 }
 
-fn color_at_coordinate(image: &Mat, coords: Coords) -> RGB {
+fn color_at_coordinate(image: &BoxedRef<'_, Mat>, coords: Coords) -> RGB {
     let mut blurred_image = Mat::default();
     cv::imgproc::gaussian_blur(
         &image,
@@ -95,7 +96,7 @@ fn color_at_coordinate(image: &Mat, coords: Coords) -> RGB {
     }
 }
 
-fn colors_within_image(image: &Mat) -> Vec<String> {
+fn colors_within_image(image: &BoxedRef<'_, Mat>) -> Vec<String> {
     let mut result: Vec<String> = Vec::default();
     let mut blurred_image = Mat::default();
     cv::imgproc::gaussian_blur(
@@ -188,7 +189,7 @@ fn colors_within_image(image: &Mat) -> Vec<String> {
 }
 
 fn requirements_v1(
-    image: &Mat,
+    image: &BoxedRef<'_, Mat>,
     base_coords: Coords,
     digivolve_template: Template,
 ) -> Vec<DigivolveRequirement> {
@@ -215,13 +216,13 @@ fn requirements_v1(
     }
     for roi in rois {
         result.push(DigivolveRequirement {
-            colors: colors_within_image(&Mat::roi(&image, roi).unwrap()),
+            colors: colors_within_image(&Mat::roi(image, roi).unwrap()),
         });
     }
     result
 }
 
-fn requirements_v2(image: &Mat, base_coords: Coords) -> Vec<DigivolveRequirement> {
+fn requirements_v2(image: &BoxedRef<'_, Mat>, base_coords: Coords) -> Vec<DigivolveRequirement> {
     let colors: Vec<Color> = vec![
         Color {
             name: "red".to_string(),
@@ -322,13 +323,13 @@ pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c
         image_mat = reduced_image_mat.clone();
         drop(reduced_image_mat);
     }
-    image_mat = Mat::roi(&image_mat, Rect::new(0, 90, 90, 210)).unwrap();
+    let image_mat_roi = image_mat.roi(Rect::new(0, 90, 90, 210)).unwrap();
     let mut result_vec: Vec<(MatchResult, Template)> = Vec::default();
     for digivolve_template in DIGIVOLVE_TEMPLATES {
         let template =
             cv::imgcodecs::imread(digivolve_template.path, cv::imgcodecs::IMREAD_UNCHANGED)
                 .unwrap();
-        let match_result = utils::template_match(&template, &image_mat);
+        let match_result = utils::template_match(&template, &image_mat_roi);
         if match_result.accuracy > 0.85 && match_result.coords.y < 25 {
             result_vec.push((match_result, digivolve_template));
         }
@@ -347,8 +348,8 @@ pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c
     }
     let edn = match result {
         Some((m, t)) => match t.version {
-            2 => Some(requirements_v2(&image_mat, m.coords)),
-            _ => Some(requirements_v1(&image_mat, m.coords, t)),
+            2 => Some(requirements_v2(&image_mat_roi, m.coords)),
+            _ => Some(requirements_v1(&image_mat_roi, m.coords, t)),
         },
         None => None,
     };

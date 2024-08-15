@@ -40,11 +40,12 @@
 
 (defn add!
   [{{:image/keys [path]} :card/image :as card}]
-  (when-not (-> @db
-                set/map-invert
-                (get (:card/id card)))
-    (let [image-index (.db_add native-library (str "resources" path))]
-      (swap! db assoc image-index (:card/id card)))))
+  (when (.exists (io/file (str "resources" path)))
+    (when-not (-> @db
+                  set/map-invert
+                  (get (:card/id card)))
+      (let [image-index (.db_add native-library (str "resources" path))]
+        (swap! db assoc image-index (:card/id card))))))
 
 (defn train!
   []
@@ -68,10 +69,12 @@
     result))
 
 (defn block-icon
-  [{:card/keys [block-icon]
+  [{:card/keys [block-icon number]
     {:image/keys [path]} :card/image
     :as card}]
-  (let [v (.block_icon native-library (str "resources" path))]
+  (let [v (if (.exists (io/file (str "resources" path)))
+            (.block_icon native-library (str "resources" path))
+            -1)]
     (cond-> card
       (and (pos? v)
            (nil? block-icon)) (assoc :card/block-icon v)
@@ -82,8 +85,10 @@
     {:image/keys [path]} :card/image
     :as card}]
   (let [requirements-with-colors
-        (-> (.digivolution_requirements native-library (str "resources" path))
-            parse-edn)]
+        (if (.exists (io/file (str "resources" path)))
+          (-> (.digivolution_requirements native-library (str "resources" path))
+              parse-edn)
+          [])]
     (cond-> (dissoc card :card/digivolution-requirements)
       (and digivolution-requirements
            (not (empty? requirements-with-colors)))

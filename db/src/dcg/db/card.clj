@@ -25,9 +25,9 @@
         parallel-id (last (re-find #"_P([0-9]+)" id))
         filename (str "resources" path)]
     (when-not (.exists (io/file filename))
-      (let [image-bytes (-> (str source)
-                            (utils/as-bytes http-opts)
-                            card-utils/trim-transparency!)]
+      (when-let [image-bytes (some-> (str source)
+                                     (utils/as-bytes http-opts)
+                                     card-utils/trim-transparency!)]
         (.mkdirs (io/file (.getParent (io/file filename))))
         (with-open [in (io/input-stream image-bytes)
                     out (io/output-stream filename)]
@@ -568,9 +568,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                      dp rareDegree entryConsumeValue envolutionConsumeTwo
-                      cardLevel effect envolutionEffect safeEffect
-                      imageCover cardGroup]}]
+                       dp rareDegree entryConsumeValue envolutionConsumeTwo
+                       cardLevel effect envolutionEffect safeEffect
+                       imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)

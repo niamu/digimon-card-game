@@ -175,8 +175,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (= source (URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -1932,7 +1932,16 @@
  {"en" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
            (= parallel-id 2)
-           (assoc :card/block-icon 3)))}
+           (assoc :card/block-icon 3)))
+  "zh-Hans" (fn [{:card/keys [parallel-id] :as card}]
+              (cond-> card
+                (= parallel-id 2)
+                (assoc :card/block-icon 3)))}
+ "BT17-070"
+ {"zh-Hans" (fn [{:card/keys [parallel-id] :as card}]
+              (cond-> card
+                (zero? parallel-id)
+                (assoc :card/block-icon 3)))}
  "BT17-077"
  {"en" (fn [card]
          (assoc card :card/color
