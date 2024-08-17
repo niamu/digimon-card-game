@@ -26,11 +26,18 @@
    {:origin/url "https://digimoncard.co.kr"
     :origin/language "ko"}])
 
-(def releases-per-origin
-  (memoize (fn []
-             (let [r (pmap release/releases origins)]
-               (assert (every? seq r) "Not every origin has releases")
-               r))))
+(defn releases-per-origin
+  []
+  (let [r (pmap release/releases origins)]
+    (assert (every? seq r) "Not every origin has releases")
+    (assert (every? (fn [releases]
+                      (->> releases
+                           (filter :release/cardlist-uri)
+                           (remove :release/image-uri)
+                           count
+                           (= 1)))
+                    r) "Not every release matched with a product")
+    r))
 
 (defn process-cards
   []

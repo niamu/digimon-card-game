@@ -161,14 +161,49 @@
     language))
 
 (defmethod releases :default
-  [{:origin/keys [url] :as origin}]
-  (let [products (->> (utils/http-get (str url "/products/"))
-                      hickory/parse
-                      hickory/as-hickory
-                      (select/select
-                       (select/descendant (select/id "maincontent")
-                                          (select/tag "article")))
-                      (pmap (partial product origin)))
+  [{:origin/keys [url language] :as origin}]
+  (let [products
+        (->> (utils/http-get (str url "/products/"))
+             hickory/parse
+             hickory/as-hickory
+             (select/select
+              (select/descendant (select/id "maincontent")
+                                 (select/tag "article")))
+             (pmap (partial product origin))
+             (map (fn [{:release/keys [name language]
+                       :as release}]
+                    (assoc release :release/name
+                           (if-let [code (->> name
+                                              (re-find #"[\[【](.*)[\]】]")
+                                              second)]
+                             (string/replace name code
+                                             (if (string/includes? code "-")
+                                               (let [[card-set n]
+                                                     (string/split code #"\-")]
+                                                 (str card-set
+                                                      "-"
+                                                      (cond-> n
+                                                        (< (count n) 2)
+                                                        (->> parse-long
+                                                             (format "%02d")))))
+                                               (->> code
+                                                    (re-find #"([A-Z]+)(.*)")
+                                                    rest
+                                                    (string/join "-"))))
+                             (str name " "
+                                  (case language
+                                    "ja" "【P】"
+                                    "en" "[P]"
+                                    "zh-Hans" "【P】"
+                                    "ko" "[P]")))))))
+        products (cond-> products
+                   (= language "ja")
+                   ;; NOTE: The Japanese site never included this product
+                   ;; in the products page
+                   (concat [{:release/name "リミテッドカードセット2024【LM-03】"
+                             :release/genre "その他"
+                             :release/date #inst "2024-03-02T05:00:00.000-00:00"
+                             :release/image-uri (URI. "https://en.digimoncard.com/images/products/goods/limited_lm-03/img_pkg.png")}]))
         cardlist-releases (->> (utils/http-get (str url "/cardlist/"))
                                hickory/parse
                                hickory/as-hickory
@@ -179,10 +214,14 @@
                                (map (partial release origin)))
         name-matches? (fn [r p]
                         (let [product-name (-> (:release/name p)
-                                               (string/replace "-0" "-")
+                                               (string/replace #"0([0-9])" "$1")
+                                               (string/replace "-" "")
+                                               (string/replace #"\s+【" "【")
                                                string/lower-case)
                               release-name (-> (:release/name r)
-                                               (string/replace "-0" "-")
+                                               (string/replace #"0([0-9])" "$1")
+                                               (string/replace "-" "")
+                                               (string/replace #"\s+【" "【")
                                                string/lower-case)]
                           (or (string/includes? release-name
                                                 product-name)
@@ -191,9 +230,7 @@
         merged
         (reduce (fn [accl r]
                   (if-let [p (some->> products
-                                      (filter
-                                       (fn [p]
-                                         (name-matches? r p)))
+                                      (filter (fn [p] (name-matches? r p)))
                                       last)]
                     (conj accl
                           (merge r (dissoc p :release/id)))
@@ -209,18 +246,72 @@
 (defmethod releases "ko"
   [{:origin/keys [url] :as origin}]
   (let [http-opts (utils/cupid-headers (str url "/products/"))
-        products (->> (utils/http-get (str url "/products/")
-                                      http-opts)
-                      hickory/parse
-                      hickory/as-hickory
-                      (select/select
-                       (select/descendant (select/id "maincontent")
-                                          (select/tag "article")))
-                      (pmap (partial product origin))
-                      (map (fn [{:release/keys [genre] :as r}]
-                             (if (string/blank? genre)
-                               (assoc r :release/genre "확장팩")
-                               r))))
+        products
+        (->> (utils/http-get (str url "/products/")
+                             http-opts)
+             hickory/parse
+             hickory/as-hickory
+             (select/select
+              (select/descendant (select/id "maincontent")
+                                 (select/tag "article")))
+             (pmap (partial product origin))
+             (map (fn [{:release/keys [genre] :as r}]
+                    (if (string/blank? genre)
+                      (assoc r :release/genre "확장팩")
+                      r)))
+             (map (fn [{:release/keys [name language]
+                       :as release}]
+                    (assoc release :release/name
+                           (if-let [code (->> name
+                                              (re-find #"[\[【](.*)[\]】]")
+                                              second)]
+                             (string/replace name code
+                                             (if (string/includes? code "-")
+                                               (let [[card-set n]
+                                                     (string/split code #"\-")]
+                                                 (str card-set
+                                                      "-"
+                                                      (cond-> n
+                                                        (< (count n) 2)
+                                                        (->> parse-long
+                                                             (format "%02d")))))
+                                               (->> code
+                                                    (re-find #"([A-Z]+)(.*)")
+                                                    rest
+                                                    (string/join "-"))))
+                             (str name " "
+                                  (case language
+                                    "ja" "【P】"
+                                    "en" "[P]"
+                                    "zh-Hans" "【P】"
+                                    "ko" "[P]"))))))
+             ;; NOTE: At some point the Korean site removed these
+             ;; products so we add them back explicitly here
+             (concat [{:release/name "스타트 덱 가이아 레드 [STK-1]"
+                       :release/genre "구축완료 덱"
+                       :release/date #inst "2023-02-24T05:00:00.000-00:00"
+                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/185/8915a4ed667c1b149d8c42f1dfb87e4b.png")
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/185")}
+                      {:release/name "스타트 덱 코큐토스 블루 [STK-2]"
+                       :release/genre "구축완료 덱"
+                       :release/date #inst "2023-02-24T05:00:00.000-00:00"
+                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/204/79d9787194c7d5e81af6fecb8c22b663.png")
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/204")}
+                      {:release/name "스타트 덱 헤븐즈 옐로 [STK-3]"
+                       :release/genre "구축완료 덱"
+                       :release/date #inst "2023-02-24T05:00:00.000-00:00"
+                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/232/0294d62b827e44573af4710e71fce0d2.png")
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/232")}
+                      {:release/name "스페셜 부스터 버전 1.0 [BTK-1.0]"
+                       :release/genre "확장팩"
+                       :release/date #inst "2023-03-10T05:00:00.000-00:00"
+                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/074/001/0f83ff7b83a84674b993e9f9d523dc95.jpg")
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/1074")}
+                      {:release/name "스페셜 부스터 버전 1.5 [BTK-1.5]"
+                       :release/genre "확장팩"
+                       :release/date #inst "2023-05-12T05:00:00.000-00:00"
+                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/279/002/283ca3e5b0683fb1dafaccf199379b64.jpg")
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/2279")}]))
         cardlist-releases (->> (utils/http-get (str url "/cardlist/")
                                                http-opts)
                                hickory/parse
@@ -247,9 +338,7 @@
         merged
         (reduce (fn [accl r]
                   (if-let [p (some->> products
-                                      (filter
-                                       (fn [p]
-                                         (name-matches? r p)))
+                                      (filter (fn [p] (name-matches? r p)))
                                       last)]
                     (conj accl
                           (merge r
@@ -313,7 +402,33 @@
                              :release/language language
                              :release/image-uri (URI. productImage)
                              :release/card-image-language card-image-language
-                             :release/product-uri product-uri}))))))
+                             :release/product-uri product-uri})))
+                   (map (fn [{:release/keys [name language]
+                             :as release}]
+                          (assoc release :release/name
+                                 (if-let [code (->> name
+                                                    (re-find #"[\[【](.*)[\]】]")
+                                                    second)]
+                                   (string/replace name code
+                                                   (if (string/includes? code "-")
+                                                     (let [[card-set n]
+                                                           (string/split code #"\-")]
+                                                       (str card-set
+                                                            "-"
+                                                            (cond-> n
+                                                              (< (count n) 2)
+                                                              (->> parse-long
+                                                                   (format "%02d")))))
+                                                     (->> code
+                                                          (re-find #"([A-Z]+)(.*)")
+                                                          rest
+                                                          (string/join "-"))))
+                                   (str name " "
+                                        (case language
+                                          "ja" "【P】"
+                                          "en" "[P]"
+                                          "zh-Hans" "【P】"
+                                          "ko" "[P]")))))))))
         releases-url (-> (new URI
                               (.getScheme origin-uri)
                               (string/replace (.getHost origin-uri)
