@@ -114,7 +114,9 @@
                                   (sort-by (comp (fnil inst-ms
                                                        (Date. Long/MAX_VALUE))
                                                  :release/date))
-                                  (map #(dissoc % :release/card-image-language)))
+                                  (map #(dissoc %
+                                                :release/card-image-language
+                                                :release/http-opts)))
                          existing-card-numbers (filter (fn [c]
                                                          (= (:card/number c)
                                                             number))
@@ -568,9 +570,9 @@
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                       dp rareDegree entryConsumeValue envolutionConsumeTwo
-                       cardLevel effect envolutionEffect safeEffect
-                       imageCover cardGroup]}]
+                      dp rareDegree entryConsumeValue envolutionConsumeTwo
+                      cardLevel effect envolutionEffect safeEffect
+                      imageCover cardGroup]}]
             (let [number (-> model
                              (string/replace #"_.*" "")
                              string/trim)

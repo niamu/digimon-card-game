@@ -169,33 +169,7 @@
              (select/select
               (select/descendant (select/id "maincontent")
                                  (select/tag "article")))
-             (pmap (partial product origin))
-             (map (fn [{:release/keys [name language]
-                       :as release}]
-                    (assoc release :release/name
-                           (if-let [code (->> name
-                                              (re-find #"[\[【](.*)[\]】]")
-                                              second)]
-                             (string/replace name code
-                                             (if (string/includes? code "-")
-                                               (let [[card-set n]
-                                                     (string/split code #"\-")]
-                                                 (str card-set
-                                                      "-"
-                                                      (cond-> n
-                                                        (< (count n) 2)
-                                                        (->> parse-long
-                                                             (format "%02d")))))
-                                               (->> code
-                                                    (re-find #"([A-Z]+)(.*)")
-                                                    rest
-                                                    (string/join "-"))))
-                             (str name " "
-                                  (case language
-                                    "ja" "【P】"
-                                    "en" "[P]"
-                                    "zh-Hans" "【P】"
-                                    "ko" "[P]")))))))
+             (pmap (partial product origin)))
         products (cond-> products
                    (= language "ja")
                    ;; NOTE: The Japanese site never included this product
@@ -228,15 +202,41 @@
                               (string/includes? product-name
                                                 release-name))))
         merged
-        (reduce (fn [accl r]
-                  (if-let [p (some->> products
-                                      (filter (fn [p] (name-matches? r p)))
-                                      last)]
-                    (conj accl
-                          (merge r (dissoc p :release/id)))
-                    (conj accl r)))
-                []
-                cardlist-releases)
+        (->> (reduce (fn [accl r]
+                       (if-let [p (some->> products
+                                           (filter (fn [p] (name-matches? r p)))
+                                           last)]
+                         (conj accl
+                               (merge r (dissoc p :release/id)))
+                         (conj accl r)))
+                     []
+                     cardlist-releases)
+             (map (fn [{:release/keys [name language]
+                       :as release}]
+                    (assoc release :release/name
+                           (if-let [code (->> name
+                                              (re-find #"[\[【](.*)[\]】]")
+                                              second)]
+                             (string/replace name code
+                                             (if (string/includes? code "-")
+                                               (let [[card-set n]
+                                                     (string/split code #"\-")]
+                                                 (str card-set
+                                                      "-"
+                                                      (cond-> n
+                                                        (< (count n) 2)
+                                                        (->> parse-long
+                                                             (format "%02d")))))
+                                               (->> code
+                                                    (re-find #"([A-Z]+)(.*)")
+                                                    rest
+                                                    (string/join "-"))))
+                             (cond-> name
+                               (or (= name "プロモーションカード")
+                                   (= name "Promotion Card"))
+                               (str (case language
+                                      "ja" "【P】"
+                                      "en" " [P]"))))))))
         merged-product-uris (set (map :release/product-uri merged))]
     (concat merged
             (remove (fn [{:release/keys [product-uri]}]
@@ -259,32 +259,6 @@
                     (if (string/blank? genre)
                       (assoc r :release/genre "확장팩")
                       r)))
-             (map (fn [{:release/keys [name language]
-                       :as release}]
-                    (assoc release :release/name
-                           (if-let [code (->> name
-                                              (re-find #"[\[【](.*)[\]】]")
-                                              second)]
-                             (string/replace name code
-                                             (if (string/includes? code "-")
-                                               (let [[card-set n]
-                                                     (string/split code #"\-")]
-                                                 (str card-set
-                                                      "-"
-                                                      (cond-> n
-                                                        (< (count n) 2)
-                                                        (->> parse-long
-                                                             (format "%02d")))))
-                                               (->> code
-                                                    (re-find #"([A-Z]+)(.*)")
-                                                    rest
-                                                    (string/join "-"))))
-                             (str name " "
-                                  (case language
-                                    "ja" "【P】"
-                                    "en" "[P]"
-                                    "zh-Hans" "【P】"
-                                    "ko" "[P]"))))))
              ;; NOTE: At some point the Korean site removed these
              ;; products so we add them back explicitly here
              (concat [{:release/name "스타트 덱 가이아 레드 [STK-1]"
@@ -336,16 +310,39 @@
                               (string/includes? product-name
                                                 release-name))))
         merged
-        (reduce (fn [accl r]
-                  (if-let [p (some->> products
-                                      (filter (fn [p] (name-matches? r p)))
-                                      last)]
-                    (conj accl
-                          (merge r
-                                 (dissoc p :release/id)))
-                    (conj accl r)))
-                []
-                cardlist-releases)
+        (->> (reduce (fn [accl r]
+                       (if-let [p (some->> products
+                                           (filter (fn [p] (name-matches? r p)))
+                                           last)]
+                         (conj accl
+                               (merge r
+                                      (dissoc p :release/id)))
+                         (conj accl r)))
+                     []
+                     cardlist-releases)
+             (map (fn [{:release/keys [name language]
+                       :as release}]
+                    (assoc release :release/name
+                           (if-let [code (->> name
+                                              (re-find #"[\[【](.*)[\]】]")
+                                              second)]
+                             (string/replace name code
+                                             (if (string/includes? code "-")
+                                               (let [[card-set n]
+                                                     (string/split code #"\-")]
+                                                 (str card-set
+                                                      "-"
+                                                      (cond-> n
+                                                        (< (count n) 2)
+                                                        (->> parse-long
+                                                             (format "%02d")))))
+                                               (->> code
+                                                    (re-find #"([A-Z]+)(.*)")
+                                                    rest
+                                                    (string/join "-"))))
+                             (cond-> name
+                               (= name "프로모션 카드")
+                               (str " [P]")))))))
         merged-product-uris (set (map :release/product-uri merged))]
     (concat merged
             (remove (fn [{:release/keys [product-uri]}]
@@ -402,33 +399,7 @@
                              :release/language language
                              :release/image-uri (URI. productImage)
                              :release/card-image-language card-image-language
-                             :release/product-uri product-uri})))
-                   (map (fn [{:release/keys [name language]
-                             :as release}]
-                          (assoc release :release/name
-                                 (if-let [code (->> name
-                                                    (re-find #"[\[【](.*)[\]】]")
-                                                    second)]
-                                   (string/replace name code
-                                                   (if (string/includes? code "-")
-                                                     (let [[card-set n]
-                                                           (string/split code #"\-")]
-                                                       (str card-set
-                                                            "-"
-                                                            (cond-> n
-                                                              (< (count n) 2)
-                                                              (->> parse-long
-                                                                   (format "%02d")))))
-                                                     (->> code
-                                                          (re-find #"([A-Z]+)(.*)")
-                                                          rest
-                                                          (string/join "-"))))
-                                   (str name " "
-                                        (case language
-                                          "ja" "【P】"
-                                          "en" "[P]"
-                                          "zh-Hans" "【P】"
-                                          "ko" "[P]")))))))))
+                             :release/product-uri product-uri}))))))
         releases-url (-> (new URI
                               (.getScheme origin-uri)
                               (string/replace (.getHost origin-uri)
@@ -466,27 +437,48 @@
                          (not= name "宣传卡") (assoc :release/date date)
                          (= name "宣传卡") (assoc :release/id
                                                   (format "release_%s_%s"
-                                                          language 0)))))
+                                                          language 0)
+                                                  :release/name "宣传卡【P】"))))
                    releases)))
         merged
-        (reduce (fn [accl p]
-                  (if-let [release
-                           (some->> releases
-                                    (filter (fn [r]
-                                              (or (string/includes?
-                                                   (:release/name r)
-                                                   (:release/name p))
-                                                  (string/includes?
-                                                   (:release/name p)
-                                                   (:release/name r)))))
-                                    first)]
-                    (conj accl (merge p
-                                      release
-                                      (select-keys p [:release/name
-                                                      :release/genre])))
-                    (conj accl p)))
-                []
-                products)
+        (->> products
+             (reduce (fn [accl p]
+                       (if-let [release
+                                (some->> releases
+                                         (filter (fn [r]
+                                                   (or (string/includes?
+                                                        (:release/name r)
+                                                        (:release/name p))
+                                                       (string/includes?
+                                                        (:release/name p)
+                                                        (:release/name r)))))
+                                         first)]
+                         (conj accl (merge p
+                                           release
+                                           (select-keys p [:release/name
+                                                           :release/genre])))
+                         (conj accl p)))
+                     [])
+             (map (fn [{:release/keys [name language] :as release}]
+                    (assoc release :release/name
+                           (if-let [code (->> name
+                                              (re-find #"[\[【](.*)[\]】]")
+                                              second)]
+                             (string/replace name code
+                                             (if (string/includes? code "-")
+                                               (let [[card-set n]
+                                                     (string/split code #"\-")]
+                                                 (str card-set
+                                                      "-"
+                                                      (cond-> n
+                                                        (< (count n) 2)
+                                                        (->> parse-long
+                                                             (format "%02d")))))
+                                               (->> code
+                                                    (re-find #"([A-Z]+)(.*)")
+                                                    rest
+                                                    (string/join "-"))))
+                             name)))))
         cardlist-uris (->> (map :release/cardlist-uri merged)
                            (remove nil?)
                            set)
