@@ -154,7 +154,8 @@
                                               [?c :card/image ?i]
                                               [?i :image/language ?l]
                                               [?c :card/language ?l]]}
-                                    card-number))})}}]])
+                                    card-number))})}}]
+   ["/images/cards/*" (ring/create-resource-handler {:root "images/cards"})]])
 
 (defonce ^:private store-key
   (.getBytes (subs (string/replace (random-uuid) "-" "") 0 16)))
