@@ -9,3 +9,7 @@ The [codec](/codec) directory hosts multiple library implementations for encodin
 ## Database
 
 [db](/db) contains code that scrapes official Bandai sources for the Digimon Card Game (2020) and produces a normalized and enriched [Datomic](https://www.datomic.com) database of card data in all officially supported languages where cards are released.
+
+## API
+
+[api](/api) is a [JSON:API](https://jsonapi.org) exposing data from the [database](/db).

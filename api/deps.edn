@@ -1,0 +1,10 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure                   {:mvn/version "1.11.1"}
+        com.taoensso/timbre                   {:mvn/version "5.2.1"}
+        liberator/liberator                   {:mvn/version "0.15.3"}
+        metosin/reitit                        {:mvn/version "0.7.0-alpha7"}
+        ring/ring-core                        {:mvn/version "1.11.0"}
+        ring/ring-jetty-adapter               {:mvn/version "1.11.0"}
+        ring/ring-defaults                    {:mvn/version "0.4.0"}
+        com.niamu/dcg-db                      {:local/root "../db/"}}
+ :aliases {:serve {:exec-fn dcg.api.core/-main}}}
