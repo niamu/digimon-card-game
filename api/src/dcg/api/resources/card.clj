@@ -70,6 +70,7 @@
     ((liberator/resource
       {:allowed-methods [:get]
        :available-media-types ["application/vnd.api+json"]
+       :etag (fn [context] (utils/sha card))
        :exists? (fn [_] (boolean card))
        :handle-ok
        (fn [{{{:keys [_ _]} :path-params} :request

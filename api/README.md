@@ -4,14 +4,20 @@
 
 ## Usage
 
-Start the server.
+The API depends on the Database, so when building the container, both projects need to be copied into the container.
+
+Build the container image from the root of this project using the following command:
 
 **NOTE**: Ensure you've already generated a db.edn file in an accessible resources directory on the classpath first.
 
 ```
-$ clj -X:serve
+$ docker build -t dcg-api -f api/Dockerfile .
+```
 
-API started on port 3000
+Then run the container:
+
+```
+$ docker run --rm -it -p 3000:3000 dcg-api
 ```
 
 Query the API:
@@ -34,7 +40,7 @@ $ curl http://127.0.0.1:3000
         "latest-release": "Sun Aug 18 00:00:00 EDT 2024"
       },
       "links": {
-        "self": "http://127.0.0.1:3000/en"
+        "related": "http://127.0.0.1:3000/en"
       }
     },
     {
@@ -48,7 +54,7 @@ $ curl http://127.0.0.1:3000
         "latest-release": "Sat Aug 10 20:00:00 EDT 2024"
       },
       "links": {
-        "self": "http://127.0.0.1:3000/ja"
+        "related": "http://127.0.0.1:3000/ja"
       }
     },
     {
@@ -62,7 +68,7 @@ $ curl http://127.0.0.1:3000
         "latest-release": "Sun Aug 04 00:00:00 EDT 2024"
       },
       "links": {
-        "self": "http://127.0.0.1:3000/zh-Hans"
+        "related": "http://127.0.0.1:3000/zh-Hans"
       }
     },
     {
@@ -76,7 +82,7 @@ $ curl http://127.0.0.1:3000
         "latest-release": "Thu Jul 18 20:00:00 EDT 2024"
       },
       "links": {
-        "self": "http://127.0.0.1:3000/ko"
+        "related": "http://127.0.0.1:3000/ko"
       }
     }
   ],
