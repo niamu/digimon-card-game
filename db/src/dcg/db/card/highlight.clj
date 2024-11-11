@@ -138,7 +138,9 @@
                       (and (= (:highlight/type h) :mention)
                            (not (:highlight/mention h))))
                 accl
-                (assoc-in accl [field text] h))))
+                (-> accl
+                    (assoc-in [field text] h)
+                    (assoc-in [field (str text "型")] h)))))
           {}
           highlights))
 
@@ -155,7 +157,9 @@
                       (and (= (:highlight/type h) :mention)
                            (not (:highlight/mention h))))
                 accl
-                (assoc-in accl [field [text index]] h))))
+                (-> accl
+                    (assoc-in [field [text index]] h)
+                    (assoc-in [field [(str text "型") index]] h)))))
           {}
           highlights))
 
@@ -190,20 +194,20 @@
          "Armor Form" "アーマー体"
          "saur" "竜"
          "Ceratopsian" "竜"
-         "Plant" "植物型"
-         "Vegetation" "植物型"
+         "Plant" "植物"
+         "Vegetation" "植物"
          "Bird" "鳥"
          "Avian" "鳥"
          "Animal" "獣"
          "Beast" "獣"
          "D-Reaper" "デ・リーパー"
-         "Fairy" "妖精型"
+         "Fairy" "妖精"
          "Sovereign" "獣"
-         "Cherub" "天使型"
-         "Throne" "天使型"
-         "Authority" "天使型"
-         "Seraph" "天使型"
-         "Virtue" "天使型"
+         "Cherub" "天使"
+         "Throne" "天使"
+         "Authority" "天使"
+         "Seraph" "天使"
+         "Virtue" "天使"
          "Royal Knights" "ロイヤルナイツ"
          "Ryouma Mogami" "最上リョウマ"
          "Dragon Mode" "ドラゴンモード"
@@ -281,7 +285,7 @@
                        (re-matches #".ルール." match)
                        (re-matches #".Rule." match)
                        (re-matches #".规则." match)
-                       (re-matches #".규칙." match)))))
+                       (re-matches #".룰." match)))))
        (reduce (fn [accl [match & contents]]
                  (let [[in-name?
                         in-characteristic?
@@ -454,7 +458,7 @@
             highlights
             (->> highlights
                  (map (fn [{:highlight/keys [language index text field]
-                            :as highlight}]
+                           :as highlight}]
                         (let [text (subs text 1 (dec (count text)))
                               ja-text (get-in translations
                                               [language text])
@@ -474,12 +478,28 @@
                                                [field [ja-text index]]))
                                 (and ja-text
                                      (not= language "ja")
+                                     (get-in field-and-text-and-index
+                                             [field [(str ja-text "型") index]
+                                              :highlight/type]))
+                                (merge highlight
+                                       (get-in field-and-text-and-index
+                                               [field [(str ja-text "型") index]]))
+                                (and ja-text
+                                     (not= language "ja")
                                      (get-in field-and-text
                                              [field ja-text
                                               :highlight/type]))
                                 (merge highlight
                                        (get-in field-and-text
                                                [field ja-text]))
+                                (and ja-text
+                                     (not= language "ja")
+                                     (get-in field-and-text
+                                             [field (str ja-text "型")
+                                              :highlight/type]))
+                                (merge highlight
+                                       (get-in field-and-text
+                                               [field (str ja-text "型")]))
                                 :else
                                 (cond-> highlight
                                   (and (= language "ja")
@@ -511,7 +531,7 @@
                                    [language
                                     (subs text 1 (dec (count text)))])))
                  (reduce (fn [accl {:highlight/keys [index language type field]
-                                    :as highlight}]
+                                   :as highlight}]
                            (update-in accl [[index type field]]
                                       conj highlight))
                          {})
@@ -521,7 +541,7 @@
                              (merge accl
                                     (translation-map
                                      (reduce (fn [result {:highlight/keys
-                                                          [language text]}]
+                                                         [language text]}]
                                                (assoc result
                                                       language
                                                       (->> (dec (count text))
@@ -581,7 +601,7 @@
         {:keys [card-highlights translations]} (highlights card-groups)
         treats-lookup
         (reduce (fn [accl {:highlight/keys [id card-id language text mention]
-                           :as highlight}]
+                          :as highlight}]
                   (if (:mention/aka? mention)
                     (let [id (string/replace id "highlight/" "treat/")
                           field (if (contains? (:mention/fields mention)
@@ -601,7 +621,7 @@
                 card-highlights)
         ja-mentioned-cards-lookup
         (reduce (fn [accl {:highlight/keys [id card-id language text mention]
-                           :as highlight}]
+                          :as highlight}]
                   (if (and mention
                            (not (:mention/aka? mention))
                            (= language "ja"))
@@ -616,7 +636,7 @@
                 card-highlights)
         mentions
         (reduce (fn [accl {:highlight/keys [id card-id language text mention]
-                           :as highlight}]
+                          :as highlight}]
                   (if (and mention (not (:mention/aka? mention)))
                     (let [text (subs text 1 (dec (count text)))
                           ja-text (get-in translations [language text])
@@ -649,7 +669,7 @@
                 []
                 card-highlights)]
     {:mentions (reduce (fn [accl {:mention/keys [language card-id]
-                                  :as mention}]
+                                 :as mention}]
                          (update-in accl [card-id language]
                                     conj
                                     (dissoc mention
@@ -658,7 +678,7 @@
                        {}
                        mentions)
      :treats (reduce (fn [accl {:treat/keys [language card-id]
-                                :as treat}]
+                               :as treat}]
                        (update-in accl [card-id language]
                                   conj
                                   (dissoc treat
@@ -683,7 +703,7 @@
                                    (assoc :highlight/type :treat)
                                    (dissoc :highlight/mention)))))
                       (reduce (fn [accl {:highlight/keys [language card-id]
-                                         :as highlight}]
+                                        :as highlight}]
                                 (update-in accl [card-id language]
                                            conj
                                            (dissoc highlight

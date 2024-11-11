@@ -135,6 +135,9 @@
     {:db/ident :digivolve/level
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
+    {:db/ident :digivolve/category
+     :db/valueType :db.type/keyword
+     :db/cardinality :db.cardinality/one}
     {:db/ident :digivolve/color
      :db/valueType :db.type/keyword
      :db/cardinality :db.cardinality/many}]

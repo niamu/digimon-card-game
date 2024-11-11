@@ -31,6 +31,7 @@ struct RGB {
 #[derive(Debug, Clone, Serialize)]
 struct DigivolveRequirement {
     colors: Vec<String>,
+    category: String,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -40,7 +41,7 @@ struct Template {
     requirements_count: i32,
 }
 
-const DIGIVOLVE_TEMPLATES: [Template; 5] = [
+const DIGIVOLVE_TEMPLATES: [Template; 6] = [
     Template {
         path: "resources/images/templates/digivolution-requirements/v1_1.png",
         version: 1,
@@ -62,9 +63,14 @@ const DIGIVOLVE_TEMPLATES: [Template; 5] = [
         requirements_count: 4,
     },
     Template {
-        path: "resources/images/templates/digivolution-requirements/v2.png",
+        path: "resources/images/templates/digivolution-requirements/v2_1.png",
         version: 2,
         requirements_count: 1,
+    },
+    Template {
+        path: "resources/images/templates/digivolution-requirements/v2_2.png",
+        version: 2,
+        requirements_count: 2,
     },
 ];
 
@@ -217,13 +223,15 @@ fn requirements_v1(
     for roi in rois {
         result.push(DigivolveRequirement {
             colors: colors_within_image(&Mat::roi(image, roi).unwrap()),
+            category: "Digimon".to_string(),
         });
     }
     result
 }
 
-fn requirements_v2(image: &BoxedRef<'_, Mat>, base_coords: Coords) -> Vec<DigivolveRequirement> {
-    let colors: Vec<Color> = vec![
+fn requirements_v2(image: &BoxedRef<'_, Mat>, base_coords: Coords, digivolve_template: Template) -> Vec<DigivolveRequirement> {
+    let mut result: Vec<DigivolveRequirement> = Vec::new();
+    let mut colors: Vec<Color> = vec![
         Color {
             name: "red".to_string(),
             coords: Coords { x: 50, y: 20 },
@@ -288,7 +296,7 @@ fn requirements_v2(image: &BoxedRef<'_, Mat>, base_coords: Coords) -> Vec<Digivo
             },
         },
     ];
-    let mut result: Vec<String> = Vec::new();
+    let mut confirmed_colors: Vec<String> = Vec::new();
     for color in colors {
         let coords = Coords {
             x: color.coords.x + base_coords.x,
@@ -297,10 +305,97 @@ fn requirements_v2(image: &BoxedRef<'_, Mat>, base_coords: Coords) -> Vec<Digivo
         let color_in_image = color_at_coordinate(&image, coords);
         let diff = color_difference(color_in_image, color.rgb.clone());
         if diff < 15.0 {
-            result.push(color.name.to_string())
+            confirmed_colors.push(color.name.to_string())
         }
     }
-    vec![DigivolveRequirement { colors: result }]
+    result.push(DigivolveRequirement {
+        colors: confirmed_colors,
+        category: "Digimon".to_string(),
+    });
+    if digivolve_template.requirements_count == 2 {
+        colors = vec![
+            Color {
+                name: "red".to_string(),
+                coords: Coords { x: 50, y: 20 + 50 },
+                rgb: RGB {
+                    r: 200,
+                    g: 20,
+                    b: 53,
+                },
+            },
+            Color {
+                name: "blue".to_string(),
+                coords: Coords { x: 54, y: 32 + 50 },
+                rgb: RGB {
+                    r: 0,
+                    g: 150,
+                    b: 223,
+                },
+            },
+            Color {
+                name: "yellow".to_string(),
+                coords: Coords { x: 43, y: 52 + 50 },
+                rgb: RGB {
+                    r: 225,
+                    g: 225,
+                    b: 0,
+                },
+            },
+            Color {
+                name: "green".to_string(),
+                coords: Coords { x: 20, y: 51 + 50 },
+                rgb: RGB {
+                    r: 0,
+                    g: 156,
+                    b: 108,
+                },
+            },
+            Color {
+                name: "black".to_string(),
+                coords: Coords { x: 10, y: 32 + 50 },
+                rgb: RGB {
+                    r: 35,
+                    g: 24,
+                    b: 17,
+                },
+            },
+            Color {
+                name: "purple".to_string(),
+                coords: Coords { x: 14, y: 20 + 50 },
+                rgb: RGB {
+                    r: 100,
+                    g: 85,
+                    b: 162,
+                },
+            },
+            Color {
+                name: "white".to_string(),
+                coords: Coords { x: 30, y: 10 + 50 },
+                rgb: RGB {
+                    r: 255,
+                    g: 255,
+                    b: 255,
+                },
+            },
+        ];
+        let mut confirmed_colors: Vec<String> = Vec::new();
+        for color in colors {
+            let coords = Coords {
+                x: color.coords.x + base_coords.x,
+                y: color.coords.y + base_coords.y,
+            };
+            let color_in_image = color_at_coordinate(&image, coords);
+            let diff = color_difference(color_in_image, color.rgb.clone());
+            if diff < 15.0 {
+                confirmed_colors.push(color.name.to_string())
+            }
+        }
+        result.push(DigivolveRequirement {
+            colors: confirmed_colors,
+            category: "Tamer".to_string(),
+        });
+    }
+    result
 }
 
 #[no_mangle]
@@ -348,7 +443,7 @@ pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c
     }
     let edn = match result {
         Some((m, t)) => match t.version {
-            2 => Some(requirements_v2(&image_mat_roi, m.coords)),
+            2 => Some(requirements_v2(&image_mat_roi, m.coords, t)),
             _ => Some(requirements_v1(&image_mat_roi, m.coords, t)),
         },
         None => None,

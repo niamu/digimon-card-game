@@ -3,6 +3,7 @@
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.set :as set]
+   [clojure.string :as string]
    [dcg.db.utils :as utils]
    [taoensso.timbre :as logging])
   (:import
@@ -94,10 +95,15 @@
            (not (empty? requirements-with-colors)))
       (assoc :card/digivolution-requirements
              (map-indexed
-              (fn [idx {colors :colors}]
-                (let [prev-requirement
-                      (or (nth digivolution-requirements idx nil)
-                          (first digivolution-requirements))]
+              (fn [idx {:keys [colors category]}]
+                (let [category (-> category
+                                   string/lower-case
+                                   keyword)
+                      prev-requirement
+                      (cond-> (or (nth digivolution-requirements idx nil)
+                                  (first digivolution-requirements))
+                        (= category :tamer)
+                        (dissoc :digivolve/level))]
                   (when-not (get prev-requirement :digivolve/cost)
                     (logging/error (format (str "Digivolution requirement"
                                                 " missing for %s on index %d")
@@ -107,5 +113,6 @@
                                                 number
                                                 idx)
                           :digivolve/color (set (map keyword colors))
+                          :digivolve/category category
                           :digivolve/index idx})))
               requirements-with-colors)))))

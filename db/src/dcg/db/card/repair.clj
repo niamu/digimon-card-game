@@ -31,7 +31,8 @@
       (string/replace #"<(Security Attack.*?)[>＞]" "&lt;$1&gt;")
       (string/replace #"<(Digi-Burst.*?)[>＞]" "&lt;$1&gt;")
       (string/replace #"<(Rush.*?)[>＞]" "&lt;$1&gt;")
-      (string/replace #"<(Vortex.*?)[>＞]" "&lt;$1&gt;")))
+      (string/replace #"<(Vortex.*?)[>＞]" "&lt;$1&gt;")
+      (string/replace #"<(Delay)[>＞]" "&lt;$1&gt;")))
 
 (defn text-fixes
   [s]

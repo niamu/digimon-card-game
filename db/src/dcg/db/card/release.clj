@@ -259,33 +259,80 @@
                     (if (string/blank? genre)
                       (assoc r :release/genre "확장팩")
                       r)))
-             ;; NOTE: At some point the Korean site removed these
-             ;; products so we add them back explicitly here
-             (concat [{:release/name "스타트 덱 가이아 레드 [STK-1]"
-                       :release/genre "구축완료 덱"
-                       :release/date #inst "2023-02-24T05:00:00.000-00:00"
-                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/185/8915a4ed667c1b149d8c42f1dfb87e4b.png")
-                       :release/product-uri (URI. "https://digimoncard.co.kr/products/185")}
-                      {:release/name "스타트 덱 코큐토스 블루 [STK-2]"
-                       :release/genre "구축완료 덱"
-                       :release/date #inst "2023-02-24T05:00:00.000-00:00"
-                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/204/79d9787194c7d5e81af6fecb8c22b663.png")
-                       :release/product-uri (URI. "https://digimoncard.co.kr/products/204")}
-                      {:release/name "스타트 덱 헤븐즈 옐로 [STK-3]"
-                       :release/genre "구축완료 덱"
-                       :release/date #inst "2023-02-24T05:00:00.000-00:00"
-                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/232/0294d62b827e44573af4710e71fce0d2.png")
-                       :release/product-uri (URI. "https://digimoncard.co.kr/products/232")}
-                      {:release/name "스페셜 부스터 버전 1.0 [BTK-1.0]"
-                       :release/genre "확장팩"
-                       :release/date #inst "2023-03-10T05:00:00.000-00:00"
-                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/074/001/0f83ff7b83a84674b993e9f9d523dc95.jpg")
-                       :release/product-uri (URI. "https://digimoncard.co.kr/products/1074")}
-                      {:release/name "스페셜 부스터 버전 1.5 [BTK-1.5]"
-                       :release/genre "확장팩"
-                       :release/date #inst "2023-05-12T05:00:00.000-00:00"
-                       :release/image-uri (URI. "https://digimoncard.co.kr/files/extravar_upload/135/279/002/283ca3e5b0683fb1dafaccf199379b64.jpg")
-                       :release/product-uri (URI. "https://digimoncard.co.kr/products/2279")}]))
+             ;; NOTE: At some point the Korean site removed these products
+             ;; Query to older database to recreate the missing products
+             #_(->> (db/q '{:find [[(pull ?r [:release/name
+                                              :release/genre
+                                              :release/date
+                                              :release/image-uri
+                                              :release/product-uri]) ...]]
+                            :where [[?r :release/language "ko"]
+                                    [?r :release/image-uri _]]})
+                    (sort-by :release/date)
+                    (drop-last 15))
+             (concat [#:release{:name "스타트 덱 가이아 레드 [STK-01]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-02-24T05:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/185/8915a4ed667c1b149d8c42f1dfb87e4b.png"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/185")}
+                      #:release{:name "스타트 덱 코큐토스 블루 [STK-02]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-02-24T05:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/204/79d9787194c7d5e81af6fecb8c22b663.png"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/204")}
+                      #:release{:name "스타트 덱 헤븐즈 옐로 [STK-03]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-02-24T05:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/232/0294d62b827e44573af4710e71fce0d2.png"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/232")}
+                      #:release{:name "스페셜 부스터 버전 1.0 [BTK-1.0]",
+                                :genre "확장팩",
+                                :date #inst "2023-03-10T05:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/074/001/0f83ff7b83a84674b993e9f9d523dc95.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/1074")}
+                      #:release{:name "스페셜 부스터 버전 1.5 [BTK-1.5]",
+                                :genre "확장팩",
+                                :date #inst "2023-05-12T05:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/279/002/283ca3e5b0683fb1dafaccf199379b64.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/2279")}
+                      #:release{:name "기가 그린 [STK-04]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-06-16T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/098/003/30fb31e6c12eb56ce02f4d6704520cfb.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/3098")}
+                      #:release{:name "파워 블랙 [STK-05]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-06-16T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/107/003/031008bf158bca8fa2384e6303f95ce6.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/3107")}
+                      #:release{:name "베놈 바이올렛 [STK-06]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-06-16T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/116/003/a0e40753e6528e030b690377ad839c07.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/3116")}
+                      #:release{:name "팩 그레이트 레전드 [BTK-04]",
+                                :genre "확장팩",
+                                :date #inst "2023-07-14T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/451/003/2bfdfa1cb6729465f3edf58d0c02cfd3.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/3451")}]))
         cardlist-releases (->> (utils/http-get (str url "/cardlist/")
                                                http-opts)
                                hickory/parse
@@ -321,7 +368,7 @@
                      []
                      cardlist-releases)
              (map (fn [{:release/keys [name language]
-                       :as release}]
+                        :as release}]
                     (assoc release :release/name
                            (if-let [code (->> name
                                               (re-find #"[\[【](.*)[\]】]")
@@ -368,7 +415,7 @@
             (as-> #__ products
               (->> products
                    (map (fn [{:strs [id name productImage createTime productType]
-                             :as p}]
+                              :as p}]
                           (let [date-re #"[0-9]{4}\-[0-9]{2}\-[0-9]{2}"
                                 date (-> (SimpleDateFormat. "yyyy-MM-dd")
                                          (.parse (re-find date-re createTime)))

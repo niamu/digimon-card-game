@@ -177,6 +177,8 @@
   (logging/info "DB Ingestion completed."))
 
 (comment
+  (set! *print-namespace-maps* false)
+
   (def *cards (time (process-cards)))
 
   (->> *cards

@@ -224,9 +224,10 @@
                    (string/replace #"P$" "")
                    ;; ko cards sometimes have the name preceeded by a space
                    (string/replace #"\s.*" ""))
-        category (-> (nth header 2)
-                     (string/replace "DIgimon" "Digimon")
-                     (string/replace "Opiton" "Option"))
+        category (or (some-> (nth header 2)
+                             (string/replace "DIgimon" "Digimon")
+                             (string/replace "Opiton" "Option"))
+                     "Unknown")
         alternate-art? (let [header-set (set header)]
                          (or (contains? header-set "パラレル")
                              (contains? header-set "Parallel Rare")
@@ -652,5 +653,9 @@
                              (if-let [pt (pack-type release card)]
                                (assoc card :card/pack-type pt)
                                card))
-                repair-fn repair-fn)))
+                repair-fn (as-> #__ card
+                            (try (repair-fn card)
+                                 (catch Exception e
+                                   (logging/error card e)
+                                   (throw e)))))))
           cards)))

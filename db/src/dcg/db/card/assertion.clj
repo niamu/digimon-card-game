@@ -99,7 +99,7 @@
                       (cond-> accl
                         (not (empty? diffmap))
                         (assoc number diffmap))))
-                  {})))
+                  (sorted-map))))
 
 (defn- card-values
   "JA card values that differ which are used as common values across languages"
@@ -235,28 +235,26 @@
                               "ST18" 4
                               "ST19" 4
                               "BT18" 4
-                              "EX7" 4}
-        block-icons-per-set
-        (->> cards
-             (filter (fn [{:card/keys [language image]}]
-                       (= language (:image/language image))))
-             (reduce (fn [accl {:card/keys [id number parallel-id block-icon]
-                               :as card}]
-                       (update-in accl [(string/replace number #"\-[0-9]+" "")
-                                        block-icon]
-                                  (fnil conj #{})
-                                  id))
-                     {})
-             (reduce-kv (fn [accl release kv]
-                          (let [result (dissoc kv
-                                               (get expected-block-icons
-                                                    release :not-found))]
-                            (cond-> accl
-                              (seq result)
-                              (assoc release result))))
-                        {}))]
-    (->> block-icons-per-set
-         (into (sorted-map)))))
+                              "EX7" 4
+                              "BT19" 4}]
+    (->> cards
+         (filter (fn [{:card/keys [language image]}]
+                   (= language (:image/language image))))
+         (reduce (fn [accl {:card/keys [id number block-icon]
+                            :as card}]
+                   (update-in accl [(string/replace number #"\-[0-9]+" "")
+                                    block-icon]
+                              (fnil conj #{})
+                              id))
+                 {})
+         (reduce-kv (fn [accl release kv]
+                      (let [result (dissoc kv
+                                           (get expected-block-icons
+                                                release :not-found))]
+                        (cond-> accl
+                          (seq result)
+                          (assoc release result))))
+                    (sorted-map)))))
 
 (defn card-assertions
   [cards]
@@ -274,16 +272,7 @@
               {"card/en_BT10-099_P0" {:timing 3 :keyword-effect 1}
                "card/ja_BT10-099_P0" {:timing 3 :keyword-effect 1}
                "card/zh-Hans_BT10-099_P0" {:timing 3 :keyword-effect 3}
-               "card/ko_BT10-099_P0" {:timing 3 :keyword-effect 1}}
-              "EX3-064"
-              {"card/en_EX3-064_P0" {:timing 2}
-               "card/en_EX3-064_P1" {:timing 2}
-               "card/ja_EX3-064_P0" {:timing 2}
-               "card/ja_EX3-064_P1" {:timing 2}
-               "card/ko_EX3-064_P0" {:keyword-effect 1 :timing 2}
-               "card/ko_EX3-064_P1" {:keyword-effect 1 :timing 2}
-               "card/zh-Hans_EX3-064_P0" {:timing 2}
-               "card/zh-Hans_EX3-064_P1" {:timing 2}}})
+               "card/ko_BT10-099_P0" {:timing 3 :keyword-effect 1}}})
           (format "Card highlights differ across languages:\n%s"
                   (highlights cards)))
   (let [missing-block-icons
@@ -305,6 +294,7 @@
                      "BT4-041"
                      "P-071"}
               "ja" #{"BT10-051"
+                     "BT10-092"
                      "EX1-001"
                      "BT11-099"
                      "BT6-084"
@@ -318,15 +308,45 @@
   cards)
 
 (comment
+  ;; Card values analysis
+  (map (fn [[k v]]
+         (let [issues (->> (partition 2 1
+                                      (vals v))
+                           (map #(apply clojure.data/diff %))
+                           (remove (fn [[only-in-a only-in-b in-both]]
+                                     (and (nil? only-in-a)
+                                          (nil? only-in-b))))
+                           (map #(take 2 %)))
+               issue-keys (vec (into #{} (mapcat (fn [x] (mapcat keys x)) issues)))
+               incorrect (->> (vals v)
+                              (map #(select-keys % issue-keys))
+                              frequencies
+                              (sort-by val)
+                              ffirst)]
+           {k {:issue/keys issue-keys
+               :issue/incorrect (->> (filter (fn [[k v]]
+                                               (= (select-keys v issue-keys)
+                                                  incorrect))
+                                             v)
+                                     (map (fn [[k v]]
+                                            {k (select-keys v issue-keys)}))
+                                     first)
+               :issue/correct (->> (filter (fn [[k v]]
+                                             (not= (select-keys v issue-keys)
+                                                   incorrect))
+                                           v)
+                                   (map (fn [[k v]]
+                                          (select-keys v issue-keys)))
+                                   first)}}))
+       (card-values dcg.db.core/*cards))
   ;; Update block-icons.edn resource
-  (spit (io/resource "block-icons.edn")
-        (merge-with (partial merge-with set/union)
-                    (edn/read (PushbackReader.
+  (let [block-icons (edn/read (PushbackReader.
                                (io/reader
-                                (io/resource "block-icons.edn"))))
-                    (first
-                     (data/diff (card-block-icons dcg.db.core/*cards)
-                                (edn/read
-                                 (PushbackReader.
-                                  (io/reader
-                                   (io/resource "block-icons.edn")))))))))
+                                (io/resource "block-icons.edn"))))]
+    (spit (io/resource "block-icons.edn")
+          (merge-with (partial merge-with set/union)
+                      block-icons
+                      (into (sorted-map)
+                            (first
+                             (data/diff (card-block-icons dcg.db.core/*cards)
+                                        block-icons)))))))
