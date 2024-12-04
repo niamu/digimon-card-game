@@ -4,6 +4,7 @@ This directory hosts multiple library implementations for encoding and decoding 
 
 - [Clojure](/codec/clojure)
 - [TypeScript](/codec/typescript)
+- [Ruby](/codec/ruby)
 - [Rust](/codec/rust)
 - [Go](/codec/go)
 - [Gleam](/codec/gleam)
