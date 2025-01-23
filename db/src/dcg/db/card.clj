@@ -51,7 +51,7 @@
     (when (and (= parallel-id "0")
                (not (.exists (io/file filename))))
       (when-let [image-bytes (try (-> image-uri
-                                      utils/as-bytes)
+                                      (utils/as-bytes {}))
                                   (catch Exception _ nil))]
         (.mkdirs (io/file (.getParent (io/file filename))))
         (with-open [in (io/input-stream image-bytes)
@@ -86,13 +86,13 @@
                           (->> (re-seq #"[0-9]+" number)
                                (apply str)
                                parse-long))
-                        (fn [{:card/keys [parallel-id]}]
+                        (fn [{:card/keys [parallel-id image]}]
                           (if (nil? parallel-id)
-                            Long/MAX_VALUE
-                            parallel-id))
-                        (comp str
-                              :image/source
-                              :card/image)))
+                            (-> image
+                                :image/source
+                                utils/last-modified
+                                inst-ms)
+                            parallel-id))))
          (reduce (fn [accl {:card/keys [number language parallel-id image
                                        notes release] :as card}]
                    (let [prev-card (peek accl)
@@ -579,7 +579,10 @@
                              string/trim)
                   parallel-id (if (not= parallCard "0")
                                 0
-                                1)
+                                (or (some-> (re-find #"_([0-9]+)" imageCover)
+                                            (nth 1 nil)
+                                            parse-long)
+                                    nil))
                   card-id (format "card/%s_%s_P%s"
                                   language
                                   number

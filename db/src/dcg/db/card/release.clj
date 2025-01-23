@@ -261,13 +261,13 @@
                       r)))
              ;; NOTE: At some point the Korean site removed these products
              ;; Query to older database to recreate the missing products
-             #_(->> (db/q '{:find [[(pull ?r [:release/name
-                                              :release/genre
-                                              :release/date
-                                              :release/image-uri
-                                              :release/product-uri]) ...]]
-                            :where [[?r :release/language "ko"]
-                                    [?r :release/image-uri _]]})
+             #_(->> (dcg.db.db/q '{:find [[(pull ?r [:release/name
+                                                     :release/genre
+                                                     :release/date
+                                                     :release/image-uri
+                                                     :release/product-uri]) ...]]
+                                   :where [[?r :release/language "ko"]
+                                           [?r :release/image-uri _]]})
                     (sort-by :release/date)
                     (drop-last 15))
              (concat [#:release{:name "스타트 덱 가이아 레드 [STK-01]",
@@ -332,7 +332,35 @@
                                 :image-uri
                                 (URI. "https://digimoncard.co.kr/files/extravar_upload/135/451/003/2bfdfa1cb6729465f3edf58d0c02cfd3.jpg"),
                                 :product-uri
-                                (URI. "https://digimoncard.co.kr/products/3451")}]))
+                                (URI. "https://digimoncard.co.kr/products/3451")}
+                      #:release{:name "팩 배틀 오브 오메가 [BTK-05]",
+                                :genre "확장팩",
+                                :date #inst "2023-08-18T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/176/005/6fe977e28afaf290caf423f340966c3e.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/5176")}
+                      #:release{:name "듀크몬 [STK-07]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-09-15T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/824/005/f6766fa0be789383325ac6c499ba8aeb.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/5824")}
+                      #:release{:name "알포스브이드라몬 [STK-08]",
+                                :genre "구축완료 덱",
+                                :date #inst "2023-09-15T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/829/005/d1e0bf91d4f6c7f4817ff80023fd1385.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/5829")}
+                      #:release{:name "팩 더블 다이아몬드 [BTK-06]",
+                                :genre "확장팩",
+                                :date #inst "2023-10-20T00:00:00.000-00:00",
+                                :image-uri
+                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/121/006/f630d7cd3151ab3f2cb7ce8f64c793ae.jpg"),
+                                :product-uri
+                                (URI. "https://digimoncard.co.kr/products/6121")}]))
         cardlist-releases (->> (utils/http-get (str url "/cardlist/")
                                                http-opts)
                                hickory/parse
@@ -368,7 +396,7 @@
                      []
                      cardlist-releases)
              (map (fn [{:release/keys [name language]
-                        :as release}]
+                       :as release}]
                     (assoc release :release/name
                            (if-let [code (->> name
                                               (re-find #"[\[【](.*)[\]】]")
@@ -415,7 +443,7 @@
             (as-> #__ products
               (->> products
                    (map (fn [{:strs [id name productImage createTime productType]
-                              :as p}]
+                             :as p}]
                           (let [date-re #"[0-9]{4}\-[0-9]{2}\-[0-9]{2}"
                                 date (-> (SimpleDateFormat. "yyyy-MM-dd")
                                          (.parse (re-find date-re createTime)))

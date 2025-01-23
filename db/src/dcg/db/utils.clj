@@ -5,7 +5,10 @@
    [dcg.db.aes :as aes]
    [hickory.core :as hickory]
    [hickory.select :as select]
-   [taoensso.timbre :as logging]))
+   [taoensso.timbre :as logging])
+  (:import
+   [java.text ParseException SimpleDateFormat]
+   [java.util Date TimeZone]))
 
 (def ^:private connection-manager
   (conn-mgr/make-reusable-conn-manager {:timeout 30
@@ -20,9 +23,9 @@
                                      :retry-handler (fn [ex try-count _]
                                                       (if (> try-count 2)
                                                         (logging/error
-                                                         (format "Failed downloading: %s %s after %d attempts"
-                                                                 url
-                                                                 try-count))
+                                                          (format "Failed downloading: %s %s after %d attempts"
+                                                                  url
+                                                                  try-count))
                                                         true))
                                      :throw-exceptions? false}))]
     (if (= (:status response) 200)
@@ -41,10 +44,10 @@
                                     (fn [ex try-count _]
                                       (if (> try-count 2)
                                         (do (logging/error
-                                             (format "Failed GET: %s %s after %d attempts"
-                                                     url
-                                                     (pr-str options)
-                                                     try-count))
+                                              (format "Failed GET: %s %s after %d attempts"
+                                                      url
+                                                      (pr-str options)
+                                                      try-count))
                                             false)
                                         true))))
                  :body))))
@@ -73,3 +76,29 @@
           cupid (aes/decrypt c a b)]
       {:headers {"Cookie" (format "CUPID=%s" cupid)}})
     {}))
+
+(defonce last-modified*
+  (memoize (fn [url options]
+             (logging/debug (format "Requesting HEAD: %s %s" url (pr-str options)))
+             (-> (client/head url
+                              (merge options
+                                     {:cookie-policy :standard
+                                      :retry-handler (fn [ex try-count _]
+                                                       (if (> try-count 2)
+                                                         (logging/error
+                                                           (format "Failed getting header: %s %s after %d attempts"
+                                                                   url
+                                                                   try-count))
+                                                         true))
+                                      :throw-exceptions? false}))
+                 :headers
+                 (get "Last-Modified" (str (Date.)))
+                 (Date.)))))
+
+(defn last-modified
+  ([url]
+   (last-modified (str url) (cupid-headers (str (.getScheme url)
+                                                "://"
+                                                (.getHost url)))))
+  ([url options]
+   (last-modified* url options)))

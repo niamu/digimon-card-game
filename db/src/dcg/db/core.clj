@@ -28,7 +28,7 @@
 
 (defn releases-per-origin
   []
-  (let [r (pmap release/releases origins)]
+  (let [r (doall (pmap release/releases origins))]
     (assert (every? seq r) "Not every origin has releases")
     (assert (every? (fn [releases]
                       (->> releases
@@ -43,12 +43,12 @@
   []
   (let [releases-per-origin (releases-per-origin)
         cards-per-origin
-        (pmap (fn [releases]
-                (->> releases
-                     (filter :release/cardlist-uri)
-                     (mapcat card/cards-in-release)
-                     (card/post-processing-per-origin releases)))
-              releases-per-origin)
+        (doall (pmap (fn [releases]
+                       (->> releases
+                            (filter :release/cardlist-uri)
+                            (mapcat card/cards-in-release)
+                            (card/post-processing-per-origin releases)))
+                     releases-per-origin))
         tr-map (translation/card-name-replacement-map cards-per-origin)
         unrefined-cards (->> cards-per-origin
                              (reduce (fn [accl cards-in-origin]
@@ -63,8 +63,10 @@
                              vals
                              card/image-processing)
         limitations (->> (pmap limitation/limitations origins)
+                         doall
                          (apply merge-with merge))
         errata (->> (pmap errata/errata origins)
+                    doall
                     (apply merge-with merge))
         common-values-by-number
         (reduce (fn [accl {:card/keys [number parallel-id language] :as card}]

@@ -1,6 +1,8 @@
 .DS_Store
 .cpcache/
 .nrepl-port
+.clj-kondo/
+.lsp/
 target/
 resources/*dcgcv*
 resources/images/cards/

@@ -236,12 +236,13 @@
                               "ST19" 4
                               "BT18" 4
                               "EX7" 4
-                              "BT19" 4}]
+                              "BT19" 4
+                              "EX8" 4}]
     (->> cards
          (filter (fn [{:card/keys [language image]}]
                    (= language (:image/language image))))
          (reduce (fn [accl {:card/keys [id number block-icon]
-                            :as card}]
+                           :as card}]
                    (update-in accl [(string/replace number #"\-[0-9]+" "")
                                     block-icon]
                               (fnil conj #{})
@@ -292,7 +293,8 @@
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
                      "BT4-041"
-                     "P-071"}
+                     "P-071"
+                     "EX1-073"}
               "ja" #{"BT10-051"
                      "BT10-092"
                      "EX1-001"
