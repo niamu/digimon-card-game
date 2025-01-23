@@ -9,12 +9,12 @@ use serde_json;
 use structopt::StructOpt;
 
 /// Digimon Card Game 2020 deck codec
-#[derive(structopt::StructOpt)]
+#[derive(StructOpt)]
 struct Cli {
     #[structopt(long = "decode", conflicts_with = "deck")]
     deck_code_str: Option<String>,
 
-    #[structopt(long = "encode", conflicts_with = "deck_code_str")]
+    #[structopt(long = "encode", conflicts_with = "deck-code-str")]
     deck: Option<String>,
 }
 
