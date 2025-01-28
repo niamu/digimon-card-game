@@ -2441,20 +2441,30 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
+ "BT20-090"
+ {"ja" (fn [card]
+         (-> card
+           (dissoc :card/form)
+           (update :card/effect
+             (fn [s]
+               (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))
+           (assoc
+             :card/level 3
+             :card/dp 1000)))}
  "EX-006"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
               (cond-> card
                 (= source
-                   (URI. "https://source.windoent.com/DTCG/1733884156304EX6-006_01.png"))
+                  (URI. "https://source.windoent.com/DTCG/1733884156304EX6-006_01.png"))
                 (assoc :card/id "card/zh-Hans_EX6-006_P1"
-                       :card/number "EX6-006"
-                       :card/parallel-id 1)))}
+                  :card/number "EX6-006"
+                  :card/parallel-id 1)))}
  "EX1-005"
  {"zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "“大河“" "“大河”")))))}
+                (fn [s]
+                  (-> s
+                    (string/replace "“大河“" "“大河”")))))}
  "EX1-024"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "U"))}
@@ -2463,51 +2473,51 @@
          (cond-> card
            (not effect)
            (assoc :card/effect
-                  (str "【어택 시】 자신의 시큐리티가 3장 이상일 때, "
-                       "다음 상대의 턴 종료 시까지 이 디지몬의 DP를 "
-                       "+4000 한다."))))}
+             (str "【어택 시】 자신의 시큐리티가 3장 이상일 때, "
+               "다음 상대의 턴 종료 시까지 이 디지몬의 DP를 "
+               "+4000 한다."))))}
  "EX1-061"
  {"en" (fn [card]
          (update card :card/inherited-effect
-                 (fn [s]
-                   (string/replace s
-                                   "with can"
-                                   "with ＜Retaliation＞ can"))))}
+           (fn [s]
+             (string/replace s
+               "with can"
+               "with ＜Retaliation＞ can"))))}
  "EX1-063"
  {"en" (fn [{{:image/keys [source]} :card/image :as card}]
          (cond-> card
            (= source (URI. "https://world.digimoncard.com/images/cardlist/card/EX1-063_P2.png"))
            (-> (dissoc :card/block-icon)
-               (assoc :card/number "P-020"
-                      :card/parallel-id 1
-                      :card/play-cost 11
-                      :card/dp 11000
-                      :card/color [{:color/id "color/P-020_index0",
-                                    :color/index 0,
-                                    :color/color :purple}]
-                      :card/digivolution-requirements
-                      [{:digivolve/id "digivolve/P-020_index0",
-                        :digivolve/index 0
-                        :digivolve/cost 4
-                        :digivolve/level 5
-                        :digivolve/color #{:purple}}]
-                      :card/effect "[On Deletion] You may play a purple Digimon Card with a level of 4 or less from your trash without paying its memory cost. Any [On Play] effects on Digimon played with this effect don't activate."
-                      :card/rarity "P"))))}
+             (assoc :card/number "P-020"
+               :card/parallel-id 1
+               :card/play-cost 11
+               :card/dp 11000
+               :card/color [{:color/id    "color/P-020_index0",
+                             :color/index 0,
+                             :color/color :purple}]
+               :card/digivolution-requirements
+               [{:digivolve/id    "digivolve/P-020_index0",
+                 :digivolve/index 0
+                 :digivolve/cost  4
+                 :digivolve/level 5
+                 :digivolve/color #{:purple}}]
+               :card/effect "[On Deletion] You may play a purple Digimon Card with a level of 4 or less from your trash without paying its memory cost. Any [On Play] effects on Digimon played with this effect don't activate."
+               :card/rarity "P"))))}
  "EX1-066"
  {"zh-Hans" (fn [card]
               (assoc card :card/security-effect
-                     "【安防】不支付费用登场此卡牌。"))}
+                "【安防】不支付费用登场此卡牌。"))}
  "EX1-073"
  {"en" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (cond-> s
-                     (not (string/includes? s "[All Turns] This Digimon's DP can't be reduced."))
-                     (str "\n"
-                          "[All Turns] This Digimon's DP can't be reduced."
-                          "\n"
-                          "[All Turns] When this Digimon would be deleted, you may trash 2 level 5 Digimon cards in this Digimon's digivolution cards to prevent this Digimon from being deleted.")))))
+           :card/effect
+           (fn [s]
+             (cond-> s
+               (not (string/includes? s "[All Turns] This Digimon's DP can't be reduced."))
+               (str "\n"
+                 "[All Turns] This Digimon's DP can't be reduced."
+                 "\n"
+                 "[All Turns] When this Digimon would be deleted, you may trash 2 level 5 Digimon cards in this Digimon's digivolution cards to prevent this Digimon from being deleted.")))))
   "ko" (fn [card]
          (assoc card :card/rarity "SEC"))}
  "EX2-001"
@@ -2551,111 +2561,111 @@
  "EX2-057"
  {"ko" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (string/replace s "\n자신의 턴】" "\n【자신의 턴】"))))}
+           :card/effect
+           (fn [s]
+             (string/replace s "\n자신의 턴】" "\n【자신의 턴】"))))}
  "EX2-044"
  {"ja" (fn [{:card/keys [effect inherited-effect] :as card}]
          (cond-> (dissoc card :card/inherited-effect)
            (and (not effect)
-                inherited-effect)
+             inherited-effect)
            (assoc :card/effect inherited-effect)))}
  "EX2-071"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (assoc :card/security-effect
-                  "【セキュリティ】このカードの【メイン】効果を発揮する。")))}
+             "【セキュリティ】このカードの【メイン】効果を発揮する。")))}
  "EX3-004"
  {"en" (fn [{:card/keys [effect] :as card}]
          (cond-> card
            (not effect)
            (assoc :card/effect
-                  (str "[On Play] By trashing 1 card with [Imperialdramon]"
-                       " in its name or [Free] in its traits in your hand,"
-                       " ＜Draw 2＞. (Draw 2 cards from your deck.)"))))
+             (str "[On Play] By trashing 1 card with [Imperialdramon]"
+               " in its name or [Free] in its traits in your hand,"
+               " ＜Draw 2＞. (Draw 2 cards from your deck.)"))))
   "ko" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (string/replace s (re-pattern " ・진화원 효과.*") ""))))}
+           (fn [s]
+             (string/replace s (re-pattern " ・진화원 효과.*") ""))))}
  "EX3-005"
  {"en" (fn [{:card/keys [effect] :as card}]
          (cond-> card
            (not effect)
            (assoc :card/effect
-                  (str "[Your Turn][Once Per Turn]"
-                       " When you play [Hina Kurihara],"
-                       " delete 1 of your opponent's Digimon with 3000 DP"
-                       " or less."))))}
+             (str "[Your Turn][Once Per Turn]"
+               " When you play [Hina Kurihara],"
+               " delete 1 of your opponent's Digimon with 3000 DP"
+               " or less."))))}
  "EX3-007"
  {"en" (fn [{:card/keys [effect] :as card}]
          (cond-> card
            (not effect)
            (assoc :card/effect
-                  (str "[On Play] Reveal the top 4 cards of your deck. Add 1 Digimon card with [Rock Dragon], [Earth Dragon], [Bird Dragon], [Machine Dragon], or [Sky Dragon] in its traits and 1 [Hina Kurihara] among them to your hand. Place the rest at the bottom of your deck in any order."))))}
+             (str "[On Play] Reveal the top 4 cards of your deck. Add 1 Digimon card with [Rock Dragon], [Earth Dragon], [Bird Dragon], [Machine Dragon], or [Sky Dragon] in its traits and 1 [Hina Kurihara] among them to your hand. Place the rest at the bottom of your deck in any order."))))}
  "EX3-008"
  {"en" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (string/replace s
-                                   "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
-                                   "You may DNA digivolve this Digimon and one of your other Digimon in play into a Digimon card in your hand for its DNA digivolve cost."))))}
+           :card/effect
+           (fn [s]
+             (string/replace s
+               "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
+               "You may DNA digivolve this Digimon and one of your other Digimon in play into a Digimon card in your hand for its DNA digivolve cost."))))}
  "EX3-014"
- {"en" (fn [card]
-         (update card
-                 :card/effect
-                 (fn [s]
-                   (-> s
-                       (string/replace "[DigiXros -2]"
-                                       "<DigiXros -2>")
-                       (string/replace "3000 or less"
-                                       "3000 DP or less")))))
+ {"en"      (fn [card]
+              (update card
+                :card/effect
+                (fn [s]
+                  (-> s
+                    (string/replace "[DigiXros -2]"
+                      "<DigiXros -2>")
+                    (string/replace "3000 or less"
+                      "3000 DP or less")))))
   "zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (some-> s
-                                (string/replace (re-pattern "^.?数码合体.*?\\n") "")
-                                (str "\n"
-                                     "≪数码合体-2≫"
-                                     "5张特征中包含“龙”且名称不同的数码宝贝卡牌")))))}
+                (fn [s]
+                  (some-> s
+                    (string/replace (re-pattern "^.?数码合体.*?\\n") "")
+                    (str "\n"
+                      "≪数码合体-2≫"
+                      "5张特征中包含“龙”且名称不同的数码宝贝卡牌")))))}
  "EX3-035"
  {"en" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (string/replace s
-                                   "-6000 for"
-                                   "-6000 DP for"))))}
+           :card/effect
+           (fn [s]
+             (string/replace s
+               "-6000 for"
+               "-6000 DP for"))))}
  "EX3-052"
  {"en" (fn [card]
          (assoc card :card/dp 7000))}
  "EX3-058"
  {"en" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (string/replace s
-                                   "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
-                                   "You may DNA digivolve this Digimon and one of your other Digimon into a Digimon card from your hand for its DNA digivolve cost."))))}
+           :card/effect
+           (fn [s]
+             (string/replace s
+               "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
+               "You may DNA digivolve this Digimon and one of your other Digimon into a Digimon card from your hand for its DNA digivolve cost."))))}
  "EX3-061"
  {"ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/EX3-061_index0"
-                  :color/index 0
-                  :color/color :purple}
-                 {:color/id "color/EX3-061_index1"
-                  :color/index 1
-                  :color/color :red}]))}
+           [{:color/id    "color/EX3-061_index0"
+             :color/index 0
+             :color/color :purple}
+            {:color/id    "color/EX3-061_index1"
+             :color/index 1
+             :color/color :red}]))}
  "EX3-070"
  {"ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/EX3-070_index0"
-                  :color/index 0
-                  :color/color :green}
-                 {:color/id "color/EX3-070_index1"
-                  :color/index 1
-                  :color/color :blue}]))}
+           [{:color/id    "color/EX3-070_index0"
+             :color/index 0
+             :color/color :green}
+            {:color/id    "color/EX3-070_index1"
+             :color/index 1
+             :color/color :blue}]))}
  "EX4-001"
  {"ko" (fn [card]
          (assoc card :card/form "유년기"))}
@@ -2671,133 +2681,133 @@
  "EX4-005"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 0 from [Koromon]"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 0 from [Koromon]"))))))}
  "EX4-006"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 0 from [Gigimon]"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 0 from [Gigimon]"))))))}
  "EX4-007"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 2 from Lv.3 w/[Agumon] in name and [Dinosaur] trait"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 2 from Lv.3 w/[Agumon] in name and [Dinosaur] trait"))))))}
  "EX4-008"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 2 from Lv.3 w/[Guilmon] in name"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 2 from Lv.3 w/[Guilmon] in name"))))))}
  "EX4-009"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 3 from [GeoGreymon]"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 3 from [GeoGreymon]"))))))}
  "EX4-010"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 3 from Lv.4 w/[Growlmon] in name"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 3 from Lv.4 w/[Growlmon] in name"))))))}
  "EX4-011"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 3 from Lv.5 w/[WarGrowlmon] in name"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 3 from Lv.5 w/[WarGrowlmon] in name"))))))}
  "EX4-012"
  {"ja" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (some-> s
-                           (string/replace "【進化】『名称に「メガログラウモン」を含むLv.5』から3"
-                                           "")))))}
+           (fn [s]
+             (some-> s
+               (string/replace "【進化】『名称に「メガログラウモン」を含むLv.5』から3"
+                 "")))))}
  "EX4-020"
  {"en" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (str s
-                        "\n"
-                        "<DigiXros -2> "
-                        "Blue [Greymon] × [MailBirdramon]"))))}
+           :card/effect
+           (fn [s]
+             (str s
+               "\n"
+               "<DigiXros -2> "
+               "Blue [Greymon] × [MailBirdramon]"))))}
  "EX4-021"
  {"en" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (str s
-                        "\n"
-                        "<DigiXros -2> "
-                        "Blue [MetalGreymon] × [DarkKnightmon]"))))}
+           :card/effect
+           (fn [s]
+             (str s
+               "\n"
+               "<DigiXros -2> "
+               "Blue [MetalGreymon] × [DarkKnightmon]"))))}
  "EX4-024"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 0 from [Viximon]"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 0 from [Viximon]"))))))}
  "EX4-026"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 2 from [Renamon]"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 2 from [Renamon]"))))))}
  "EX4-027"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 2 from [Veemon]"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 2 from [Veemon]"))))))}
  "EX4-028"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 3 from [Kyubimon]"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 3 from [Kyubimon]"))))))}
  "EX4-037"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 4 from Lv.5 w/[Rapidmon] in name or 2-color w/green"))))))}
+           (fn [s]
+             (and s
+               (cond->> s
+                 (not (re-find (re-pattern "^.?Digivolve") s))
+                 (str "[Digivolve] 4 from Lv.5 w/[Rapidmon] in name or 2-color w/green"))))))}
  "EX4-063"
  {"en" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/EX4-063_index0"
-                  :color/index 0
-                  :color/color :green}
-                 {:color/id "color/EX4-063_index1"
-                  :color/index 1
-                  :color/color :yellow}]))}
+           [{:color/id    "color/EX4-063_index0"
+             :color/index 0
+             :color/color :green}
+            {:color/id    "color/EX4-063_index1"
+             :color/index 1
+             :color/color :yellow}]))}
  "EX5-001"
  {"en" (fn [card]
          (dissoc card :card/effect))}
@@ -2819,81 +2829,81 @@
  "EX5-009"
  {"en" (fn [card]
          (update card
-                 :card/inherited-effect
-                 (fn [s]
-                   (string/replace s "gains." "gains ＜Security A. +1＞."))))}
+           :card/inherited-effect
+           (fn [s]
+             (string/replace s "gains." "gains ＜Security A. +1＞."))))}
  "EX5-010"
  {"en" (fn [card]
          (update card
-                 :card/inherited-effect
-                 (fn [s]
-                   (string/replace s "gains." "gains ＜Security A. +1＞."))))}
+           :card/inherited-effect
+           (fn [s]
+             (string/replace s "gains." "gains ＜Security A. +1＞."))))}
  "EX5-011"
  {"en" (fn [card]
          (update card
-                 :card/inherited-effect
-                 (fn [s]
-                   (string/replace s "gains." "gains ＜Security A. +1＞."))))}
+           :card/inherited-effect
+           (fn [s]
+             (string/replace s "gains." "gains ＜Security A. +1＞."))))}
  "EX5-024"
  {"en" (fn [{{:image/keys [source]} :card/image :as card}]
          (cond-> card
            (= source
-              (URI. "https://world.digimoncard.com/images/cardlist/card/EX5-024.png"))
+             (URI. "https://world.digimoncard.com/images/cardlist/card/EX5-024.png"))
            (assoc :card/block-icon 3)))}
  "EX5-071"
  {"zh-Hans" (fn [card]
               (-> card
-                  (assoc :card/security-effect (:card/inherited-effect card))
-                  (dissoc :card/inherited-effect)))}
+                (assoc :card/security-effect (:card/inherited-effect card))
+                (dissoc :card/inherited-effect)))}
  "EX5-072"
  {"zh-Hans" (fn [card]
               (-> card
-                  (assoc :card/security-effect (:card/inherited-effect card))
-                  (dissoc :card/inherited-effect)))}
+                (assoc :card/security-effect (:card/inherited-effect card))
+                (dissoc :card/inherited-effect)))}
  "EX6-007"
  {"ja" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (cond->> s
-                     (not (re-find (re-pattern "^.?進化[】〕]") s))
-                     (str "【進化】「サクットモン」/「カッキンモン」:コスト0")))))}
+           (fn [s]
+             (cond->> s
+               (not (re-find (re-pattern "^.?進化[】〕]") s))
+               (str "【進化】「サクットモン」/「カッキンモン」:コスト0")))))}
  "EX6-011"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
-                "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))}
+           "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))}
  "EX6-027"
- {"en" (fn [{:card/keys [parallel-id] :as card}]
-         (cond-> card
-           (= parallel-id 2)
-           (assoc :card/block-icon 3)))
+ {"en"      (fn [{:card/keys [parallel-id] :as card}]
+              (cond-> card
+                (= parallel-id 2)
+                (assoc :card/block-icon 3)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
               (cond-> card
                 (= source
-                   (URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682803EX6-027_02.png"))
+                  (URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682803EX6-027_02.png"))
                 (assoc :card/block-icon 3)))}
  "EX6-028"
- {"en" (fn [{:card/keys [parallel-id] :as card}]
-         (cond-> card
-           (= parallel-id 2)
-           (assoc :card/block-icon 3)))
+ {"en"      (fn [{:card/keys [parallel-id] :as card}]
+              (cond-> card
+                (= parallel-id 2)
+                (assoc :card/block-icon 3)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
               (cond-> card
                 (= source
-                   (URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682804EX6-028_02.png"))
+                  (URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682804EX6-028_02.png"))
                 (assoc :card/block-icon 3)))}
  "EX6-029"
  {"en" (fn [card]
          (assoc card
-                :card/play-cost 7
-                :card/dp 12000))}
+           :card/play-cost 7
+           :card/dp 12000))}
  "EX6-031"
  {"en" (fn [card]
          (assoc card
-                :card/level 7))}
+           :card/level 7))}
  "EX6-035"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
-                "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）"))}
+           "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）"))}
  "EX7-030"
  {"ja" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
@@ -2920,93 +2930,93 @@
  "EX8-032"
  {"zh-Hans" (fn [card]
               (assoc card :card/effect
-                     "【进化】拥有“NSo”特征的Lv.3:费用2"))}
+                "【进化】拥有“NSo”特征的Lv.3:费用2"))}
  "LM-005"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
-                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
+           "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
  "LM-006"
  {"en" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/LM-006_index0"
-                  :color/index 0
-                  :color/color :blue}
-                 {:color/id "color/LM-006_index1"
-                  :color/index 1
-                  :color/color :purple}]))}
+           [{:color/id    "color/LM-006_index0"
+             :color/index 0
+             :color/color :blue}
+            {:color/id    "color/LM-006_index1"
+             :color/index 1
+             :color/color :purple}]))}
  "LM-013"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
-                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
+           "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
  "LM-016"
  {"en" (fn [card]
          (assoc card :card/rarity "R"))}
  "LM-017"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
-                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
+           "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
  "LM-027"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (-> (assoc :card/security-effect
-                      "【セキュリティ】自分のトラッシュから、赤のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+                 "【セキュリティ】自分のトラッシュから、赤のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
  "LM-028"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (-> (assoc :card/security-effect
-                      "【セキュリティ】自分のトラッシュから、青のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+                 "【セキュリティ】自分のトラッシュから、青のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
  "LM-029"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (-> (assoc :card/security-effect
-                      "【セキュリティ】自分のトラッシュから、黄のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+                 "【セキュリティ】自分のトラッシュから、黄のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
  "LM-030"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (-> (assoc :card/security-effect
-                      "【セキュリティ】自分のトラッシュから、緑のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+                 "【セキュリティ】自分のトラッシュから、緑のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
  "LM-031"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (-> (assoc :card/security-effect
-                      "【セキュリティ】自分のトラッシュから、黒のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+                 "【セキュリティ】自分のトラッシュから、黒のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
  "LM-032"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (-> (assoc :card/security-effect
-                      "【セキュリティ】自分のトラッシュから、紫のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+                 "【セキュリティ】自分のトラッシュから、紫のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
  "RB1-006"
  {"zh-Hans" (fn [card]
               (assoc card :card/play-cost 4))}
  "RB1-018"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (some-> s
-                           (string/replace (re-pattern "(?<!\\[On Play\\])(\\[When Digivolving\\])")
-                                           "[On Play]$1")
-                           (string/replace "Digivolving] on]"
-                                           "Digivolving]")))))}
+           (fn [s]
+             (some-> s
+               (string/replace (re-pattern "(?<!\\[On Play\\])(\\[When Digivolving\\])")
+                 "[On Play]$1")
+               (string/replace "Digivolving] on]"
+                 "Digivolving]")))))}
  "RB1-026"
  {"en" (fn [{:card/keys [inherited-effect effect] :as card}]
          (cond-> card
            (and (not inherited-effect)
-                effect)
+             effect)
            (-> (assoc :card/inherited-effect effect)
-               (dissoc :card/effect))))}
+             (dissoc :card/effect))))}
  "RB1-030"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (some-> s
-                           (string/replace "gains”[On Deletion]"
-                                           "gains “[On Deletion]")))))}
+           (fn [s]
+             (some-> s
+               (string/replace "gains”[On Deletion]"
+                 "gains “[On Deletion]")))))}
  "ST1-03"
  {"zh-Hans" (fn [card]
               (assoc card :card/dp 2000))}
@@ -3016,7 +3026,7 @@
  "ST1-16"
  {"ko" (fn [card]
          (assoc card :card/effect
-                "【메인】 상대의 디지몬 1마리를 소멸시킨다."))}
+           "【메인】 상대의 디지몬 1마리를 소멸시킨다."))}
  "ST2-02"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "C"))}
@@ -3035,8 +3045,8 @@
  "ST3-05"
  {"zh-Hans" (fn [card]
               (assoc card
-                     :card/inherited-effect
-                     "【攻击时】当我方持有4张或更多的安防卡牌时,内存值+1。"))}
+                :card/inherited-effect
+                "【攻击时】当我方持有4张或更多的安防卡牌时,内存值+1。"))}
  "ST3-08"
  {"zh-Hans" (fn [card]
               (assoc card :card/dp 7000))}
@@ -3048,7 +3058,7 @@
          (cond-> card
            (not security-effect)
            (assoc :card/security-effect
-                  "【시큐리티】 이 카드의 【메인】 효과를 발휘한다.")))}
+             "【시큐리티】 이 카드의 【메인】 효과를 발휘한다.")))}
  "ST5-01"
  {"ko" (fn [{:card/keys [form type] :as card}]
          (cond-> card
@@ -3089,78 +3099,78 @@
  "ST9-11"
  {"ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/ST9-11_index0"
-                  :color/index 0
-                  :color/color :green}
-                 {:color/id "color/ST9-11_index1"
-                  :color/index 1
-                  :color/color :blue}]))}
+           [{:color/id    "color/ST9-11_index0"
+             :color/index 0
+             :color/color :green}
+            {:color/id    "color/ST9-11_index1"
+             :color/index 1
+             :color/color :blue}]))}
  "ST10-01"
  {"en" (fn [{:card/keys [inherited-effect effect] :as card}]
          (cond-> card
            (and (not inherited-effect)
-                effect)
+             effect)
            (-> (assoc :card/inherited-effect effect)
-               (dissoc :card/effect))))}
+             (dissoc :card/effect))))}
  "ST12-09"
  {"ja" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/ST12-09_index0"
-                  :color/index 0
-                  :color/color :red}
-                 {:color/id "color/ST12-09_index1"
-                  :color/index 1
-                  :color/color :black}]))}
+           [{:color/id    "color/ST12-09_index0"
+             :color/index 0
+             :color/color :red}
+            {:color/id    "color/ST12-09_index1"
+             :color/index 1
+             :color/color :black}]))}
  "ST12-15"
  {"ko" (fn [card]
          (-> card
-             (dissoc :card/attribute)
-             (assoc :card/type "로얄 나이츠")))}
+           (dissoc :card/attribute)
+           (assoc :card/type "로얄 나이츠")))}
  "ST12-18"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
               (cond-> card
                 (= source
-                   (URI. "https://source.windoent.com/DTCG/ST18-12_01.png"))
+                  (URI. "https://source.windoent.com/DTCG/ST18-12_01.png"))
                 (assoc :card/id "card/zh-Hans_ST18-12_P1"
-                       :card/number "ST18-12")))}
+                  :card/number "ST18-12")))}
  "ST13-06"
- {"ja" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (cond->> s
-                     (not (string/starts-with? s "≪ジョグレス:"))
-                     (str "〔ジョグレス〕赤Lv.6+黒Lv.6から0"
-                          "指定のデジモン2体を重ね、"
-                          "アクティブで進化する\n")))))
+ {"ja"      (fn [card]
+              (update card :card/effect
+                (fn [s]
+                  (cond->> s
+                    (not (string/starts-with? s "≪ジョグレス:"))
+                    (str "〔ジョグレス〕赤Lv.6+黒Lv.6から0"
+                      "指定のデジモン2体を重ね、"
+                      "アクティブで進化する\n")))))
   "zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?合步") s))
-                          (str "〔合步〕红Lv.6+黑Lv.6起0"
-                               "将指定的2只数码宝贝重叠,"
-                               "以活跃状态进化\n")))))}
+                (fn [s]
+                  (cond->> s
+                    (not (re-find (re-pattern "^.?合步") s))
+                    (str "〔合步〕红Lv.6+黑Lv.6起0"
+                      "将指定的2只数码宝贝重叠,"
+                      "以活跃状态进化\n")))))}
  "ST13-12"
  {"ko" (fn [card]
          (assoc card
-                :card/color
-                [{:color/id "color/ST13-12_index0"
-                  :color/index 0
-                  :color/color :black}
-                 {:color/id "color/ST13-12_index1"
-                  :color/index 1
-                  :color/color :red}]))}
+           :card/color
+           [{:color/id    "color/ST13-12_index0"
+             :color/index 0
+             :color/color :black}
+            {:color/id    "color/ST13-12_index1"
+             :color/index 1
+             :color/color :red}]))}
  "ST13-16"
  {"zh-Hans" (fn [card]
               (assoc card :card/type "Legend-Arms"))
-  "ko" (fn [card]
-         (assoc card
+  "ko"      (fn [card]
+              (assoc card
                 :card/type "Legend-Arms"
                 :card/color
-                [{:color/id "color/ST13-16_index0"
+                [{:color/id    "color/ST13-16_index0"
                   :color/index 0
                   :color/color :black}
-                 {:color/id "color/ST13-16_index1"
+                 {:color/id    "color/ST13-16_index1"
                   :color/index 1
                   :color/color :red}]))}
  "ST14-02"
@@ -3169,97 +3179,97 @@
  "ST14-08"
  {"ko" (fn [card]
          (assoc card
-                :card/form "궁극체"
-                :card/attribute "바이러스종"))}
+           :card/form "궁극체"
+           :card/attribute "바이러스종"))}
  "ST14-12"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
            (not security-effect)
            (assoc :card/security-effect
-                  "【セキュリティ】最もLv.が驚い箱手のデジモン1体を消滅させる。")))}
+             "【セキュリティ】最もLv.が驚い箱手のデジモン1体を消滅させる。")))}
  "ST15-02"
  {"en" (fn [{{:image/keys [source]} :card/image :as card}]
          (cond-> card
            (= source
-              (URI. "https://world.digimoncard.com/images/cardlist/card/ST15-02_P1.png"))
+             (URI. "https://world.digimoncard.com/images/cardlist/card/ST15-02_P1.png"))
            (assoc-in [:card/image :image/source]
-                     (URI. "https://static.wikia.nocookie.net/digimoncardgame/images/f/fd/ST15-02_P1.png"))))}
+             (URI. "https://static.wikia.nocookie.net/digimoncardgame/images/f/fd/ST15-02_P1.png"))))}
  "ST15-08"
  {"en" (fn [card]
          (dissoc card :card/security-effect))}
  "ST15-13"
  {"en" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (-> s
-                       (string/replace "attack target.\n" "attack target.)\n")))))}
+           (fn [s]
+             (-> s
+               (string/replace "attack target.\n" "attack target.)\n")))))}
  "ST16-08"
  {"en" (fn [card]
          (dissoc card :card/security-effect))}
  "ST18-15"
  {"en" (fn [card]
          (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 5)
-             (assoc :card/category "Option")))}
+           (dissoc :card/play-cost)
+           (assoc :card/use-cost 5)
+           (assoc :card/category "Option")))}
  "ST19-10"
  {"zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (str s
-                             "\n"
-                             "≪数码合体-2≫ 名称中包含 “巨龙兽”/“烂泥兽” 的Lv.4 x 拥有 “玩偶型” 特征的Lv.4"))))}
+                (fn [s]
+                  (str s
+                    "\n"
+                    "≪数码合体-2≫ 名称中包含 “巨龙兽”/“烂泥兽” 的Lv.4 x 拥有 “玩偶型” 特征的Lv.4"))))}
  "PR-004"
  {"ko" (fn [card]
          (assoc card :card/number "P-004"))}
  "P-005"
- {"en" (fn [{{:image/keys [source]} :card/image :as card}]
-         (cond-> card
-           (= source (URI. "https://world.digimoncard.com/images/cardlist/card/P-005_P1.png"))
-           (assoc :card/block-icon 0)))
+ {"en"      (fn [{{:image/keys [source]} :card/image :as card}]
+              (cond-> card
+                (= source (URI. "https://world.digimoncard.com/images/cardlist/card/P-005_P1.png"))
+                (assoc :card/block-icon 0)))
   "zh-Hans" (fn [card]
               (assoc card :card/play-cost 4))}
  "P-007"
  {"ko" (fn [{:card/keys [effect inherited-effect] :as card}]
          (cond-> card
            (and effect
-                (not inherited-effect))
+             (not inherited-effect))
            (-> (assoc :card/inherited-effect effect)
-               (dissoc :card/effect))))}
+             (dissoc :card/effect))))}
  "P-008"
  {"ko" (fn [{:card/keys [effect inherited-effect] :as card}]
          (cond-> card
            (and effect
-                (not inherited-effect))
+             (not inherited-effect))
            (-> (assoc :card/inherited-effect effect)
-               (assoc :card/effect
-                      "【어택 시】 [턴에 1회] 이 디지몬의 진화원에 「가루몬」이 있을 때, 이 디지몬을 액티브로 한다."))))}
+             (assoc :card/effect
+               "【어택 시】 [턴에 1회] 이 디지몬의 진화원에 「가루몬」이 있을 때, 이 디지몬을 액티브로 한다."))))}
  "P-009"
  {"ko" (fn [{:card/keys [effect inherited-effect] :as card}]
          (cond-> card
            (and effect
-                (not inherited-effect))
+             (not inherited-effect))
            (-> (assoc :card/inherited-effect effect)
-               (dissoc :card/effect))))}
+             (dissoc :card/effect))))}
  "P-010"
  {"ko" (fn [{:card/keys [effect] :as card}]
          (cond-> card
            (not effect)
            (assoc :card/effect
-                  "【자신의 턴】이 디지몬의 진화원에 「아구몬」이 있는 동안, 《시큐리티 어택 +1》(이 디지몬이 시큐리티에 어택했을 때에 체크하는 매수+1)를 얻는다.")))}
+             "【자신의 턴】이 디지몬의 진화원에 「아구몬」이 있는 동안, 《시큐리티 어택 +1》(이 디지몬이 시큐리티에 어택했을 때에 체크하는 매수+1)를 얻는다.")))}
  "P-011"
  {"ko" (fn [card]
          (assoc card
-                :card/effect
-                "【어택 시】 블루인 자신의 테이머가 있을때, 자신의 덱 위에서 3장 파기하는 것으로, 이 턴 동안, 이 디지몬의 DP를 +2000 한다."))}
+           :card/effect
+           "【어택 시】 블루인 자신의 테이머가 있을때, 자신의 덱 위에서 3장 파기하는 것으로, 이 턴 동안, 이 디지몬의 DP를 +2000 한다."))}
  "P-012"
- {"ko" (fn [card]
-         (update card :card/security-effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (string/starts-with? s "【시큐리티】"))
-                          (str "【시큐리티】 "))))))
+ {"ko"      (fn [card]
+              (update card :card/security-effect
+                (fn [s]
+                  (and s
+                    (cond->> s
+                      (not (string/starts-with? s "【시큐리티】"))
+                      (str "【시큐리티】 "))))))
   "zh-Hans" (fn [card]
               (assoc card :card/category "驯兽师"))}
  "P-018"
@@ -3268,8 +3278,8 @@
  "P-023"
  {"ja" (fn [card]
          (update card :card/effect
-                 (fn [s]
-                   (string/replace s "高石 タケル" "高石タケル"))))}
+           (fn [s]
+             (string/replace s "高石 タケル" "高石タケル"))))}
  "P-028"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
               (cond-> card
@@ -3280,47 +3290,47 @@
          (cond-> card
            (not inherited-effect)
            (assoc :card/inherited-effect
-                  "【자신의턴】 이디지몬이패의 「에이션트가루몬」 으로진화할때, 지불하는진화코스트를-2한다.")))}
+             "【자신의턴】 이디지몬이패의 「에이션트가루몬」 으로진화할때, 지불하는진화코스트를-2한다.")))}
  "P-035"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
-  "ko" (fn [card]
-         (assoc card :card/rarity "SR"))}
+  "ko"      (fn [card]
+              (assoc card :card/rarity "SR"))}
  "P-036"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
-  "ko" (fn [card]
-         (assoc card :card/rarity "SR"))}
+  "ko"      (fn [card]
+              (assoc card :card/rarity "SR"))}
  "P-037"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
-  "ko" (fn [card]
-         (assoc card :card/rarity "SR"))}
+  "ko"      (fn [card]
+              (assoc card :card/rarity "SR"))}
  "P-038"
- {"en" (fn [card]
-         (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 3)
-             (assoc :card/category "Option")))
+ {"en"      (fn [card]
+              (-> card
+                (dissoc :card/play-cost)
+                (assoc :card/use-cost 3)
+                (assoc :card/category "Option")))
   "zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
-  "ko" (fn [card]
-         (assoc card :card/rarity "SR"))}
+  "ko"      (fn [card]
+              (assoc card :card/rarity "SR"))}
  "P-039"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
-  "ko" (fn [card]
-         (assoc card :card/rarity "SR"))}
+  "ko"      (fn [card]
+              (assoc card :card/rarity "SR"))}
  "P-040"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
-  "ko" (fn [card]
-         (assoc card :card/rarity "SR"))}
+  "ko"      (fn [card]
+              (assoc card :card/rarity "SR"))}
  "P-048"
- {"ja" (fn [card]
-         (update card :card/digivolution-requirements
-                 (fn [requirements]
-                   (map (fn [d] (assoc d :digivolve/cost 4)) requirements))))
+ {"ja"      (fn [card]
+              (update card :card/digivolution-requirements
+                (fn [requirements]
+                  (map (fn [d] (assoc d :digivolve/cost 4)) requirements))))
   "zh-Hans" (fn [card]
               (assoc card :card/dp 12000))}
  "P-057"
@@ -3328,7 +3338,7 @@
               (cond-> card
                 (not inherited-effect)
                 (assoc :card/inherited-effect
-                       "【我方的回合】 此数码宝贝为LV.6或更高等级的期间, 此 数码宝贝的DP+2000。")))}
+                  "【我方的回合】 此数码宝贝为LV.6或更高等级的期间, 此 数码宝贝的DP+2000。")))}
  "P-059"
  {"ko" (fn [card]
          (assoc card :card/dp 3000))}
@@ -3341,15 +3351,15 @@
  "P-062"
  {"en" (fn [card]
          (assoc card :card/security-effect
-                "[Security] Play this card without paying its memory cost."))}
+           "[Security] Play this card without paying its memory cost."))}
  "P-063"
  {"en" (fn [card]
          (assoc card :card/security-effect
-                "[Security] Play this card without paying its memory cost."))}
+           "[Security] Play this card without paying its memory cost."))}
  "P-064"
  {"en" (fn [card]
          (assoc card :card/security-effect
-                "[Security] Play this card without paying its memory cost."))}
+           "[Security] Play this card without paying its memory cost."))}
  "P-065"
  {"zh-Hans" (fn [card]
               (assoc card :card/level 3))}
@@ -3357,228 +3367,228 @@
  {"en" (fn [{:card/keys [effect security-effect] :as card}]
          (cond-> (assoc card :card/play-cost 3)
            (and (not effect)
-                security-effect)
+             security-effect)
            (-> (assoc :card/effect security-effect)
-               (dissoc :card/security-effect))))}
+             (dissoc :card/security-effect))))}
  "P-067"
  {"en" (fn [{:card/keys [effect security-effect] :as card}]
          (cond-> (-> card
-                     (assoc :card/play-cost 3)
-                     (dissoc :card/security-effect))
+                   (assoc :card/play-cost 3)
+                   (dissoc :card/security-effect))
            security-effect
            (assoc :card/effect security-effect)))}
  "P-068"
  {"en" (fn [{:card/keys [effect security-effect] :as card}]
          (cond-> (-> card
-                     (assoc :card/play-cost 3)
-                     (dissoc :card/security-effect))
+                   (assoc :card/play-cost 3)
+                   (dissoc :card/security-effect))
            security-effect
            (assoc :card/effect security-effect)))}
  "P-069"
  {"en" (fn [{:card/keys [effect security-effect] :as card}]
          (cond-> (-> card
-                     (assoc :card/play-cost 3)
-                     (dissoc :card/security-effect))
+                   (assoc :card/play-cost 3)
+                   (dissoc :card/security-effect))
            security-effect
            (assoc :card/effect security-effect)))}
  "P-070"
  {"en" (fn [{:card/keys [effect security-effect] :as card}]
          (cond-> (assoc card :card/play-cost 3)
            (and (not effect)
-                security-effect)
+             security-effect)
            (-> (assoc :card/effect security-effect)
-               (dissoc :card/security-effect))))}
+             (dissoc :card/security-effect))))}
  "P-071"
  {"en" (fn [card]
          (assoc card :card/play-cost 3))}
  "P-072"
- {"ja" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (cond->> s
-                     (not (re-find (re-pattern "^.?進化") s))
-                     (str "【進化】「メタルグレイモン」から0")))))
-  "en" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 0 from [MetalGreymon]"))))))
+ {"ja"      (fn [card]
+              (update card :card/effect
+                (fn [s]
+                  (cond->> s
+                    (not (re-find (re-pattern "^.?進化") s))
+                    (str "【進化】「メタルグレイモン」から0")))))
+  "en"      (fn [card]
+              (update card :card/effect
+                (fn [s]
+                  (and s
+                    (cond->> s
+                      (not (re-find (re-pattern "^.?Digivolve") s))
+                      (str "[Digivolve] 0 from [MetalGreymon]"))))))
   "zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (and s
-                             (cond->> s
-                               (not (re-find (re-pattern "^.?进化") s))
-                               (str "【进化】“机械暴龙兽”起0"))))))}
+                (fn [s]
+                  (and s
+                    (cond->> s
+                      (not (re-find (re-pattern "^.?进化") s))
+                      (str "【进化】“机械暴龙兽”起0"))))))}
  "P-073"
- {"ja" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (cond->> s
-                     (not (re-find (re-pattern "^.?進化") s))
-                     (str "【進化】「ワーガルルモン」から0")))))
-  "en" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (and s
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 0 from [WereGarurumon]"))))))
+ {"ja"      (fn [card]
+              (update card :card/effect
+                (fn [s]
+                  (cond->> s
+                    (not (re-find (re-pattern "^.?進化") s))
+                    (str "【進化】「ワーガルルモン」から0")))))
+  "en"      (fn [card]
+              (update card :card/effect
+                (fn [s]
+                  (and s
+                    (cond->> s
+                      (not (re-find (re-pattern "^.?Digivolve") s))
+                      (str "[Digivolve] 0 from [WereGarurumon]"))))))
   "zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (and s
-                             (cond->> s
-                               (not (re-find (re-pattern "^.?进化") s))
-                               (str "【进化】“狼人加鲁鲁兽”起0"))))))}
+                (fn [s]
+                  (and s
+                    (cond->> s
+                      (not (re-find (re-pattern "^.?进化") s))
+                      (str "【进化】“狼人加鲁鲁兽”起0"))))))}
  "P-075"
  {"zh-Hans" (fn [card]
               (assoc card :card/play-cost 7))}
  "P-076"
  {"ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-076_index0"
-                  :color/index 0
-                  :color/color :black}
-                 {:color/id "color/P-076_index1"
-                  :color/index 1
-                  :color/color :red}]))}
+           [{:color/id    "color/P-076_index0"
+             :color/index 0
+             :color/color :black}
+            {:color/id    "color/P-076_index1"
+             :color/index 1
+             :color/color :red}]))}
  "P-084"
  {"en" (fn [card]
          (update card
-                 :card/effect
-                 (fn [s]
-                   (string/replace s
-                                   "gets until"
-                                   "gets ＜Security A. -1＞ until"))))}
+           :card/effect
+           (fn [s]
+             (string/replace s
+               "gets until"
+               "gets ＜Security A. -1＞ until"))))}
  "P-088"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "P"))}
  "P-091"
  {"zh-Hans" (fn [card]
               (assoc card :card/level 4))
-  "ko" (fn [card]
-         (assoc card :card/type "거조형"))}
+  "ko"      (fn [card]
+              (assoc card :card/type "거조형"))}
  "P-092"
  {"zh-Hans" (fn [card]
               (assoc card :card/level 3))
-  "ko" (fn [card]
-         (assoc card :card/type "용형"))}
+  "ko"      (fn [card]
+              (assoc card :card/type "용형"))}
  "P-093"
  {"zh-Hans" (fn [card]
               (assoc card :card/level 5))
-  "ko" (fn [card]
-         (assoc card :card/type "수인형"))}
+  "ko"      (fn [card]
+              (assoc card :card/type "수인형"))}
  "P-094"
  {"zh-Hans" (fn [card]
               (assoc card :card/level 5))
-  "ko" (fn [card]
-         (assoc card :card/type "불명"))}
+  "ko"      (fn [card]
+              (assoc card :card/type "불명"))}
  "P-097"
  {"en" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-097_index0"
-                  :color/index 0
-                  :color/color :red}]))}
+           [{:color/id    "color/P-097_index0"
+             :color/index 0
+             :color/color :red}]))}
  "P-099"
  {"zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (and s
-                             (cond->> s
-                               (not (re-find (re-pattern "^.?进化") s))
-                               (str "【进化】<名称中包含“大便兽”的Lv.4>起3"))))))
-  "ko" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (cond->> s
-                     (not (re-find (re-pattern "^.?진화】") s))
-                     (str "【진화】명칭에 「스카몬」을 포함하는 Lv.4: 코스트 3")))))}
+                (fn [s]
+                  (and s
+                    (cond->> s
+                      (not (re-find (re-pattern "^.?进化") s))
+                      (str "【进化】<名称中包含“大便兽”的Lv.4>起3"))))))
+  "ko"      (fn [card]
+              (update card :card/effect
+                (fn [s]
+                  (cond->> s
+                    (not (re-find (re-pattern "^.?진화】") s))
+                    (str "【진화】명칭에 「스카몬」을 포함하는 Lv.4: 코스트 3")))))}
  "P-102"
  {"ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-102_index0"
-                  :color/index 0
-                  :color/color :purple}
-                 {:color/id "color/P-102_index1"
-                  :color/index 1
-                  :color/color :red}]))}
+           [{:color/id    "color/P-102_index0"
+             :color/index 0
+             :color/color :purple}
+            {:color/id    "color/P-102_index1"
+             :color/index 1
+             :color/color :red}]))}
  "P-103"
  {"en" (fn [card]
          (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+           (dissoc :card/play-cost)
+           (assoc :card/use-cost 2)
+           (assoc :card/category "Option")))
   "ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-103_index0"
-                  :color/index 0
-                  :color/color :red}]))}
+           [{:color/id    "color/P-103_index0"
+             :color/index 0
+             :color/color :red}]))}
  "P-104"
  {"en" (fn [card]
          (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+           (dissoc :card/play-cost)
+           (assoc :card/use-cost 2)
+           (assoc :card/category "Option")))
   "ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-104_index0"
-                  :color/index 0
-                  :color/color :blue}]))}
+           [{:color/id    "color/P-104_index0"
+             :color/index 0
+             :color/color :blue}]))}
  "P-105"
  {"en" (fn [card]
          (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+           (dissoc :card/play-cost)
+           (assoc :card/use-cost 2)
+           (assoc :card/category "Option")))
   "ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-105_index0"
-                  :color/index 0
-                  :color/color :yellow}]))}
+           [{:color/id    "color/P-105_index0"
+             :color/index 0
+             :color/color :yellow}]))}
  "P-106"
  {"en" (fn [card]
          (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+           (dissoc :card/play-cost)
+           (assoc :card/use-cost 2)
+           (assoc :card/category "Option")))
   "ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-106_index0"
-                  :color/index 0
-                  :color/color :green}]))}
+           [{:color/id    "color/P-106_index0"
+             :color/index 0
+             :color/color :green}]))}
  "P-107"
  {"en" (fn [card]
          (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+           (dissoc :card/play-cost)
+           (assoc :card/use-cost 2)
+           (assoc :card/category "Option")))
   "ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-107_index0"
-                  :color/index 0
-                  :color/color :black}]))}
+           [{:color/id    "color/P-107_index0"
+             :color/index 0
+             :color/color :black}]))}
  "P-108"
  {"en" (fn [card]
          (-> card
-             (dissoc :card/play-cost)
-             (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+           (dissoc :card/play-cost)
+           (assoc :card/use-cost 2)
+           (assoc :card/category "Option")))
   "ko" (fn [card]
          (assoc card :card/color
-                [{:color/id "color/P-108_index0"
-                  :color/index 0
-                  :color/color :purple}]))}
+           [{:color/id    "color/P-108_index0"
+             :color/index 0
+             :color/color :purple}]))}
  "P-114"
  {"ja" (fn [card]
          (assoc card :card/rarity "P"))}
  "P-132"
  {"zh-Hans" (fn [card]
               (assoc card
-                     :card/effect
-                     "【进化时】可将1只数码宝贝转换为休息状态,直到对方的回合结束为止,此数码宝贝的DP+2000。\n\n【我方的回合】我方场上存在“风真照人”的期间,此数码宝贝获得《贯通》（当此数码宝贝进行攻击的战斗中对方的数码宝贝被消灭时,在攻击结束前进行判定）效果。"))}
+                :card/effect
+                "【进化时】可将1只数码宝贝转换为休息状态,直到对方的回合结束为止,此数码宝贝的DP+2000。\n\n【我方的回合】我方场上存在“风真照人”的期间,此数码宝贝获得《贯通》（当此数码宝贝进行攻击的战斗中对方的数码宝贝被消灭时,在攻击结束前进行判定）效果。"))}
  "P-133"
  {"en" (fn [card]
          (dissoc card :card/attribute))}
@@ -3590,32 +3600,32 @@
               (cond-> card
                 security-effect
                 (-> (dissoc :card/security-effect)
-                    (assoc :card/inherited-effect security-effect))))}
+                  (assoc :card/inherited-effect security-effect))))}
  "P-149"
  {"zh-Hans" (fn [card]
               (assoc card
-                     :card/inherited-effect
-                     "【攻击时】[每回合1次]若此数码宝贝为多色，则可丢弃我方的1张手牌，并消灭对方1只Lv.3的数码宝贝。"))}
+                :card/inherited-effect
+                "【攻击时】[每回合1次]若此数码宝贝为多色，则可丢弃我方的1张手牌，并消灭对方1只Lv.3的数码宝贝。"))}
  "P-151"
- {"ja" (fn [{:card/keys [security-effect] :as card}]
-         (cond-> card
-           (not security-effect)
-           (assoc :card/security-effect
+ {"ja"      (fn [{:card/keys [security-effect] :as card}]
+              (cond-> card
+                (not security-effect)
+                (assoc :card/security-effect
                   "【セキュリティ】このカードの【メイン】効果を発揮する。")))
   "zh-Hans" (fn [card]
               (assoc card :card/type "界放者"))}
  "P-152"
- {"ja" (fn [{:card/keys [parallel-id] :as card}]
-         (cond-> card
-           (= parallel-id 1)
-           (assoc :card/block-icon 4)))
+ {"ja"      (fn [{:card/keys [parallel-id] :as card}]
+              (cond-> card
+                (= parallel-id 1)
+                (assoc :card/block-icon 4)))
   "zh-Hans" (fn [card]
               (update card :card/effect
-                      (fn [s]
-                        (and s
-                             (cond->> s
-                               (not (re-find (re-pattern "^.?进化") s))
-                               (str "【进化】登场费用不高于4的 “高吼會”/“多會路善”：费用0"))))))}
+                (fn [s]
+                  (and s
+                    (cond->> s
+                      (not (re-find (re-pattern "^.?进化") s))
+                      (str "【进化】登场费用不高于4的 “高吼會”/“多會路善”：费用0"))))))}
  "P-155"
  {"zh-Hans" (fn [card]
               (assoc card :card/type "装置"))}}

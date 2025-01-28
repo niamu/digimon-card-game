@@ -10,3 +10,5 @@ resources/images/icons/
 resources/images/releases/
 resources/db.edn
 src/main.rs
+.idea/
+db.iml

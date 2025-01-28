@@ -237,7 +237,8 @@
                               "BT18" 4
                               "EX7" 4
                               "BT19" 4
-                              "EX8" 4}]
+                              "EX8" 4
+                              "BT20" 4}]
     (->> cards
          (filter (fn [{:card/keys [language image]}]
                    (= language (:image/language image))))
@@ -310,6 +311,12 @@
   cards)
 
 (comment
+  (highlights dcg.db.core/*cards)
+
+  (->> dcg.db.core/*cards
+       (filter (fn [{:card/keys [number]}]
+                 (= number "BT20-090")))
+       (map (juxt :card/effect)))
   ;; Card values analysis
   (map (fn [[k v]]
          (let [issues (->> (partition 2 1

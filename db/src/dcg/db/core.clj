@@ -1,7 +1,6 @@
 (ns dcg.db.core
   (:gen-class)
   (:require
-   [clojure.data.json :as json]
    [clojure.string :as string]
    [dcg.db.card :as card]
    [dcg.db.card.assertion :as assertion]
@@ -52,10 +51,8 @@
         tr-map (translation/card-name-replacement-map cards-per-origin)
         unrefined-cards (->> cards-per-origin
                              (reduce (fn [accl cards-in-origin]
-                                       (->> (reduce (fn [accl card]
-                                                      (assoc accl
-                                                             (:card/id card)
-                                                             card))
+                                       (->> (reduce (fn [accl2 card]
+                                                      (assoc accl2 (:card/id card) card))
                                                     {}
                                                     cards-in-origin)
                                             (merge-with merge accl)))
@@ -122,7 +119,7 @@
                                                                      [idx s])))
                                              [error-index error]
                                              (some->> error-indexes
-                                                      (filter (fn [[idx s]]
+                                                      (filter (fn [[_ s]]
                                                                 (string/includes? v s)))
                                                       first)
                                              correction (and error-index
@@ -139,7 +136,7 @@
                                      c)
                           (assoc :card/errata errata-for-card)))
                     (and limitation
-                         (not= (:limitiation/type limitation)
+                         (not= (:limitation/type limitation)
                                :unrestrict))
                     (assoc :card/limitation limitation))))
               unrefined-cards)
@@ -170,7 +167,7 @@
     (sort-by :card/id cards)))
 
 (defn -main
-  [& args]
+  [& _args]
   (logging/info "DB Ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
