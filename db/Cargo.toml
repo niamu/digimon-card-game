@@ -9,6 +9,6 @@ name = "dcgcv"
 crate-type = ["dylib"]
 
 [dependencies]
-edn-derive = "0.5.0"
-edn-rs = "0.17.4"
-opencv = { version = "0.92.2", features = ["clang-runtime"] }
+edn-derive = "0.7.0"
+edn-rs = "0.18.0"
+opencv = { version = "0.94.2", features = ["clang-runtime"] }

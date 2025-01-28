@@ -8,7 +8,7 @@ use std::os::raw::c_char;
 use opencv::{
     self as cv,
     boxed_ref::BoxedRef,
-    core::{Mat, Rect, Size, Vec3b, Vector},
+    core::{AlgorithmHint, Mat, Rect, Size, Vec3b, Vector},
     prelude::MatTraitConst,
 };
 
@@ -92,6 +92,7 @@ fn color_at_coordinate(image: &BoxedRef<'_, Mat>, coords: Coords) -> RGB {
         0.0,
         0.0,
         cv::core::BORDER_DEFAULT,
+        AlgorithmHint::ALGO_HINT_DEFAULT,
     )
     .unwrap();
     let bgr = blurred_image.at_2d::<Vec3b>(coords.y, coords.x).unwrap();
@@ -112,6 +113,7 @@ fn colors_within_image(image: &BoxedRef<'_, Mat>) -> Vec<String> {
         0.0,
         0.0,
         cv::core::BORDER_DEFAULT,
+        AlgorithmHint::ALGO_HINT_DEFAULT,
     )
     .unwrap();
     let mut images: Vector<Mat> = Vector::new();
@@ -403,7 +405,7 @@ pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c
     let image_path: &str = unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
     let mut image_mat = cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
     if image_mat.cols() != 430 || image_mat.rows() != 600 {
-        let image_size = cv::core::Size::new(430, 600);
+        let image_size = Size::new(430, 600);
         let mut reduced_image_mat = Mat::default();
         cv::imgproc::resize(
             &image_mat,
@@ -448,7 +450,7 @@ pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c
         },
         None => None,
     };
-    let edn_string = edn_rs::to_string(edn);
+    let edn_string = edn_rs::to_string(&edn);
     let c_str = CString::new(edn_string).unwrap();
     c_str.into_raw()
 }

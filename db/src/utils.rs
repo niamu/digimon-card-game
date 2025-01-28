@@ -4,7 +4,7 @@ use std::os::raw::c_char;
 use opencv::{
     self as cv,
     boxed_ref::BoxedRef,
-    core::{Mat, Point},
+    core::{AlgorithmHint, Mat, Point},
     prelude::MatTraitConst,
 };
 
@@ -39,7 +39,7 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
     let mut result_sqdiff = Mat::default();
     let mut result: f64;
     let mut image_prep = Mat::default();
-    cv::imgproc::cvt_color(&image, &mut image_prep, cv::imgproc::COLOR_BGRA2GRAY, 0).unwrap();
+    cv::imgproc::cvt_color(&image, &mut image_prep, cv::imgproc::COLOR_BGRA2GRAY, 0, AlgorithmHint::ALGO_HINT_DEFAULT).unwrap();
     let mut coords = Coords { x: 0, y: 0 };
     if template.channels() > 3 {
         cv::core::extract_channel(&template, &mut alpha, 3).unwrap();
@@ -56,6 +56,7 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
             &mut template_prep,
             cv::imgproc::COLOR_BGRA2GRAY,
             0,
+            AlgorithmHint::ALGO_HINT_DEFAULT,
         )
         .unwrap();
     } else {
@@ -64,6 +65,7 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
             &mut template_prep,
             cv::imgproc::COLOR_BGR2GRAY,
             0,
+            AlgorithmHint::ALGO_HINT_DEFAULT,
         )
         .unwrap();
     }
@@ -133,6 +135,6 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
     result = (result + (1.0 - min_val.unwrap())) / 3.0;
     MatchResult {
         accuracy: result,
-        coords: coords,
+        coords,
     }
 }
