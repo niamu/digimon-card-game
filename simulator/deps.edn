@@ -3,10 +3,8 @@
         com.niamu/dcg-codec                   {:local/root "../codec/clojure/"}
         com.niamu/dcg-db                      {:local/root "../db/"}
         hiccup/hiccup                         {:mvn/version "2.0.0-RC2"}
-        instaparse/instaparse                 {:mvn/version "1.4.12"}
+        instaparse/instaparse                 {:mvn/version "1.5.0"}
         metosin/reitit                        {:mvn/version "0.7.0-alpha7"}
         ring/ring-core                        {:mvn/version "1.11.0"}
         ring/ring-jetty-adapter               {:mvn/version "1.11.0"}
-        ring/ring-defaults                    {:mvn/version "0.4.0"}}
- :jvm-opts ["-Xmx8g"
-            "-Xms6g"]}
+        ring/ring-defaults                    {:mvn/version "0.4.0"}}}

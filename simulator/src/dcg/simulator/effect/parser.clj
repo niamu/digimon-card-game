@@ -5,9 +5,10 @@
    [dcg.db.db :as db]
    [instaparse.core :as insta]))
 
-(defonce ^:private parser
+(def ^:private parser
   (insta/parser (io/resource "card-parser.bnf")
-                :output-format :enlive))
+                :output-format :enlive
+                :allow-namespaced-nts true))
 
 (defn parse
   [text]
@@ -19,9 +20,10 @@
                                   parser)]
                    (cond-> accl
                      (insta/failure? result) (conj result)
-                     (not (insta/failure? result)) (as-> #__ accl
-                                                     (->> (concat accl result)
-                                                          (into []))))))
+                     (not (insta/failure? result))
+                     (as-> #__ accl
+                       (->> (concat accl result)
+                            (into []))))))
                [])))
 
 (defn transform
@@ -65,12 +67,6 @@
                                      args)])
          :timing (fn [& args]
                    {:effect/timing (into #{} args)})
-         :timing_main (fn [] :main)
-         :timing_on-play (fn [] :on-play)
-         :timing_security (fn [] :security)
-         :timing_your-turn (fn [] :your-turn)
-         :timing_when-digivolving (fn [] :when-digivolving)
-         :timing_when-attacking (fn [] :when-attacking)
          :without-paying-memory-cost (fn [] {:cost 0})
          :play (fn [& args]
                  {:effect/action [:action/play args]})
@@ -101,14 +97,17 @@
                        [(clojure.string/starts-with? ?n "ST1-")]
                        [?i :image/language "en"]]})
        (pmap (fn [{:card/keys [effect inherited-effect security-effect]
-                  :as card}]
+                   :as card}]
                (cond-> card
-                 effect           (assoc-in [::card-effects :card/effect]
-                                            (transform effect))
-                 inherited-effect (assoc-in [::card-effects :card/inherited-effect]
-                                            (transform inherited-effect))
-                 security-effect  (assoc-in [::card-effects :card/security-effect]
-                                            (transform security-effect)))))
+                 effect
+                 (assoc-in [::card-effects :card/effect]
+                           (transform effect))
+                 inherited-effect
+                 (assoc-in [::card-effects :card/inherited-effect]
+                           (transform inherited-effect))
+                 security-effect
+                 (assoc-in [::card-effects :card/security-effect]
+                           (transform security-effect)))))
        (filter (fn [{:card/keys [effect inherited-effect security-effect]}]
                  (or effect inherited-effect security-effect))))
 
@@ -123,25 +122,27 @@
                                     [?c :card/language ?l]
                                     [?c :card/parallel-id 0]
                                     [?c :card/number ?n]
-                                    #_[(clojure.string/starts-with? ?n "BT16-")]
+                                    [(clojure.string/starts-with? ?n "BT17-")]
                                     [?i :image/language "en"]]})
-              failures (->> cards
-                            (pmap (fn [{:card/keys [number] :as card}]
-                                    (let [failures
-                                          (->> [(:card/effect card)
-                                                (:card/inherited-effect card)
-                                                (:card/security-effect card)]
-                                               (remove nil?)
-                                               (pmap (comp (fn [[s results]]
-                                                             (when (some insta/failure?
-                                                                         results)
-                                                               s))
-                                                           (juxt identity parse)))
-                                               (remove nil?))]
-                                      (when-not (empty? failures)
-                                        [number (into [] failures)]))))
-                            (remove nil?)
-                            (into []))]
+              failures
+              (->> cards
+                   (pmap (fn [{:card/keys [number] :as card}]
+                           (let [failures
+                                 (->> [(:card/effect card)
+                                       (:card/inherited-effect card)
+                                       (:card/security-effect card)]
+                                      (remove nil?)
+                                      (pmap (comp
+                                             (fn [[s results]]
+                                               (when (some insta/failure?
+                                                           results)
+                                                 s))
+                                             (juxt identity parse)))
+                                      (remove nil?))]
+                             (when-not (empty? failures)
+                               [number (into [] failures)]))))
+                   (remove nil?)
+                   (into []))]
           {:percentage (* (float (/ (- (count cards)
                                        (count failures))
                                     (count cards)))
@@ -152,24 +153,26 @@
            :failures failures}))
 
   (defn format-effect
+    "Format card text with line breaks matching the printed cards"
     [text]
     (let [s (->> text
                  string/split-lines
                  (map string/trim)
                  string/join)
-          split-indexes (->> text
-                             parse
-                             (map insta/span)
-                             (remove nil?)
-                             (reduce (fn [accl [start end]]
-                                       (let [[prev-start prev-end]
-                                             (or (last accl) [0 0])]
-                                         (conj accl
-                                               [(cond-> start
-                                                  (zero? start) (+ prev-end))
-                                                (cond-> end
-                                                  (zero? start) (+ prev-end))])))
-                                     []))]
+          split-indexes
+          (->> text
+               parse
+               (map insta/span)
+               (remove nil?)
+               (reduce (fn [accl [start end]]
+                         (let [[prev-start prev-end]
+                               (or (last accl) [0 0])]
+                           (conj accl
+                                 [(cond-> start
+                                    (zero? start) (+ prev-end))
+                                  (cond-> end
+                                    (zero? start) (+ prev-end))])))
+                       []))]
       (-> (->> split-indexes
                (map (fn [[start end]]
                       (string/trim (subs s start end))))

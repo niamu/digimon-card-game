@@ -2,6 +2,7 @@
   (:require
    [clojure.spec.alpha :as s]
    [dcg.codec.common :as codec-common]
+   [dcg.codec.encode]
    [dcg.codec.decode :as codec-decode]
    [dcg.simulator.attack :as-alias attack]
    [dcg.simulator.area :as-alias area]
@@ -192,7 +193,7 @@
                               (= privacy :public))))
 
 (s/def ::area/security (s/and (fn [{cards ::area/cards
-                                   privacy ::area/privacy}]
+                                    privacy ::area/privacy}]
                                 (= privacy :private))
                               (s/keys :req [::area/privacy
                                             ::area/cards])))
@@ -231,3 +232,32 @@
                               (s/tuple ::card/number ::card/parallel-id)))
 (s/def ::card/actions ::game/available-actions)
 (s/def ::card/privacy ::area/privacy)
+
+(comment
+  ;; Encode pack order into :deck/name
+  (let [deck {:deck/name "#b[S0GQ 20210606 190.45]BT01-03 v1.0: Booster Pack"
+              :deck/digi-eggs []
+              :deck/deck [{:card/number "BT1-019" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-038" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-032" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-113" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-030" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT2-018" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-046" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-004" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-058" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT1-035" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT2-030" :card/parallel-id 0 :card/count 1}
+                          {:card/number "BT2-020" :card/parallel-id 0 :card/count 1}]}
+        pack-order (->> deck
+                        :deck/deck
+                        (map-indexed (fn [idx card]
+                                       (assoc card :card/index idx)))
+                        (sort-by (juxt :card/number :card/parallel-id))
+                        (map :card/index)
+                        (clojure.string/join " "))]
+    (-> (assoc deck
+               :deck/name
+               (format "#pack[%s]" pack-order))
+        dcg.codec.encode/encode
+        dcg.codec.decode/decode)))

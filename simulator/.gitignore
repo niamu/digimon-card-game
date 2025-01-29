@@ -3,3 +3,5 @@
 .nrepl-port
 target/
 resources/public/images/
+simulator.iml
+.idea/
