@@ -7,7 +7,7 @@
    [hickory.select :as select]))
 
 (def ^:private parser
-  (insta/parser (io/resource "card-parser_v1.bnf")
+  (insta/parser (io/resource "card-parser_v2.bnf")
                 :output-format :enlive
                 :allow-namespaced-nts true))
 
@@ -67,20 +67,21 @@
                       (select/select
                        (select/child (select/tag :effect/timing)
                                      (select/tag :timing/your-turn)))
-                      seq))))
+                      seq)))
+       transform)
 
   (->> (db/q '{:find [[(pull ?c [:card/id
                                  :card/number
                                  :card/effect
                                  :card/inherited-effect
                                  :card/security-effect]) ...]]
-               :where [[?c :card/image ?i]
-                       [?c :card/parallel-id 0]
-                       [?c :card/number ?n]
+               :where [[?c :card/number ?n]
                        (or [(clojure.string/starts-with? ?n "ST1-")]
-                           [(clojure.string/starts-with? ?n "ST2-")]
-                           [(clojure.string/starts-with? ?n "ST3-")]
+                           #_[(clojure.string/starts-with? ?n "ST2-")]
+                           #_[(clojure.string/starts-with? ?n "ST3-")]
                            #_[(clojure.string/starts-with? ?n "ST4-")])
+                       [?c :card/parallel-id 0]
+                       [?c :card/image ?i]
                        [?i :image/language "en"]]})
        (pmap (fn [{:card/keys [effect inherited-effect security-effect]
                   :as card}]
@@ -96,8 +97,8 @@
                            (parse security-effect)))))
        (filter (fn [{:card/keys [effect inherited-effect security-effect]}]
                  (or effect inherited-effect security-effect)))
-       (filter (fn [{effects ::card-effects}]
-                 (some #(some insta/failure? %) (vals effects)))))
+       #_(filter (fn [{effects ::card-effects}]
+                   (some #(some insta/failure? %) (vals effects)))))
 
   (db/import-from-file!)
   (time (let [cards (db/q '{:find [[(pull ?c [:card/number

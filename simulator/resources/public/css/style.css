@@ -48,8 +48,8 @@
 	box-sizing: border-box;
 }
 
-@font-face{font-family:"Peter-Black";src:url("/fonts/Peter-Black.woff") format("woff");font-weight:800}
-@font-face{font-family:"Prohibition";src:url("/fonts/Prohibition-Regular.woff") format("woff");font-weight:400}
+@font-face{font-family:"Prohibition";src:url("/fonts/Prohibition-Regular.woff2") format("woff2");font-weight:600}
+@font-face{font-family:"Kommon Grotesk";src:url("/fonts/KommonGrotesk-Black.ttf") format("truetype");font-weight:900}
 @font-face{font-family:"Roboto";src:url("/fonts/Roboto-ThinItalic.woff") format("woff");font-style:italic;font-weight:100}
 @font-face{font-family:"Roboto";src:url("/fonts/Roboto-Bold.woff") format("woff");font-style:normal;font-weight:700}
 @font-face{font-family:"Roboto Condensed";src:url("/fonts/RobotoCondensed-Light.woff") format("woff");font-style:normal;font-weight:300}

@@ -3,10 +3,14 @@
   (:require
    [clojure.edn :as edn]
    [clojure.string :as string]
+   [com.fulcrologic.fulcro.components :as comp]
+   [com.fulcrologic.fulcro.dom-server :as dom]
    [dcg.db.db :as db]
    [dcg.simulator]
    [dcg.simulator.player :as-alias player]
+   [dcg.simulator.server.query :as query]
    [dcg.simulator.state :as state]
+   [dcg.simulator.page.ui :as ui]
    [dcg.simulator.server.render :as render]
    [reitit.ring :as ring]
    [ring.adapter.jetty :as jetty]
@@ -45,15 +49,19 @@
            :handler (fn [{{:keys [player]} :session
                          {:keys [game-id]} :path-params
                          :as request}]
-                      (if-let [game (some-> @state/state
-                                            (get-in [::state/games-by-id
-                                                     (UUID/fromString game-id)])
-                                            (state/private-state-for-player-id
-                                             (or (::player/id player)
-                                                 (random-uuid))))]
+                      (if-let [game (and (get-in @state/state
+                                                 [::state/games-by-id
+                                                  (UUID/fromString game-id)])
+                                         (query/parser request
+                                                       (comp/get-query ui/Game)))]
+                        #_(com.fulcrologic.fulcro.algorithms.normalize/tree->db
+                           ui/Game
+                           game
+                           true)
                         {:status 200
                          :headers {"Content-Type" "text/html"}
-                         :body (render/game game player)}
+                         :body (-> (dom/render-to-str (ui/ui-game game))
+                                   (render/game-wrapper))}
                         {:status 404
                          :headers {"Content-Type" "text/html"}
                          :body "Not Found"}))}
@@ -151,9 +159,9 @@
                                                           :release/product-uri]}]) ...]]
                                       :in [$ ?n]
                                       :where [[?c :card/number ?n]
+                                              [?c :card/language ?l]
                                               [?c :card/image ?i]
-                                              [?i :image/language ?l]
-                                              [?c :card/language ?l]]}
+                                              [?i :image/language ?l]]}
                                     card-number))})}}]
    ["/images/cards/*" (ring/create-resource-handler {:root "images/cards"})]])
 

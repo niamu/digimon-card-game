@@ -13,39 +13,43 @@
    [dcg.simulator.random :as random]))
 
 (defn set-memory
-  [{::game/keys [db]
-    {::game-in/keys [turn]} ::game/in
+  [{::game/keys [players] {::game-in/keys [turn-index]} ::game/in
     :as game} memory]
   (let [memory (min memory 10)
-        {next-player-id ::player/id} (helpers/next-player game)]
+        next-player-index (mod (inc turn-index) (count players))]
     (-> game
-        (assoc-in [::game/db ::player/id turn ::player/memory]
+        (assoc-in [::game/players turn-index ::player/memory]
                   memory)
-        (assoc-in [::game/db ::player/id next-player-id ::player/memory]
+        (assoc-in [::game/players next-player-index ::player/memory]
                   (* memory -1)))))
 
 (defn update-memory
-  [{::game/keys [db]
-    {::game-in/keys [turn]} ::game/in
+  [{::game/keys [players] {::game-in/keys [turn-index]} ::game/in
     :as game} [_ player-id [op value]]]
-  (let [{turn-idx ::player/turn-index} (get-in db [::player/id turn])
-        memory (-> (get-in db [::player/id player-id ::player/memory])
+  (let [player-index (.indexOf (map ::player/id players) player-id)
+        memory (-> (get-in game [::game/players player-index ::player/memory])
                    (op value))]
     (set-memory game memory)))
 
 (defn re-draw?
-  [{::game/keys [random log players]
-    {::game-in/keys [turn]} ::game/in
+  [{::game/keys [random available-actions log players]
+    {::game-in/keys [turn-index]} ::game/in
     :as game} [_ [_ player-id] re-draw? :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{next-player-id ::player/id} (helpers/next-player game)
+  (let [{current-player-id ::player/id} (nth players turn-index)
+        player-index (.indexOf (map ::player/id players) player-id)
+        already-drawn (conj (->> log
+                                 (filter (fn [[state-id _ _]]
+                                           (= :action/re-draw? state-id)))
+                                 (map (fn [[_ [_ player-id]]] player-id))
+                                 set)
+                            player-id)
         {::game/keys [players] :as game}
         (-> game
-            (update-in [::game/db
-                        ::player/id
-                        player-id
+            (update-in [::game/players
+                        player-index
                         ::player/areas]
                        (fn [{{deck ::area/cards} ::area/deck
                             {hand ::area/cards} ::area/hand
@@ -53,200 +57,211 @@
                          (let [[hand deck] (->> (cond->> (concat hand deck)
                                                   re-draw?
                                                   (random/shuffle random))
-                                                (split-at 5)
-                                                (map #(into [] %)))
+                                                (split-at 5))
                                [security deck] (->> deck
-                                                    (split-at 5)
-                                                    (map #(into [] %)))]
+                                                    (split-at 5))]
                            (-> areas
                                (assoc-in [::area/deck ::area/cards] deck)
                                (assoc-in [::area/hand ::area/cards] hand)
                                (assoc-in [::area/security ::area/cards]
                                          (reverse security))))))
             (assoc ::game/available-actions
-                   (let [already-drawn (->> log
-                                            (filter (fn [[state-id _ _]]
-                                                      (= :action/re-draw?
-                                                         state-id)))
-                                            (map second)
-                                            (into #{}))]
-                     (cond-> #{}
-                       (not (contains? already-drawn next-player-id))
-                       (conj [:action/re-draw?
-                              [::player/id next-player-id] true]
-                             [:action/re-draw?
-                              [::player/id next-player-id] false])))))]
+                   (->> available-actions
+                        (remove (fn [[action-key [_ id] _]]
+                                  (and (= action-key :action/re-draw?)
+                                       (= id player-id))))
+                        set)))]
     (cond-> game
-      (= (conj (->> log
-                    (filter (fn [[state-id _ _]]
-                              (= state-id :action/re-draw?)))
-                    (map (fn [[_ [_ id] _]]
-                           id))
-                    (into #{}))
-               player-id)
-         (->> players
-              (map second)
-              (into #{})))
+      (= already-drawn (set (map ::player/id players)))
       (-> (assoc ::game/available-actions
-                 #{[:phase/unsuspend [::player/id turn] nil]})
+                 #{[:phase/unsuspend [::player/id current-player-id] nil]})
           (assoc-in [::game/in ::game-in/state-id]
                     :phase/unsuspend)))))
 
 (defn hatch
-  [{::game/keys [random db] {::game-in/keys [turn]} ::game/in
+  [{::game/keys [random players] {::game-in/keys [turn-index]} ::game/in
     :as game} action]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [stack-uuid (random/uuid random)]
+  (let [{current-player-id ::player/id} (nth players turn-index)]
     (-> game
-        (update-in [::game/db ::player/id turn ::player/areas]
-                   (fn [areas]
+        (update-in [::game/players turn-index ::player/areas]
+                   (fn [{{digi-eggs ::area/cards} ::area/digi-eggs :as areas}]
                      (-> areas
-                         (update-in [::area/digi-eggs ::area/cards]
-                                    (comp #(into [] %) rest))
+                         (update-in [::area/digi-eggs ::area/cards] rest)
                          (update-in [::area/breeding ::area/stacks] conj
-                                    [::stack/uuid stack-uuid]))))
-        (assoc-in [::game/db ::stack/uuid stack-uuid]
-                  {::stack/uuid stack-uuid
-                   ::stack/cards (->> (get-in db
-                                              [::player/id
-                                               turn
-                                               ::player/areas
-                                               ::area/digi-eggs
-                                               ::area/cards])
-                                      (take 1)
-                                      (into []))
-                   ::stack/summoned? false
-                   ::stack/suspended? false})
+                                    {::stack/uuid (random/uuid random)
+                                     ::stack/cards (->> (take 1 digi-eggs)
+                                                        (into []))
+                                     ::stack/summoned? false
+                                     ::stack/suspended? false}))))
         (assoc ::game/available-actions
-               #{[:phase/main [::player/id turn] nil]})
+               #{[:phase/main [::player/id current-player-id] nil]})
         (assoc-in [::game/in ::game-in/state-id]
                   :phase/main))))
 
 (defn move
-  [{::game/keys [db] {::game-in/keys [turn]} ::game/in
-    :as game} [_ _ [stack] :as action]]
+  [{::game/keys [players] {::game-in/keys [turn-index]} ::game/in
+    :as game} [_ _ [_ stack-uuid] :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (-> game
-      (update-in [::game/db ::player/id turn ::player/areas]
-                 (fn [areas]
-                   (-> areas
-                       (update-in [::area/battle ::area/stacks] conj stack)
-                       (assoc-in [::area/breeding ::area/stacks] []))))
-      (assoc ::game/available-actions
-             #{[:phase/main [::player/id turn] nil]})
-      (assoc-in [::game/in ::game-in/state-id]
-                :phase/main)))
+  (let [{current-player-id ::player/id} (nth players turn-index)]
+    (cond-> game
+      (= (some-> (get-in players [turn-index
+                                  ::player/areas
+                                  ::area/breeding
+                                  ::area/stacks])
+                 first
+                 ::stack/uuid)
+         stack-uuid)
+      (-> (update-in [::game/players turn-index ::player/areas]
+                     (fn [{{breeding ::area/stacks} ::area/breeding :as areas}]
+                       (-> areas
+                           (update-in [::area/battle ::area/stacks]
+                                      (comp #(into [] %) concat) breeding)
+                           (assoc-in [::area/breeding ::area/stacks] []))))
+          (assoc ::game/available-actions
+                 #{[:phase/main [::player/id current-player-id] nil]})
+          (assoc-in [::game/in ::game-in/state-id]
+                    :phase/main)))))
 
 (defn play
-  [{::game/keys [random db] {::game-in/keys [turn]} ::game/in
-    :as game} [_ _ [card & [override]] :as action]]
+  [{::game/keys [random players cards-lookup]
+    {::game-in/keys [turn-index]} ::game/in
+    :as game} [_ _ [_ card-uuid & [override]] :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{{:card/keys [play-cost use-cost]} ::card/card} (get-in db card)
+  (let [card {::card/uuid card-uuid}
+        {:card/keys [play-cost use-cost]} (get-in cards-lookup [card-uuid "en"])
+        {current-player-id ::player/id} (nth players turn-index)
         stack-uuid (random/uuid random)]
     (-> game
         (update-memory [:action/update-memory
-                        turn
+                        current-player-id
                         [- (or (:cost override)
                                play-cost use-cost)]])
-        (update-in [::game/db ::player/id turn ::player/areas]
-                   (fn [{::area/keys [hand battle] :as areas}]
+        (update-in [::game/players turn-index ::player/areas]
+                   (fn [{::area/keys [hand] :as areas}]
                      (-> areas
                          (update-in [::area/hand ::area/cards]
                                     (fn [cards]
                                       (->> cards
-                                           (remove (fn [xcard]
-                                                     (= xcard card)))
+                                           (remove (partial = card))
                                            (into []))))
                          (update-in [::area/battle ::area/stacks] conj
-                                    [::stack/uuid stack-uuid]))))
-        (assoc-in [::game/db ::stack/uuid stack-uuid]
-                  {::stack/uuid stack-uuid
-                   ::stack/summoned? true
-                   ::stack/suspended? false
-                   ::stack/cards [card]})
+                                    {::stack/uuid stack-uuid
+                                     ::stack/summoned? true
+                                     ::stack/suspended? false
+                                     ::stack/cards [card]}))))
         (assoc ::game/available-actions
-               #{[:phase/main [::player/id turn] nil]}))))
+               #{[:phase/main [::player/id current-player-id] nil]}))))
 
 (defn digivolve
-  [{::game/keys [db players] {::game-in/keys [turn]} ::game/in
-    :as game} [_ _ [card digivolve-idx onto-stack] :as action]]
+  [{::game/keys [players cards-lookup] {::game-in/keys [turn-index]} ::game/in
+    :as game} [_ _ [[_ card-uuid] digivolve-idx [_ stack-uuid]] :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{{{cards-in-hand ::area/cards} ::area/hand
+  (let [card {::card/uuid card-uuid}
+        {{{cards-in-hand ::area/cards} ::area/hand
           {deck-cards ::area/cards} ::area/deck} ::player/areas
-         :as current-player} (get-in db [::player/id turn])
+         :as current-player} (nth players turn-index)
         deck-has-cards? (pos? (count deck-cards))
-        {{:card/keys [digivolution-requirements]} ::card/card} (get-in db card)]
+        {:card/keys [digivolution-requirements]} (get-in cards-lookup
+                                                         [card-uuid "en"])
+        {current-player-id ::player/id} (nth players turn-index)]
     (-> game
         (update-memory [:action/update-memory
-                        turn
+                        current-player-id
                         [- (get-in digivolution-requirements
                                    [digivolve-idx :digivolve/cost])]])
-        (update-in [::game/db
-                    ::player/id
-                    turn
+        (update-in [::game/players
+                    turn-index
                     ::player/areas
                     ::area/hand
                     ::area/cards]
                    (fn [cards]
                      (->> cards
-                          (remove (fn [xcard]
-                                    (= xcard card)))
+                          (remove (partial = card))
                           (into []))))
-        (update-in (->> (concat [::game/db] onto-stack)
-                        (into []))
-                   (fn [stack]
-                     (update stack
-                             ::stack/cards
-                             (fn [cards]
-                               (->> cards
-                                    (concat [card])
-                                    (into []))))))
+        (update-in [::game/players
+                    turn-index
+                    ::player/areas]
+                   (fn [areas]
+                     (reduce-kv (fn [accl k {::area/keys [stacks] :as area}]
+                                  (assoc accl k
+                                         (cond-> area
+                                           (seq stacks)
+                                           (update ::area/stacks
+                                                   (fn [stacks]
+                                                     (map (fn [{::stack/keys [uuid] :as stack}]
+                                                            (cond-> stack
+                                                              (= uuid stack-uuid)
+                                                              (update ::stack/cards
+                                                                      (fn [cards]
+                                                                        (->> cards
+                                                                             (concat [card])
+                                                                             (into []))))))
+                                                          stacks))))))
+                                {}
+                                areas)))
         ;; Draw on digivolve
         (cond-> #__
           deck-has-cards?
-          (-> (update-in [::game/db ::player/id turn ::player/areas
+          (-> (update-in [::game/players turn-index ::player/areas
                           ::area/hand ::area/cards]
                          conj
                          (first deck-cards))
-              (update-in [::game/db ::player/id turn ::player/areas
+              (update-in [::game/players turn-index ::player/areas
                           ::area/deck ::area/cards]
                          (comp #(into [] %) rest))))
         (assoc ::game/available-actions
-               #{[:phase/main [::player/id turn] nil]}))))
+               #{[:phase/main [::player/id current-player-id] nil]}))))
 
 (defn declare-attack
-  [{::game/keys [db]
-    {::game-in/keys [turn]} ::game/in
+  [{::game/keys [players]
+    {::game-in/keys [turn-index]} ::game/in
     :as game} [_ _ [attacker target] :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [player-by-stack
-        (->> (::player/id db)
-             (reduce-kv (fn [accl _ {{{breeding ::area/stacks} ::area/breeding
-                                     {battle ::area/stacks} ::area/battle}
-                                    ::player/areas
-                                    ::player/keys [id]}]
-                          (merge accl
-                                 (->> (concat breeding battle)
-                                      (map (fn [stack]
-                                             [stack [::player/id id]]))
-                                      (into {}))))
-                        {}))
+  (let [players-by-index (->> players
+                              (map-indexed (fn [idx {::player/keys [id]}]
+                                             [id idx]))
+                              (into {}))
+        player-by-stack
+        (->> players
+             (reduce (fn [accl {{{breeding ::area/stacks} ::area/breeding
+                                {battle ::area/stacks} ::area/battle}
+                               ::player/areas
+                               ::player/keys [id]}]
+                       (merge accl
+                              (->> (concat breeding battle)
+                                   (map (fn [{stack-uuid ::stack/uuid}]
+                                          [[::stack/uuid stack-uuid]
+                                           [::player/id id]]))
+                                   (into {}))))
+                     {}))
         [_ opponent-id] (case (first target)
                           ::player/id target
                           (get player-by-stack target))]
     (-> game
-        (assoc-in [::game/db ::stack/uuid (second attacker) ::stack/suspended?]
-                  true)
+        (update-in [::game/players
+                    (->> (get player-by-stack attacker)
+                         second
+                         (get players-by-index))
+                    ::player/areas
+                    ::area/battle
+                    ::area/stacks]
+                   (fn [stacks]
+                     (map (fn [{::stack/keys [uuid] :as stack}]
+                            (cond-> stack
+                              (= uuid (second attacker))
+                              (assoc ::stack/suspended? true)))
+                          stacks)))
         (assoc ::game/attack
                {::attack/attacker attacker
                 ::attack/attacking target
@@ -279,163 +294,246 @@
 
 (defn block-attack
   [{::game/keys [players]
-    {::game-in/keys [turn]} ::game/in
+    {::game-in/keys [turn-index]} ::game/in
     :as game} [_ _ target :as action]]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
   (-> game
       (assoc-in [::game/attack ::attack/attacking] target)
-      (assoc ::game/available-actions
-             #{[:action/attack.digimon [::player/id turn] nil]})))
+      ;; TODO: Action should be action/attack.battle
+      #_(assoc ::game/available-actions
+               ;; TODO: Action should be action/attack.battle
+               #{[:action/attack.digimon [::player/id turn] nil]})))
 
 (defn digimon-attack
-  [{::game/keys [db players]
+  [{::game/keys [cards-lookup players]
     {::attack/keys [attacker attacking player]} ::game/attack
-    {::game-in/keys [turn]} ::game/in
+    {::game-in/keys [turn-index]} ::game/in
     :as game} action]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{{{battle-stacks ::area/stacks} ::area/battle}
-         ::player/areas} (get-in db [::player/id turn])
-        attacker-stack (get-in db attacker)
+  (let [{current-player-id ::player/id} (nth players turn-index)
+        player-by-stack
+        (->> players
+             (reduce (fn [accl {{{breeding ::area/stacks} ::area/breeding
+                                {battle ::area/stacks} ::area/battle}
+                               ::player/areas
+                               ::player/keys [id]}]
+                       (merge accl
+                              (->> (concat breeding battle)
+                                   (map (fn [{stack-uuid ::stack/uuid}]
+                                          [[::stack/uuid stack-uuid]
+                                           id]))
+                                   (into {}))))
+                     {}))
+        stacks-by-ident (helpers/stacks-by-ident players)
+        attacker-stack (-> (get stacks-by-ident attacker)
+                           (update ::stack/cards
+                                   (partial helpers/stack-cards-lookup
+                                            cards-lookup)))
         attacker-dp (or (-> attacker-stack ::stack/dp)
-                        (-> (get-in db (-> attacker-stack
-                                           ::stack/cards
-                                           first))
+                        (-> attacker-stack
+                            ::stack/cards
+                            first
                             (get-in [::card/card :card/dp] 0)))
-        {{{opponent-battle-stacks ::area/stacks} ::area/battle}
-         ::player/areas} (get-in db player)
-        attacking-stack (get-in db attacking)
-        attacking-dp (-> (get-in db (-> attacking-stack
-                                        ::stack/cards
-                                        first))
-                         (get-in [::card/card :card/dp] 0))]
+        attacking-stack (-> (get stacks-by-ident attacking)
+                            (update ::stack/cards
+                                    (partial helpers/stack-cards-lookup
+                                             cards-lookup)))
+        attacking-dp (or (-> attacking-stack ::stack/dp)
+                         (-> attacking-stack
+                             ::stack/cards
+                             first
+                             (get-in [::card/card :card/dp] 0)))]
     (cond-> game
       (<= attacker-dp attacking-dp)
       ;; TODO: On deletion effect
-      (-> (update-in [::game/db ::stack/uuid] dissoc (second attacker))
-          (update-in [::game/db ::player/id turn
-                      ::player/areas ::area/battle ::area/stacks]
-                     (fn [stacks]
-                       (->> stacks
-                            (remove (fn [stack]
-                                      (= stack attacker)))
-                            (into []))))
-          (update-in [::game/db ::player/id turn
-                      ::player/areas ::area/trash ::area/cards]
-                     (fn [cards]
-                       (->> (concat (::stack/cards attacker-stack)
-                                    cards)
-                            (into [])))))
+      (update-in
+       [::game/players]
+       (fn [players]
+         (mapv (fn [player]
+                 (cond-> player
+                   (= (::player/id player)
+                      (get player-by-stack attacker))
+                   (update ::player/areas
+                           (fn [areas]
+                             (-> areas
+                                 (update-in [::area/battle
+                                             ::area/stacks]
+                                            (fn [stacks]
+                                              (->> stacks
+                                                   (remove
+                                                    (fn [{::stack/keys [uuid]}]
+                                                      (= (get attacker-stack
+                                                              ::stack/uuid)
+                                                         uuid))))))
+                                 (update-in [::area/trash
+                                             ::area/cards]
+                                            (fn [cards]
+                                              (->> (concat (get attacker-stack
+                                                                ::stack/cards)
+                                                           cards)
+                                                   (into [])))))))))
+               players)))
       (>= attacker-dp attacking-dp)
       ;; TODO: On deletion effect
-      (-> (update-in [::game/db ::stack/uuid] dissoc (second attacking))
-          (update-in [::game/db ::player/id (second player)
-                      ::player/areas ::area/battle ::area/stacks]
-                     (fn [stacks]
-                       (->> stacks
-                            (remove (fn [stack]
-                                      (= stack attacking)))
-                            (into []))))
-          (update-in [::game/db ::player/id (second player)
-                      ::player/areas ::area/trash ::area/cards]
-                     (fn [cards]
-                       (->> (concat (::stack/cards attacking-stack)
-                                    cards)
-                            (into [])))))
+      (update-in
+       [::game/players]
+       (fn [players]
+         (mapv (fn [player]
+                 (cond-> player
+                   (= (::player/id player)
+                      (get player-by-stack attacking))
+                   (update ::player/areas
+                           (fn [areas]
+                             (-> areas
+                                 (update-in [::area/battle
+                                             ::area/stacks]
+                                            (fn [stacks]
+                                              (->> stacks
+                                                   (remove
+                                                    (fn [{::stack/keys [uuid]}]
+                                                      (= (get attacking-stack
+                                                              ::stack/uuid)
+                                                         uuid))))))
+                                 (update-in [::area/trash
+                                             ::area/cards]
+                                            (fn [cards]
+                                              (->> (concat (get attacking-stack
+                                                                ::stack/cards)
+                                                           cards)
+                                                   (into [])))))))))
+               players)))
       true
       (assoc ::game/available-actions
              (if false ;; TODO: if attacker has piercing and survived
-               #{[:action/attack.security [::player/id turn] nil]}
-               #{[:phase/main [::player/id turn] nil]})))))
+               #{[:action/attack.security [::player/id current-player-id] nil]}
+               #{[:phase/main [::player/id current-player-id] nil]})))))
 
 (defn security-attack
-  [{::game/keys [db players]
+  [{::game/keys [cards-lookup players]
     {::attack/keys [attacker attacking player]} ::game/attack
-    {::game-in/keys [turn]} ::game/in
+    {::game-in/keys [turn-index]} ::game/in
     :as game} action]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{{{battle-stacks ::area/stacks} ::area/battle}
-         ::player/areas} (get-in db [::player/id turn])
-        attacker-stack (get-in db attacker)
+  (let [{current-player-id ::player/id} (nth players turn-index)
+        player-by-stack
+        (->> players
+             (reduce (fn [accl {{{breeding ::area/stacks} ::area/breeding
+                                {battle ::area/stacks} ::area/battle}
+                               ::player/areas
+                               ::player/keys [id]}]
+                       (merge accl
+                              (->> (concat breeding battle)
+                                   (map (fn [{stack-uuid ::stack/uuid}]
+                                          [[::stack/uuid stack-uuid]
+                                           id]))
+                                   (into {}))))
+                     {}))
+        stacks-by-ident (helpers/stacks-by-ident players)
+        attacker-stack (-> (get stacks-by-ident attacker)
+                           (update ::stack/cards
+                                   (partial helpers/stack-cards-lookup
+                                            cards-lookup)))
         attacker-dp (or (-> attacker-stack ::stack/dp)
-                        (-> (get-in db (-> attacker-stack
-                                           ::stack/cards
-                                           first))
+                        (-> attacker-stack
+                            ::stack/cards
+                            first
                             (get-in [::card/card :card/dp] 0)))
-        {{{opponent-security ::area/cards} ::area/security}
-         ::player/areas} (get-in db player)
+        {{{opponent-security ::area/cards} ::area/security} ::player/areas
+         opponent-id ::player/id} (get (helpers/players-by-id players) (second player))
         attacking-card (first opponent-security)
-        attacking-dp (-> (get-in db attacking-card)
-                         (get-in [::card/card :card/dp] 0))]
+        attacking-dp (get (helpers/card-lookup cards-lookup attacking-card)
+                          :card/dp 0)]
     (if (zero? (count opponent-security))
       (-> game
           (assoc ::game/available-actions #{})
           (assoc-in [::game/in ::game-in/state-id] :game/end)
           (update-in [::game/log] conj
-                     [:game/end [::player/id turn] [::player/id turn]]))
+                     [:game/end
+                      [::player/id current-player-id]
+                      [::player/id current-player-id]]))
       (cond-> game
         (<= attacker-dp attacking-dp)
         ;; TODO: On deletion effect
-        (-> (update-in [::game/db ::stack/uuid] dissoc (second attacker))
-            (update-in [::game/db ::player/id turn
-                        ::player/areas ::area/battle ::area/stacks]
-                       (fn [stacks]
-                         (->> stacks
-                              (remove (fn [stack]
-                                        (= stack attacker)))
-                              (into []))))
-            (update-in [::game/db ::player/id turn
-                        ::player/areas ::area/trash ::area/cards]
-                       (fn [cards]
-                         (->> (concat (::stack/cards attacker-stack)
-                                      cards)
-                              (into [])))))
+        (update-in
+         [::game/players]
+         (fn [players]
+           (mapv (fn [player]
+                   (cond-> player
+                     (= (::player/id player)
+                        (get player-by-stack attacker))
+                     (update ::player/areas
+                             (fn [areas]
+                               (-> areas
+                                   (update-in [::area/battle
+                                               ::area/stacks]
+                                              (fn [stacks]
+                                                (->> stacks
+                                                     (remove
+                                                      (fn [{::stack/keys [uuid]}]
+                                                        (= (get attacker-stack
+                                                                ::stack/uuid)
+                                                           uuid))))))
+                                   (update-in [::area/trash
+                                               ::area/cards]
+                                              (fn [cards]
+                                                (->> (concat (get attacker-stack
+                                                                  ::stack/cards)
+                                                             cards)
+                                                     (into [])))))))))
+                 players)))
         true
-        (-> (update-in [::game/db ::player/id (second player)
-                        ::player/areas ::area/security ::area/cards]
-                       (comp #(into [] %) rest))
-            ;; TODO: security effect may move to battle area instead of trash
-            (update-in [::game/db ::player/id (second player)
-                        ::player/areas ::area/trash ::area/cards]
-                       (fn [cards]
-                         (->> (concat [attacking-card]
-                                      cards)
-                              (into [])))))
+        (update-in
+         [::game/players]
+         (fn [players]
+           (mapv (fn [player]
+                   (cond-> player
+                     (= (::player/id player)
+                        opponent-id)
+                     (update ::player/areas
+                             (fn [areas]
+                               (-> areas
+                                   (update-in [::area/security
+                                               ::area/cards]
+                                              (comp #(into [] %) rest))
+                                   ;; TODO: security effect may move to
+                                   ;; battle area instead of trash
+                                   (update-in [::area/trash
+                                               ::area/cards]
+                                              (fn [cards]
+                                                (->> (concat [attacking-card]
+                                                             cards)
+                                                     (into [])))))))))
+                 players)))
         true
         (assoc ::game/available-actions
                (if false ;; TODO: if attacker has security attack +N
-                 #{[:action/attack.security turn nil]}
-                 #{[:phase/main [::player/id turn] nil]}))))))
+                 #{[:action/attack.security [::player/id current-player-id] nil]}
+                 #{[:phase/main [::player/id current-player-id] nil]}))))))
 
 (defn pass
-  [{{::game-in/keys [turn]} ::game/in :as game} action]
+  [{::game/keys [players] {::game-in/keys [turn-index]} ::game/in
+    :as game} action]
   {:pre [(s/valid? ::simulator/game game)
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
-  (let [{next-player-id ::player/id} (helpers/next-player game)]
+  (let [{next-player-id ::player/id} (->> (mod (inc turn-index) (count players))
+                                          (nth players))]
     (-> game
         (set-memory -3)
         (assoc ::game/available-actions
-               #{[:phase/unsuspend [::player/id turn] nil]})
+               #{[:phase/end-turn [::player/id next-player-id] nil]})
         (assoc-in [::game/in ::game-in/turn] next-player-id)
         (assoc-in [::game/in ::game-in/state-id]
-                  :phase/unsuspend))))
+                  :phase/end-turn))))
 
 (defn unsuspend-stack
-  [stack cards]
+  [stack]
   (assoc stack
          ::stack/suspended? false
          ::stack/summoned? false))
-
-(defn unsuspend
-  [{::game/keys [db] :as game}
-   [_ _ [[_ stack-uuid]] :as action]]
-  (update-in game [::game/db ::stack/uuid stack-uuid]
-             (fn [{cards ::stack/cards :as stack}]
-               (unsuspend-stack stack
-                                (map #(get-in db %) cards)))))

@@ -1,188 +1,9 @@
 (ns dcg.simulator.server.render
   (:require
-   [clojure.pprint :as pprint]
    [clojure.string :as string]
-   [dcg.simulator.area :as-alias area]
-   [dcg.simulator.card :as-alias card]
-   [dcg.simulator.game :as-alias game]
-   [dcg.simulator.game.in :as-alias game-in]
-   [dcg.simulator.helpers :as helpers]
-   [dcg.simulator.player :as-alias player]
-   [dcg.simulator.stack :as-alias stack]
    [dcg.simulator.state :as state]
    [hiccup.page :as page]
    [ring.middleware.anti-forgery :as anti-forgery]))
-
-(declare stack)
-
-(defn action
-  [{[action-key _ original-params :as original-action] :action/action :as action
-    params :action/params}]
-  (let [params-lookup (zipmap original-params params)]
-    [:li
-     [:form {:method "POST"}
-      [:input
-       {:type "hidden"
-        :name "__anti-forgery-token"
-        :value anti-forgery/*anti-forgery-token*}]
-      [:input
-       {:type "hidden"
-        :name "action"
-        :value (pr-str action-key)}]
-      [:input
-       {:type "hidden"
-        :name "params"
-        :value (pr-str original-params)}]
-      (case action-key
-        :action/play
-        [:button {:type "submit"}
-         (format "Play for a cost of %d"
-                 (get-in params
-                         [0
-                          ::card/card
-                          :card/play-cost]))]
-        :action/use
-        [:button {:type "submit"}
-         (format "Use for a cost of %d"
-                 (get-in params
-                         [0
-                          ::card/card
-                          :card/use-cost]))]
-        :action/digivolve
-        (let [stack-uuid (-> original-params last last)]
-          (list
-           [:style
-            (format
-             (str "dcg-board:has(button[data-stack=\"%s\"]:hover) "
-                  "dcg-stack[data-stack=\"%s\"] {"
-                  " box-shadow: var(--card-glow-small), var(--card-glow-large);"
-                  "}")
-             stack-uuid
-             stack-uuid)]
-           [:button
-            {:type "submit"
-             :data-stack stack-uuid}
-            (format "Digivolve for a cost of %d"
-                    (get-in params
-                            [0
-                             ::card/card
-                             :card/digivolution-requirements
-                             (second params)
-                             :digivolve/cost]))
-            (stack (last params))]))
-        :action/move
-        [:button {:type "submit"}
-         "Move to Battle Area"]
-        :action/attack.declare
-        (let [attack-stack (-> original-params last last)]
-          (list
-           [:style
-            (format
-             (str "dcg-board:has(button[data-stack=\"%s\"]:hover) "
-                  "dcg-stack[data-stack=\"%s\"] {"
-                  " box-shadow: var(--card-glow-small), var(--card-glow-large);"
-                  "}")
-             attack-stack
-             attack-stack)]
-           [:button
-            {:type "submit"
-             :data-stack attack-stack}
-            "Attack"
-            (if (= (-> original-params last first)
-                   ::player/id)
-              (str " " (-> params last ::player/name))
-              (stack (last params)))]))
-        [:li (pr-str action-key)])]]))
-
-(defn card-component
-  [{::card/keys [uuid actions]
-    {:card/keys [id category number color rarity image language]
-     :as card} ::card/card}]
-  (if id
-    [:dcg-card {:lang language}
-     [:div
-      {:itemscope ""
-       :itemprop "dcg-card"}
-      [:div {:itemscope ""
-             :itemprop "brand"}
-       [:data {:itemprop "name" :value "Digimon Card Game"} "Digimon Card Game"]
-       [:data {:itemprop "url" :value "https://digimoncard.com/global"}
-        "https://digimoncard.com/global"]]
-      [:data {:itemprop "id" :value id} id]
-      [:data {:itemprop "uuid" :value uuid} uuid]
-      [:data {:itemprop "name" :value (:card/name card)} (:card/name card)]
-      [:data {:itemprop "number" :value number} number]
-      (when-let [parallel-id (:card/parallel-id card)]
-        [:data {:itemprop "parallel-id" :value parallel-id} parallel-id])
-      [:data {:itemprop "category" :value category} category]
-      [:data {:itemprop "rarity" :value rarity} rarity]
-      (let [color (->> color
-                       (sort-by :color/index)
-                       (map (comp name :color/color))
-                       (string/join "/"))]
-        [:data {:itemprop "color" :value color} color])
-      [:data {:itemprop "image" :value (:image/path image)} (:image/path image)]
-      (when-let [level (:card/level card)]
-        [:data {:itemprop "level" :value level} level])
-      (when-let [dp (:card/dp card)]
-        [:data {:itemprop "DP" :value dp} dp])
-      (when-let [play-cost (:card/play-cost card)]
-        [:data {:itemprop "play-cost" :value play-cost} play-cost])
-      (when-let [use-cost (:card/use-cost card)]
-        [:data {:itemprop "use-cost" :value use-cost} use-cost])
-      (when-let [form (:card/form card)]
-        [:data {:itemprop "form" :value form} form])
-      (when-let [attribute (:card/attribute card)]
-        [:data {:itemprop "attribute" :value attribute} attribute])
-      (when-let [type (:card/type card)]
-        [:data {:itemprop "type" :value type} type])
-      (when-let [effect (:card/effect card)]
-        [:data {:itemprop "effect" :value effect} effect])
-      (when-let [inherited-effect (:card/inherited-effect card)]
-        [:data {:itemprop "inherited-effect" :value inherited-effect}
-         inherited-effect])
-      (when-let [security-effect (:card/security-effect card)]
-        [:data {:itemprop "security-effect" :value security-effect}
-         security-effect])
-      (when-let [notes (:card/notes card)]
-        [:data {:itemprop "notes" :value notes} notes])
-      (when-let [block-icon (:card/block-icon card)]
-        [:data {:itemprop "block-icon" :value block-icon} block-icon])
-      (when-let [digivolution-requirements (:card/digivolution-requirements card)]
-        [:div
-         (map (fn [{:digivolve/keys [level color cost] :as digivolve}]
-                (let [color (->> color
-                                 sort
-                                 (map name)
-                                 (string/join "/"))]
-                  [:div {:itemscope ""
-                         :itemprop "dcg-digivolution-requirment"}
-                   [:data {:itemprop "level" :value level} level]
-                   [:data {:itemprop "color" :value color} color]
-                   [:data {:itemprop "cost" :value cost} cost]]))
-              digivolution-requirements)])]
-     [:picture
-      [:source {:srcset (:image/path image)}]
-      [:img {:width 430 :height 600 :draggable "false"
-             :alt (format "%s %s" number (:card/name card))}]]
-     (when (seq actions)
-       (list [:button {:popovertarget (str uuid "-actions")}
-              "See actions"]
-             [:ul {:popover true
-                   :id (str uuid "-actions")}
-              (map action actions)]))]
-    [:dcg-card]))
-
-(defn stack
-  [{::stack/keys [actions cards uuid suspended?] :as stack}]
-  [:dcg-stack {:data-stack uuid}
-   (when (seq actions)
-     (list [:button {:popovertarget (str uuid "-actions")}
-            "See actions"]
-           [:ul {:popover true
-                 :id (str uuid "-actions")}
-            (map action actions)]))
-   (map card-component cards)])
 
 (def card-color
   {:red     "#E90022"
@@ -299,10 +120,10 @@
                 :fill (if (not= (-> color first :color/color) :black)
                         (get card-color :white)
                         (get card-color :black))
-                :font-size 24
-                :font-weight 700
-                :x 11
-                :y 36}
+                :font-size 22
+                :font-weight 600
+                :x 13
+                :y 35}
          [:tspan "L"]
          [:tspan {:font-size 18} "v"]
          [:tspan "."]
@@ -312,7 +133,7 @@
               (and (not= "en" language)
                    (< (count name) 28)))
         [:text {:lang language
-                :font-family "Peter-Black"
+                :font-family "Kommon Grotesk"
                 :fill (if (and (or (= (-> color first :color/color) :yellow)
                                    (= (-> color first :color/color) :white))
                                (< (count color) 3))
@@ -329,10 +150,9 @@
                             "#FFF"
                             "#000"))
                 :stroke-width (when (> (count color) 1) 3)
-                :font-size (cond-> 22
-                             (and (not= "en" language)
-                                  (>= (count name) 9))
-                             (- (/ (count name) 2.5)))
+                :font-size (cond-> 24
+                             (= "en" language)
+                             (+ 6))
                 :lengthAdjust "spacingAndGlyphs"
                 :textLength (cond
                               (and (> (count name) 13)
@@ -340,7 +160,7 @@
                               (and (> (count name) 20)
                                    (not digimon?)) 220
                               :else nil)
-                :font-weight 800
+                :font-weight 900
                 :x (if digimon?
                      (if (and (or (= "ja" language)
                                   (= "ko" language))
@@ -348,7 +168,7 @@
                        85
                        200)
                      195)
-                :y (cond-> 29
+                :y (cond-> 30
                      (some string? [form attribute type])
                      (- 3))
                 :text-anchor (if (and digimon?
@@ -375,7 +195,7 @@
                                      (map #(apply str %))))]
           [:g
            [:text {:lang language
-                   :font-family "Peter-Black"
+                   :font-family "Kommon Grotesk"
                    :fill (if (and (or (= (-> color first :color/color) :yellow)
                                       (= (-> color first :color/color) :white))
                                   (< (count color) 3))
@@ -398,7 +218,7 @@
                                  (and (> (count line-1) 20)
                                       (not digimon?)) 220
                                  :else nil)
-                   :font-weight 800
+                   :font-weight 900
                    :x (if digimon?
                         (if (and (or (= "ja" language)
                                      (= "ko" language))
@@ -406,7 +226,7 @@
                           85
                           200)
                         195)
-                   :y (cond-> 22
+                   :y (cond-> 20
                         (some string? [form attribute type])
                         (- 3))
                    :text-anchor (if (and digimon?
@@ -416,7 +236,7 @@
                                   "start"
                                   "middle")} line-1]
            [:text {:lang language
-                   :font-family "Peter-Black"
+                   :font-family "Kommon Grotesk"
                    :fill (if (and (or (= (-> color first :color/color) :yellow)
                                       (= (-> color first :color/color) :white))
                                   (< (count color) 3))
@@ -439,7 +259,7 @@
                                  (and (> (count line-2) 20)
                                       (not digimon?)) 220
                                  :else nil)
-                   :font-weight 800
+                   :font-weight 900
                    :x (if digimon?
                         (if (and (or (= "ja" language)
                                      (= "ko" language))
@@ -447,7 +267,7 @@
                           85
                           200)
                         195)
-                   :y (cond-> 35
+                   :y (cond-> 33
                         (some string? [form attribute type])
                         (- 3))
                    :text-anchor (if (and digimon?
@@ -502,7 +322,7 @@
                 :font-size 8
                 :font-weight 900
                 :kerning 1
-                :x 372
+                :x 370
                 :y 42
                 :fill (if (= (-> color first :color/color) :black)
                         (get card-color :black)
@@ -510,305 +330,7 @@
                 :text-anchor "end"}
          (->> [form attribute type]
               (remove nil?)
-              (string/join " | "))])]]))
-
-(defn player-perspective
-  [{::game/keys [available-actions players] :as game} player me]
-  (let [spectator? (not (contains? (->> players
-                                        (map ::player/id)
-                                        (into #{}))
-                                   (::player/id me)))
-        {::player/keys [areas]} (get (helpers/players-by-id players)
-                                     (::player/id player))]
-    [:dcg-player-perspective {:data-opponent (if spectator?
-                                               (str (not= (::player/id player)
-                                                          (get-in players
-                                                                  [0 ::player/id])))
-                                               (str (not= (::player/id player)
-                                                          (::player/id me))))}
-     (when (contains? available-actions [:phase/main
-                                         [::player/id (::player/id player)]
-                                         nil])
-       [:form {:method "POST"}
-        [:input
-         {:type "hidden"
-          :name "__anti-forgery-token"
-          :value anti-forgery/*anti-forgery-token*}]
-        [:input
-         {:type "hidden"
-          :name "action"
-          :value ":phase/main"}]
-        [:button
-         {:type "submit"}
-         "Move to Main Phase"]])
-     (when (contains? available-actions
-                      [:action/pass
-                       [::player/id (::player/id player)]
-                       nil])
-       [:form {:method "POST"}
-        [:input
-         {:type "hidden"
-          :name "__anti-forgery-token"
-          :value anti-forgery/*anti-forgery-token*}]
-        [:input
-         {:type "hidden"
-          :name "action"
-          :value ":action/pass"}]
-        [:button
-         {:type "submit"}
-         "Pass Turn"]])
-     (when (contains? available-actions
-                      [:action/attack.counter
-                       [::player/id (::player/id player)]
-                       :require-input])
-       [:form {:method "POST"}
-        [:input
-         {:type "hidden"
-          :name "__anti-forgery-token"
-          :value anti-forgery/*anti-forgery-token*}]
-        [:input
-         {:type "hidden"
-          :name "action"
-          :value ":action/attack.counter"}]
-        [:input
-         {:type "hidden"
-          :name "params"
-          :value ":require-input"}]
-        [:button
-         {:type "submit"}
-         "No Counter"]])
-     [:dcg-playmat
-      ;; Security
-      (let [{::area/keys [privacy cards]} (get areas ::area/security)]
-        [:dcg-area
-         {::area/security ""
-          :privacy privacy}
-         [:h3.sr-only (format "Security (%d)" (count cards))]
-         (list (map card-component cards))])
-      ;; Battle
-      (let [{::area/keys [privacy stacks]} (get areas ::area/battle)]
-        [:dcg-area
-         {::area/battle ""
-          :privacy privacy}
-         [:h3.sr-only (format "Battle (%d)" (count stacks))]
-         [:div.scrollable-container
-          (->> stacks
-               (remove (fn [{::stack/keys [cards uuid] :as stack}]
-                         (some (fn [{{:card/keys [category]}
-                                    ::card/card}]
-                                 (or (= category "Tamer")
-                                     (= category "테이머")
-                                     (= category "Option")
-                                     (= category "옵션")))
-                               cards)))
-               (map stack))]])
-      ;; Deck
-      (let [{::area/keys [privacy cards]} (get areas ::area/deck)]
-        [:dcg-area
-         {::area/deck ""
-          :privacy privacy}
-         [:h3.sr-only (format "Deck (%d)" (count cards))]
-         (when (pos? (count cards))
-           [:dcg-card])])
-      ;; Digi-Eggs
-      (let [{::area/keys [privacy cards]} (get areas ::area/digi-eggs)]
-        [:dcg-area
-         {::area/digi-eggs ""
-          :privacy privacy}
-         [:h3.sr-only (format "Digi-Eggs (%d)" (count cards))]
-         (if (contains? available-actions
-                        [:action/hatch
-                         [::player/id (::player/id player)]
-                         nil])
-           [:form {:method "POST"}
-            [:input
-             {:type "hidden"
-              :name "__anti-forgery-token"
-              :value anti-forgery/*anti-forgery-token*}]
-            [:input
-             {:type "hidden"
-              :name "action"
-              :value ":action/hatch"}]
-            [:dcg-card
-             [:button
-              {:type "submit"}
-              "Hatch Digi-Egg"]]]
-           (when (pos? (count cards))
-             [:dcg-card]))])
-      ;; Breeding Area
-      (let [{::area/keys [privacy stacks]} (get areas ::area/breeding)]
-        [:dcg-area
-         {::area/breeding ""
-          :privacy privacy}
-         [:h3.sr-only "Breeding Area"]
-         (list (map stack stacks))])
-      ;; Tamer/Option
-      (let [{::area/keys [privacy stacks]} (get areas ::area/battle)]
-        [:dcg-area
-         {"tamer-option" ""
-          :privacy privacy}
-         [:h3.sr-only (format "Battle (%d)" (count stacks))]
-         [:div.scrollable-container
-          (->> stacks
-               (filter (fn [{::stack/keys [cards uuid] :as stack}]
-                         (some (fn [{{:card/keys [category]}
-                                    ::card/card}]
-                                 (or (= category "Tamer")
-                                     (= category "테이머")
-                                     (= category "Option")
-                                     (= category "옵션")))
-                               cards)))
-               (map stack))]])
-      ;; Trash
-      (let [{::area/keys [privacy cards]} (get areas ::area/trash)]
-        [:dcg-area
-         {::area/trash ""
-          :privacy privacy}
-         [:h3.sr-only "Trash"]
-         ;; TODO: Trash can be opened to see all cards publicly
-         (list (->> cards
-                    (take 1)
-                    (map card-component)))])
-      [:dcg-area
-       {::area/hand ""
-        :privacy :owner}
-       (let [{::area/keys [privacy cards]} (get-in areas [::area/hand])]
-         [:div.scrollable-container
-          (map card-component cards)])]]]))
-
-(defn prompt
-  [{::game/keys [available-actions log players] :as game} player]
-  (let [{::player/keys [memory areas] :as me} (get (helpers/players-by-id players)
-                                                   (::player/id player))
-        dialog-actions (filter (fn [[action-state-id _ _]]
-                                 (string/ends-with? (str action-state-id)
-                                                    "?"))
-                               available-actions)
-        action-state-id (ffirst dialog-actions)]
-    (case (or action-state-id
-              (get-in game [::game/in ::game-in/state-id]))
-      :action/re-draw?
-      [:dialog {:open true}
-       [:form {:method "POST"}
-        [:div
-         [:p [:strong "Re-draw Hand?"]]
-         [:dcg-area {::area/hand ""}
-          (->> (get-in areas [::area/hand ::area/cards])
-               (map card-component))]]
-        [:input
-         {:type "hidden"
-          :name "__anti-forgery-token"
-          :value anti-forgery/*anti-forgery-token*}]
-        [:input
-         {:type "hidden"
-          :name "action"
-          :value (str action-state-id)}]
-        (->> dialog-actions
-             (sort-by (fn [[_ _ param]] param))
-             (map (fn [[_ _ param]]
-                    [:button
-                     (cond-> {:type "submit"
-                              :name "params"
-                              :value (str param)}
-                       (= param false)
-                       (merge {:autofocus true}))
-                     (case param
-                       true "Yes"
-                       false "No")]))
-             list)]]
-      :game/end
-      [:dialog {:open true}
-       [:form {:method "dialog"}
-        [:button {:autofocus true} "Close"]]
-       (let [[_ _ [_ turn]] (last log)]
-         (if (get (helpers/players-by-id players) (get player ::player/id))
-           (str "You "
-                (if (= turn (get player ::player/id))
-                  "Win"
-                  "Lose"))
-           (str (get-in (helpers/players-by-id players)
-                        [turn ::player/name])
-                " Wins")))]
-      nil)))
-
-(defn card
-  [cards]
-  (page/html5
-      {:mode :html
-       :lang "en"}
-    [:head
-     [:meta {:charset "utf-8"}]
-     [:title "Heroicc"]
-     [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
-     (page/include-css "/css/style.css")
-     [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
-    [:body
-     [:h1 [:a {:href "/"} "Heroicc"]]
-     [:div
-      [:h2 "Card names"]
-      [:ul
-       (map (comp (fn [n]
-                    [:li n " - " (count n)])
-                  :card/name) cards)]]
-     [:div
-      [:h2 "Compact cards"]
-      (map (fn [c]
-             [:div
-              [:div
-               (card-component {::card/card c})]
-              (compact-card-component c)
-              [:p (:card/category c)]])
-           cards)]]))
-
-(defn game
-  [{::game/keys [available-actions log players] :as game} player]
-  (let [spectator? (not (contains? (->> players
-                                        (map ::player/id)
-                                        (into #{}))
-                                   (::player/id player)))
-        {::player/keys [memory] :as me} (get (helpers/players-by-id players)
-                                             (::player/id player))]
-    (page/html5 {:mode :html
-                 :lang "en"}
-      [:head
-       [:meta {:charset "utf-8"}]
-       [:title "Heroicc"]
-       [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
-       (page/include-css "/css/style.css")
-       [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
-      [:body
-       [:h1 [:a {:href "/"} "Heroicc"]]
-       [:h2 (::player/name me)]
-       [:p "Memory: " memory]
-       #_(when (and (not spectator?))
-           [:pre
-            [:code
-             (->> available-actions
-                  pprint/pprint
-                  with-out-str)]])
-       (when (and (not spectator?)
-                  (empty? available-actions)
-                  (not= (get-in game [::game/in ::game-in/state-id])
-                        :game/end))
-         [:p "Waiting for opponent..."])
-       [:dcg-board
-        [:div.scrollable-container
-         (->> players
-              (remove (fn [{::player/keys [id]}]
-                        (if spectator?
-                          (= id (get-in players [0 ::player/id]))
-                          (= id (::player/id player)))))
-              (map (fn [opponent]
-                     (player-perspective game opponent me))))]
-        [:div.scrollable-container
-         (->> players
-              (filter (fn [{::player/keys [id]}]
-                        (if spectator?
-                          (= id (get-in players [0 ::player/id]))
-                          (= id (::player/id player)))))
-              (map (fn [teammate]
-                     (player-perspective game teammate me))))]]
-       (prompt game player)])))
+              (string/join "&nbsp;&nbsp;|&nbsp;&nbsp;"))])]]))
 
 (defn index
   [player]
@@ -840,3 +362,48 @@
         [:input
          {:type "submit"
           :value "Queue"}]])]))
+
+(defn card
+  [cards]
+  (page/html5
+      {:mode :html
+       :lang "en"}
+    [:head
+     [:meta {:charset "utf-8"}]
+     [:title "Heroicc"]
+     [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
+     (page/include-css "/css/style.css")
+     [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
+    [:body
+     [:h1 [:a {:href "/"} "Heroicc"]]
+     [:div
+      [:h2 "Card names"]
+      [:ul
+       (->> cards
+            (map (juxt :card/name :card/language))
+            set
+            (sort-by second)
+            (map (fn [[n language]]
+                   [:li (format "%s (%s)"
+                                n language)])))]]
+     [:div
+      [:h2 "Compact cards"]
+      (map (fn [c]
+             [:div
+              [:div
+               (card-component {::card/card c})]
+              (compact-card-component c)
+              [:p (:card/category c)]])
+           cards)]]))
+
+(defn game-wrapper
+  [app]
+  (page/html5 {:mode :html
+               :lang "en"}
+    [:head
+     [:meta {:charset "utf-8"}]
+     [:title "Heroicc"]
+     [:meta {:content "width=device-width,initial-scale=1" :name "viewport"}]
+     (page/include-css "/css/style.css")
+     [:script {:type "text/javascript" :defer "defer" :src "/js/dcg-card.js"}]]
+    [:body app]))

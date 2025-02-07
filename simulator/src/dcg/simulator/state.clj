@@ -46,9 +46,9 @@
                     :or {parallel-id 0}}]
             (apply conj accl
                    (repeatedly count
-                               (fn []
-                                 {::card/number number
-                                  ::card/parallel-id parallel-id}))))
+                               (constantly
+                                {::card/number number
+                                 ::card/parallel-id parallel-id}))))
           []
           cards))
 
@@ -62,10 +62,6 @@
         player-language (get-in (helpers/players-by-id players)
                                 [player-id ::player/language]
                                 "en")
-        card-lookup-fn (fn [{:card/keys [number parallel-id]}]
-                         (get-in db [:card-uuids-by-language
-                                     player-language
-                                     [number parallel-id]]))
         available-actions (reduce (fn [accl [_ [_ id] _ :as action]]
                                     (cond-> accl
                                       (= id player-id)
@@ -121,43 +117,10 @@
                                :action/params expanded-params}))))
                 {}
                 available-actions)
-        update-card (fn [[_ uuid :as lookup]]
-                      (when (contains? visible-cards lookup)
-                        (let [card (get-in db lookup)
-                              actions (get actions-by-ident lookup)]
-                          (cond-> card
-                            actions
-                            (assoc ::card/actions actions)))))
-        update-cards (fn [cards]
-                       (mapv update-card cards))
-        update-stack (fn [[_ uuid :as lookup]]
-                       (let [{::stack/keys [cards]
-                              :as stack} (get-in db lookup)
-                             actions (get actions-by-ident lookup)]
-                         (cond-> (update stack ::stack/cards update-cards)
-                           actions
-                           (assoc ::stack/actions actions))))
-        update-stacks (fn [stacks]
-                        (mapv update-stack stacks))
         players-by-id
         (->> players
              (reduce (fn [accl {::player/keys [id] :as player}]
-                       (assoc accl id
-                              (update player ::player/areas
-                                      (fn [areas]
-                                        (reduce-kv
-                                         (fn [accl k {::area/keys [cards stacks]
-                                                     :as area}]
-                                           (assoc accl k
-                                                  (cond-> area
-                                                    cards
-                                                    (update ::area/cards
-                                                            update-cards)
-                                                    stacks
-                                                    (update ::area/stacks
-                                                            update-stacks))))
-                                         {}
-                                         areas)))))
+                       (assoc accl id player))
                      {}))]
     (-> game
         (dissoc ::game/random
@@ -173,52 +136,70 @@
   [^Random r {::player/keys [deck-code id] :as player}]
   (let [{:deck/keys [digi-eggs deck language]
          :or {language "en"}} (codec-decode/decode deck-code)
-        initial-digi-eggs (->> (decoded->deck digi-eggs)
-                               (random/shuffle r)
-                               (mapv (fn [{::card/keys [number parallel-id]
-                                          :as card}]
-                                       (assoc card
-                                              ::card/uuid (random/uuid r)))))
-        [initial-hand initial-deck]
-        (->> (decoded->deck deck)
-             (random/shuffle r)
-             (mapv (fn [{::card/keys [number parallel-id]
-                        :as card}]
-                     (assoc card
-                            ::card/uuid (random/uuid r))))
-             (split-at 5)
-             (map #(into [] %)))
-        cards (concat initial-digi-eggs
-                      initial-hand
-                      initial-deck)]
+        assign-uuid-to-card (fn [card] (assoc card ::card/uuid (random/uuid r)))
+        digi-eggs (->> (decoded->deck digi-eggs)
+                       (map assign-uuid-to-card))
+        deck (->> (decoded->deck deck)
+                  (map assign-uuid-to-card))
+        cards-by-uuid (reduce (fn [accl {::card/keys [uuid number parallel-id]}]
+                                (assoc accl
+                                       uuid
+                                       [number parallel-id]))
+                              {}
+                              (concat digi-eggs deck))
+        update-card (fn [card] (select-keys card [::card/uuid]))
+        initial-digi-eggs (->> digi-eggs
+                               (map update-card)
+                               (random/shuffle r))
+        [initial-hand initial-deck] (->> deck
+                                         (map update-card)
+                                         (random/shuffle r)
+                                         (split-at 5))
+        player-id (or id (random/uuid r))]
     (-> player
-        (assoc ::player/id (or id (random/uuid r))
+        (assoc ::player/id player-id
+               ::player/turn-index 0
                ::player/language language
                ::player/memory 0
                ::player/areas {::area/digi-eggs
-                               {::area/privacy :private
+                               {::area/name ::area/digi-eggs
+                                ::area/of-player player-id
+                                ::area/privacy :private
                                 ::area/cards initial-digi-eggs}
                                ::area/deck
-                               {::area/privacy :private
+                               {::area/name ::area/deck
+                                ::area/of-player player-id
+                                ::area/privacy :private
                                 ::area/cards initial-deck}
                                ::area/breeding
-                               {::area/privacy :public
+                               {::area/name ::area/breeding
+                                ::area/of-player player-id
+                                ::area/privacy :public
                                 ::area/stacks []}
                                ::area/trash
-                               {::area/privacy :public
+                               {::area/name ::area/trash
+                                ::area/of-player player-id
+                                ::area/privacy :public
                                 ::area/cards []}
                                ::area/battle
-                               {::area/privacy :public
+                               {::area/name ::area/battle
+                                ::area/of-player player-id
+                                ::area/privacy :public
                                 ::area/stacks []}
                                ::area/security
-                               {::area/privacy :private
+                               {::area/name ::area/security
+                                ::area/of-player player-id
+                                ::area/privacy :private
                                 ::area/cards []}
                                ::area/hand
-                               {::area/privacy :owner
+                               {::area/name ::area/hand
+                                ::area/of-player player-id
+                                ::area/privacy :owner
                                 ::area/cards initial-hand}}
-               ::player/timings #{}))))
+               ::player/timings #{}
+               ::player/cards-by-uuid cards-by-uuid))))
 
-(defn initialize
+(defn initialize-game
   [players constraint-code]
   {:pre [(s/valid? (s/coll-of (s/keys :req [::player/name
                                             ::player/deck-code])
@@ -228,105 +209,51 @@
    :post [(s/valid? ::simulator/game %)]}
   (let [game-id (random-uuid)
         r (Random. (.getMostSignificantBits game-id))
-        instant (Instant/now)
         players (->> players
                      (random/shuffle r)
-                     (map-indexed
-                      (fn [idx player]
-                        (initialize-player r
-                                           (assoc player
-                                                  ::player/turn-index
-                                                  idx))))
-                     (into []))
-        turn (-> players first ::player/id)
-        cards (mapcat (comp (fn [areas]
-                              (mapcat (fn [[_ {cards ::area/cards}]]
-                                        cards)
-                                      areas))
-                            ::player/areas)
-                      players)
-        card-uuids-by-language (helpers/load-cards (map (juxt ::card/number
-                                                              ::card/parallel-id)
-                                                        cards)
-                                                   (->> players
-                                                        (map ::player/language)
-                                                        (reduce conj #{"en"})))
-        update-cards-fn (fn [cards]
-                          (mapv (fn [{::card/keys [uuid]}]
-                                  [::card/uuid uuid])
-                                cards))
-        update-stacks-fn (fn [stacks]
-                           (mapv (fn [{::stack/keys [uuid] :as stack}]
-                                   [::stack/uuid uuid])
-                                 stacks))]
+                     (mapv (fn [player]
+                             (initialize-player r player))))
+        turn-index 0
+        player-id (::player/id (nth players turn-index))
+        cards-by-uuid (->> players
+                           (map ::player/cards-by-uuid)
+                           (apply merge))
+        card-languages (conj (->> players
+                                  (map ::player/language)
+                                  (into #{}))
+                             "en")
+        cards-lookup (helpers/load-cards cards-by-uuid
+                                         card-languages)
+        available-actions (->> players
+                               (mapcat (fn [{::player/keys [id]}]
+                                         [[:action/re-draw? [::player/id id] true]
+                                          [:action/re-draw? [::player/id id] false]]))
+                               set)]
     {::game/random r
      ::game/id game-id
-     ::game/instant instant
+     ::game/instant (Instant/now)
      ::game/turn-counter 0
      ::game/constraint-code constraint-code
      ::game/log [[:phase/pre-game [::game/id game-id] [constraint-code]]]
      ::game/pending-effects clojure.lang.PersistentQueue/EMPTY
-     ::game/available-actions #{[:action/re-draw? [::player/id turn] true]
-                                [:action/re-draw? [::player/id turn] false]}
-     ::game/in {::game-in/turn turn
+     ::game/available-actions available-actions
+     ::game/in {::game-in/turn-index turn-index
                 ::game-in/state-id :phase/pre-game}
-     ::game/players (mapv (fn [{::player/keys [id]}]
-                            [::player/id id])
+     ::game/players (mapv (fn [player]
+                            (dissoc player ::player/cards-by-uuid))
                           players)
-     ::game/db (merge {:card-uuids-by-language card-uuids-by-language}
-                      (reduce
-                       (fn [accl {::player/keys [id areas] :as player}]
-                         (-> accl
-                             (assoc-in [::player/id id] player)
-                             (assoc-in [::player/id id ::player/areas]
-                                       (reduce-kv
-                                        (fn [accl k {::area/keys [cards stacks]
-                                                    :as area}]
-                                          (assoc accl k
-                                                 (cond-> area
-                                                   cards
-                                                   (update ::area/cards
-                                                           update-cards-fn)
-                                                   stacks
-                                                   (update ::area/stacks
-                                                           update-stacks-fn))))
-                                        {}
-                                        areas))))
-                       {}
-                       players)
-                      (reduce (fn [accl {{::area/keys [battle breeding]}
-                                        ::player/areas
-                                        :as player}]
-                                (merge accl
-                                       (->> (concat breeding
-                                                    battle)
-                                            (mapv (fn [{::stack/keys [uuid]}]
-                                                    (when uuid
-                                                      [::stack/uuid uuid])))
-                                            (remove nil?)
-                                            (into {}))))
-                              {}
-                              players)
-                      (reduce (fn [accl {::card/keys [uuid number parallel-id]}]
-                                (assoc-in accl
-                                          [::card/uuid uuid]
-                                          {::card/uuid uuid
-                                           ::card/card
-                                           (get-in card-uuids-by-language
-                                                   ["en"
-                                                    [number parallel-id]])}))
-                              {}
-                              cards))}))
+     ::game/cards-lookup cards-lookup}))
 
 (defn initialize-from-queue!
   []
-  (when (> (count (get @state ::queue)) 1)
-    (let [players (take 2 (get @state ::queue))
-          game (initialize players nil)]
-      (swap! state
-             (fn [state]
+  (swap! state
+         (fn [{queue ::queue :as state}]
+           (if (< (count queue) 2)
+             state
+             (let [players (take 2 queue)
+                   game (initialize-game players nil)]
                (-> state
-                   (update ::queue (fn [q] (nth (iterate pop q) 2)))
+                   (update ::queue (fn [q] (-> (iterate pop q) (nth 2))))
                    (assoc-in [::games-by-id (::game/id game)] game)
                    (update ::game-by-player-id merge
                            (reduce (fn [accl {::player/keys [id]}]
@@ -350,6 +277,7 @@
    :action/pass #'action/pass
    :action/update-memory #'action/update-memory
    ;; Phases
+   :phase/start-turn #'phase/start-of-turn
    :phase/unsuspend #'phase/unsuspend
    :phase/draw #'phase/draw
    :phase/breeding #'phase/breeding
@@ -365,17 +293,46 @@
   (when-not (contains? available-actions action)
     (throw (Exception. (str "Invalid action: " action))))
   (let [handler (get-in fsm [action-state-id])
-        {::game/keys [available-actions in]
-         :as game} (-> game
-                       (handler action)
-                       (as-> #__ game
-                         (cond-> game
-                           (not= (get-in game [::game/in ::game-in/state-id])
-                                 :game/end)
-                           (-> (update ::game/available-actions disj action)
-                               (update ::game/log conj action)))))]
+        {::game/keys [available-actions]
+         :as game} (as-> (handler game action) game
+                     (cond-> game
+                       (not= (get-in game [::game/in ::game-in/state-id])
+                             :game/end)
+                       (-> (update ::game/available-actions disj action)
+                           (update ::game/log conj action))))]
     (cond-> game
       (and (= (count available-actions) 1)
            (not= (last (first available-actions))
                  :require-input))
       (flow (first available-actions)))))
+
+(comment
+  (let [game-db (get-in @state [::games-by-id
+                                #uuid "19ac6500-1740-4406-960b-6b36fe1ed459"
+                                ::game/db])
+        stack-paths (get-in game-db [::player/id
+                                     #uuid "8427e599-51d6-4d7e-883c-d625cad0962a"
+                                     ::player/areas
+                                     ::area/battle
+                                     ::area/stacks])
+        stacks (->> stack-paths
+                    (map (fn [path]
+                           (-> (get-in game-db path)
+                               (update ::stack/cards
+                                       (fn [cards]
+                                         (->> cards
+                                              (map #(get-in game-db %)))))))))]
+    stacks)
+
+  (initialize-game [{::player/id (random-uuid)
+                     ::player/name "niamu"
+                     ::player/deck-code "DCGAREdU1QxIEHBU1QxIE_CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ"}
+                    {::player/id (random-uuid)
+                     ::player/name "AI"
+                     ::player/deck-code "DCGARMhU1QyIEHBU1QyIE_CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0"}]
+                   nil)
+
+  (get-in @state
+          [::games-by-id #uuid "4970cb51-99a5-47d1-b9ce-15942b6efcc5"])
+
+  )

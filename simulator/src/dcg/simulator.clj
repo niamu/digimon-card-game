@@ -23,8 +23,7 @@
                 ::player/language
                 ::player/memory
                 ::player/areas
-                ::player/timings]
-          :opt [::player/uuid->lookup]))
+                ::player/timings]))
 
 (s/def ::player/id uuid?)
 (s/def ::player/turn-index (s/or :zero zero?
@@ -38,7 +37,6 @@
 (s/def ::player/timings (s/coll-of keyword?
                                    :distinct true
                                    :kind set?))
-(s/def ::player/uuid->lookup (s/map-of ::card/uuid ::card/lookup))
 
 (s/def ::effect
   (s/keys :req [::effect/origin
@@ -84,9 +82,12 @@
                 ::game/pending-effects
                 ::game/available-actions
                 ::game/in
-                ::game/db]
+                ::game/cards-lookup]
           :opt [::game/constraint-code
                 ::game/attack]))
+
+(s/def ::game/cards-lookup (s/map-of uuid?
+                                     (s/map-of string? map?)))
 
 (s/def ::game/random #(instance? Random %))
 (s/def ::game/id uuid?)
@@ -97,41 +98,22 @@
                                            (try (codec-decode/decode s)
                                                 (catch Exception _ false)))))
 (s/def ::game/log (s/coll-of ::action))
-(s/def ::game/players (s/coll-of (s/tuple #{::player/id
-                                            ::stack/uuid
-                                            ::card/uuid}
-                                          uuid?)
+(s/def ::game/players (s/coll-of ::player
                                  :distinct true
                                  :min-count 2))
 (s/def ::game/active-effects (s/map-of ::effect pos-int?))
 (s/def ::game/pending-effects #(instance? clojure.lang.PersistentQueue %))
 
+(s/def ::action-ident (s/tuple keyword? uuid?))
 (s/def ::action (s/tuple ::game-in/state-id
-                         (s/tuple #{::game/id
-                                    ::player/id} uuid?)
+                         ::action-ident
                          any?))
-(s/def ::game/in (s/keys :req [::game-in/turn
+(s/def ::game/in (s/keys :req [::game-in/turn-index
                                ::game-in/state-id]))
 
-(s/def ::game-in/turn ::player/id)
+(s/def ::game-in/turn-index (s/or :zero zero?
+                                  :pos-int pos-int?))
 (s/def ::game-in/state-id keyword?)
-
-(s/def ::game/db (s/map-of #{:card-uuids-by-language
-                             ::player/id
-                             ::stack/uuid
-                             ::card/uuid}
-                           (s/or :idents
-                                 (s/map-of uuid?
-                                           (s/or :player ::player
-                                                 :stack ::stack
-                                                 :card map?))
-                                 :card-lookup
-                                 (s/map-of string?
-                                           (s/map-of
-                                            (s/tuple string?
-                                                     (s/or :zero zero?
-                                                           :pos-int pos-int?))
-                                            map?)))))
 
 (s/def ::game/attack (s/keys :req [::attack/attacker
                                    ::attack/attacking
@@ -149,56 +131,65 @@
 
 (s/def ::areas
   (s/keys :req [::area/digi-eggs
-		::area/breeding
-		::area/deck
-		::area/trash
-		::area/battle
-		::area/security
-		::area/hand]))
+	        ::area/breeding
+	        ::area/deck
+	        ::area/trash
+	        ::area/battle
+	        ::area/security
+	        ::area/hand]))
 
 (s/def ::player/areas ::areas)
+
+(s/def ::area/name keyword?)
 
 (s/def ::area/privacy #{:private
                         :owner
                         :public})
 
-(s/def ::area/cards (s/coll-of (s/tuple #{::card/uuid} uuid?)
+(s/def ::area/cards (s/coll-of ::card
                                :distinct true))
 
 (s/def ::area/stacks (s/* ::stack))
 
-(s/def ::area/digi-eggs (s/and (s/keys :req [::area/privacy
+(s/def ::area/digi-eggs (s/and (s/keys :req [::area/name
+                                             ::area/privacy
                                              ::area/cards])
                                (fn [{privacy ::area/privacy}]
                                  (= privacy :private))))
 
-(s/def ::area/breeding (s/and (s/keys :req [::area/privacy
+(s/def ::area/breeding (s/and (s/keys :req [::area/name
+                                            ::area/privacy
                                             ::area/stacks])
                               (fn [{privacy ::area/privacy}]
                                 (= privacy :public))))
 
-(s/def ::area/deck (s/and (s/keys :req [::area/privacy
+(s/def ::area/deck (s/and (s/keys :req [::area/name
+                                        ::area/privacy
                                         ::area/cards])
                           (fn [{privacy ::area/privacy}]
                             (= privacy :private))))
 
-(s/def ::area/trash (s/and (s/keys :req [::area/privacy
+(s/def ::area/trash (s/and (s/keys :req [::area/name
+                                         ::area/privacy
                                          ::area/cards])
                            (fn [{privacy ::area/privacy}]
                              (= privacy :public))))
 
-(s/def ::area/battle (s/and (s/keys :req [::area/privacy
+(s/def ::area/battle (s/and (s/keys :req [::area/name
+                                          ::area/privacy
                                           ::area/stacks])
                             (fn [{privacy ::area/privacy}]
                               (= privacy :public))))
 
 (s/def ::area/security (s/and (fn [{cards ::area/cards
-                                    privacy ::area/privacy}]
+                                   privacy ::area/privacy}]
                                 (= privacy :private))
-                              (s/keys :req [::area/privacy
+                              (s/keys :req [::area/name
+                                            ::area/privacy
                                             ::area/cards])))
 
-(s/def ::area/hand (s/and (s/keys :req [::area/privacy
+(s/def ::area/hand (s/and (s/keys :req [::area/name
+                                        ::area/privacy
                                         ::area/cards])
                           (fn [{privacy ::area/privacy}]
                             (= privacy :owner))))
@@ -218,19 +209,9 @@
 
 (s/def ::card
   (s/nilable (s/keys :req [::card/uuid]
-                     :opt [::card/number
-                           ::card/parallel-id
-                           ::card/actions
-                           ::card/privacy])))
+                     :opt [::card/privacy])))
 
 (s/def ::card/uuid uuid?)
-(s/def ::card/number string?)
-(s/def ::card/parallel-id (s/or :zero zero?
-                                :pos-int pos-int?))
-(s/def ::card/lookup (s/tuple keyword?
-                              ::player/language
-                              (s/tuple ::card/number ::card/parallel-id)))
-(s/def ::card/actions ::game/available-actions)
 (s/def ::card/privacy ::area/privacy)
 
 (comment
