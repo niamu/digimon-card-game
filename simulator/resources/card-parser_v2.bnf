@@ -1,0 +1,367 @@
+<S> = effect / effect+
+
+effect =
+      EFFECT_CONTENTS
+    / (EFFECT_CONTENTS <#"(?i)Then,?" SPACE> EFFECT_CONTENTS)
+
+<EFFECT_CONTENTS> =
+    (
+        effect/keyword
+        /
+        (
+            (
+                (
+                    (
+                        <SPACE>?
+                        (effect/timing | effect/precondition)
+                        <SPACE>?
+                    )+
+                )
+                <SPACE>?
+            )*
+            (
+                  effect/gain
+                | effect/lose
+                | effect/play
+                | effect/activate
+                | effect/trigger
+                | effect/delete
+                | effect/trash
+                | effect/add
+                | effect/return
+                | effect/unsuspend
+                | effect/choose
+            )
+        )
+    )
+    (<"."? SPACE?>? PARENTHESES?)?
+
+value/tree =
+    ((value/lte) <SPACE>)?
+    (value/every / value/all / value/number / value/none / value/one)
+    (<SPACE> (value/lte | value/gte))?
+value/number = #"[\+\-]?[0-9]+"
+value/every = <"every" SPACE> value/number
+value/all = <#"(?i)All">
+value/one = <"a"> | <"an"> | <"the">
+value/none = <"no"> | <"without paying its memory cost">
+value/gte = <"or" SPACE>? <"more">
+value/lte = <"up to"> | <"or less">
+
+<SPACE> = #"\s+" | "―"
+<OPEN_QUOTE> = "“" | '"'
+<CLOSE_QUOTE> = "“" | "”" | '"'
+<PARENTHESES> = <#"[(][^)]*[)]">
+with = (<#"(?i)with"> | <"w/">) <SPACE "a">?
+
+
+(* LIST ITEM *)
+effect/list-item = <("・" | "*")> effect
+
+
+(* KEYWORD *)
+effect/keyword = (
+        keyword/blocker
+        | keyword/digi-burst
+        | keyword/draw
+        | keyword/rush
+        | keyword/security-attack
+        | keyword/alliance
+        | keyword/armor-purge
+        | keyword/barrier
+        | keyword/blast-digivolve
+        | keyword/blitz
+        | keyword/de-digivolve
+        | keyword/decoy
+        | keyword/delay
+        | keyword/digi-burst
+        | keyword/digisorption
+        | keyword/evade
+        | keyword/fortitude
+        | keyword/jamming
+        | keyword/material-save
+        | keyword/mind-link
+        | keyword/overflow
+        | keyword/piercing
+        | keyword/raid
+        | keyword/reboot
+        | keyword/save
+        | keyword/retaliation
+        | keyword/recovery
+        | keyword/digixros
+        | keyword/digixrosing
+        | keyword/partition
+        | keyword/collision
+    )
+    (<"."? SPACE?>? PARENTHESES?)?
+keyword/blocker = <#"[\<＜]"> <#"(?i)Blocker"> <#"[\>＞]"> <" to suspend one of your " card/type>?
+keyword/digi-burst = <#"[\<＜]"> <#"(?i)Digi\-Burst"> <SPACE>? value/tree <#"[\>＞]">
+keyword/draw = <#"[\<＜]"> <#"(?i)Draw"> <SPACE>? value/tree <#"[\>＞]">
+keyword/rush = <#"[\<＜]"> <#"(?i)Rush"> <#"[\>＞]">
+keyword/security-attack = <#"[\<＜]"> <(#"(?i)S Attack" | #"(?i)Security A(\.|ttack)")> (<SPACE>? value/tree)? <#"[\>＞]">
+keyword/alliance = <#"[\<＜]"> <#"(?i)Alliance"> <#"[\>＞]">
+keyword/armor-purge = <#"[\<＜]"> <#"(?i)Armor Purge"> <#"[\>＞]">
+keyword/barrier = <#"[\<＜]"> <#"(?i)Barrier"> <#"[\>＞]">
+keyword/blast-digivolve = <#"[\<＜]"> <#"(?i)Blast Digivolve"> <#"[\>＞]">
+keyword/blitz = <#"[\<＜]"> <#"(?i)Blitz"> <#"[\>＞]">
+keyword/de-digivolve = <#"[\<＜]"> <#"(?i)De\-Digivolve"> (<SPACE>? value/tree)? <#"[\>＞]"> (<SPACE "on">? <SPACE> effect/target)?
+keyword/decoy =
+    <#"[\<＜]">
+    <#"(?i)Decoy">
+    <SPACE>?
+    <"(">
+    (
+          ((<"/">? card/color)+ <"trait">?)
+        | mention
+    )
+    <")">
+    <#"[\>＞]">
+keyword/delay = <#"[\<＜]"> <#"(?i)Delay"> <#"[\>＞]"> (<"."? SPACE?>? PARENTHESES)? <"."? SPACE>? effect/list-item+
+keyword/digi-burst = <#"[\<＜]"> <#"(?i)Digi\-Burst"> (<SPACE>? value/tree)? <#"[\>＞]">
+keyword/digisorption = <#"[\<＜]"> <#"(?i)Digisorption"> (<SPACE>? value/tree)? <#"[\>＞]">
+keyword/evade = <#"[\<＜]"> <#"(?i)Evade"> <#"[\>＞]">
+keyword/fortitude = <#"[\<＜]"> <#"(?i)Fortitude"> <#"[\>＞]">
+keyword/jamming = <#"[\<＜]"> <#"(?i)Jamming"> <#"[\>＞]">
+keyword/material-save = <#"[\<＜]"> <#"(?i)Material Save"> <SPACE>? value/tree <#"[\>＞]">
+keyword/mind-link = <#"[\<＜]"> <#"(?i)Mind Link"> <#"[\>＞]">
+keyword/overflow = <#"[\<＜]"> <#"(?i)Overflow"> <SPACE>? <"("> value/tree <")"> <#"[\>＞]">
+keyword/piercing = <#"[\<＜]"> <#"(?i)Piercing"> <#"[\>＞]">
+keyword/raid = <#"[\<＜]"> <#"(?i)Raid"> <#"[\>＞]">
+keyword/reboot = <#"[\<＜]"> <#"(?i)Reboot"> <#"[\>＞]">
+keyword/save = <#"[\<＜]"> <#"(?i)Save"> <#"[\>＞]">
+keyword/retaliation = <#"[\<＜]"> <#"(?i)Retaliation"> <#"[\>＞]">
+keyword/recovery = <#"[\<＜]"> <#"(?i)Recovery"> (<SPACE>? value/tree)? <SPACE>? <#"[\(≪]Deck[\)≫]"> <#"[\>＞]">
+keyword/digixros =
+    <#"[\<＜]"> <#"(?i)DigiXros"> (<SPACE>? value/tree)? <#"[\>＞]">
+    <SPACE>
+    (
+          effect/target
+        / (<SPACE? ("+" | "×") SPACE?>? effect/target)+
+    )
+    <SPACE>?
+    (
+        (
+            <"When you would play this card, you may place specified cards from your hand/battle area under it.">
+            <SPACE "Each placed card reduces the" SPACE ("play" SPACE)? "cost">
+        ) | (
+            <"On play, place from hand/battle area under this card. Reduce play cost per card">
+        )
+    )?
+keyword/digixrosing = <#"(?i)DigiXrosing"> (<SPACE with>)? (<SPACE> effect/target)?
+keyword/partition = <#"[\<＜]"> <#"(?i)Partition"> <SPACE>? <"("> card/type <" & "> card/type <")"> <#"[\>＞]">
+keyword/collision = <#"[\<＜]"> <#"(?i)Collision"> <#"[\>＞]">
+
+
+(* PRECONDITION *)
+effect/precondition =
+    <"[">
+    (
+          precondition/breeding
+        | precondition/hand
+        | precondition/once-per-turn
+        | precondition/twice-per-turn
+        | precondition/precondition_trash
+    )
+    <"]">
+precondition/breeding = <"Breeding">
+precondition/hand = <"Hand">
+precondition/once-per-turn = <"Once Per Turn">
+precondition/twice-per-turn = <"Twice Per Turn">
+precondition/precondition_trash = <"Trash">
+
+
+(* TIMING *)
+effect/timing =
+    (
+          timing/all-turns
+        | timing/start-of-opponent-turn
+        | timing/end-of-opponent-turn
+        | timing/start-of-your-turn
+        | timing/end-of-your-turn
+        | timing/when-attacking
+        | timing/your-turn
+        | timing/opponent-turn
+        | timing/main
+        | timing/counter
+        | timing/end-of-all-turns
+        | timing/on-play
+        | timing/end-of-attack
+        | timing/start-of-your-main-phase
+        | timing/start-of-opponent-main-phase
+        | timing/security
+        | timing/when-digivolving
+        | timing/on-deletion
+    )
+timing/all-turns = <"[All Turns]">
+timing/start-of-opponent-turn = <"[Start of Opponent's Turn]">
+timing/end-of-opponent-turn = <("At End of Opponent's Turn" | "End of Opponent's Turn")>
+timing/start-of-your-turn = <"[Start of Your Turn]">
+timing/end-of-your-turn = <"[End of Your Turn]">
+timing/when-attacking = <"[When Attacking]">
+timing/your-turn = <"[Your Turn]">
+timing/opponent-turn = <"[Opponent's Turn]">
+timing/main = <"[Main]">
+timing/counter = <"[Counter]">
+timing/end-of-all-turns = <"[End of All Turns]">
+timing/on-play = <"[On Play]">
+timing/end-of-attack = <"[End of Attack]">
+timing/start-of-your-main-phase = <"[Start of Your Main Phase]">
+timing/start-of-opponent-main-phase = <"[Start of Opponent's Main Phase]">
+timing/security = <"[Security]">
+timing/when-digivolving = <"[When Digivolving]">
+timing/on-deletion = <"[On Deletion]">
+
+
+effect/target = (
+          target/this
+        | target/previously-mentioned
+        | target/digimon
+        | target/security-digimon
+        | target/player
+    )
+    / auxiliary
+    / target/and
+target/and = (
+        <" and ">?
+        effect/target
+    )+
+target/this = <#"(?i)This" SPACE> card/type
+target/previously-mentioned = <"it"> | (<#"(?i)That"> (<SPACE> card/type)?)
+target/digimon = (value/tree <SPACE>)? <"of" SPACE>? (target/player <SPACE>)? card/type
+target/security-digimon = (value/tree <SPACE>)? <"of" SPACE>? (target/player <SPACE>)? <#"(?i)Security" SPACE> card/type
+
+target/player = player/you | player/opponent | player/owner
+player/you = <#"(?i)Your?">
+player/opponent =
+    (<player/you> <SPACE>)?
+    <#"opponent(\'s)?">
+player/owner = <#"owner(\'s)?">
+
+<auxiliary> = auxiliary/of / auxiliary/is / auxiliary/has / auxiliary/with
+auxiliary/is = (effect/target <SPACE "is" SPACE>)? state/tree
+auxiliary/has =
+      (effect/target <(SPACE "that")? SPACE ("has" | "have") SPACE> effect/zone)
+    | (effect/target <SPACE ("has" | "have") SPACE> effect/target)
+    | (effect/zone <SPACE> effect/target <(SPACE "that")? SPACE ("has" | "have")>)
+    | (effect/zone <SPACE "placed under" SPACE> effect/target)
+auxiliary/with =
+      (effect/target <SPACE with SPACE> card-attributes)
+    | (effect/target <SPACE with SPACE> effect/zone)
+auxiliary/of =
+    (effect/zone <SPACE "of" SPACE> effect/target)
+
+state/tree = (
+        <" or ">?
+        (
+              state/block
+            | state/blocked
+            | state/battling
+            | state/attack
+            | state/deleted
+        )
+    )+
+state/battling = <"battling"> (<SPACE> effect/target)
+state/block = <"block">
+state/blocked = <"blocked">
+state/attack = <"attack">
+state/deleted = <"deleted"> (<SPACE> deleted/by)?
+deleted/by = <("by dropping to" | "having") SPACE> card/dp
+
+effect/gain =
+    effect/contingency?
+    (effect/target <SPACE>)?
+    <(#"gets?" | #"(?i)Gains?") SPACE>
+    (card-attributes | player/memory | effect/keyword)
+    (<SPACE> effect/contingency)?
+    (<SPACE> effect/span)?
+effect/lose = effect/contingency? <#"(?i)Lose"> <SPACE> player/memory
+
+effect/play = effect/contingency? <#"(?i)Play" SPACE> effect/target (<SPACE> play/as)? (<SPACE> play/cost)
+play/as = <"as" SPACE "another" SPACE> card/type
+play/cost = value/tree
+
+effect/activate = <#"(?i)Activate" SPACE> effect/target <SPACE> effect/timing <SPACE "effect">
+effect/trigger = effect/contingency? <#"(?i)Trigger" SPACE> effect/keyword
+
+effect/delete = <#"(?i)Delete" SPACE> effect/target
+effect/trash = <#"(?i)Trash" SPACE> effect/target
+
+effect/add = <#"(?i)Add" SPACE> effect/target <SPACE> add/to
+add/to = <"to" SPACE "its" SPACE> to/hand
+
+effect/return = <#"(?i)Return" SPACE> effect/target <SPACE> return/to
+return/to = <"to" SPACE "its" SPACE> to/hand
+
+to/hand = target/player <SPACE "hand">
+
+effect/unsuspend = <#"(?i)Unsuspend" SPACE> effect/target
+
+effect/choose =
+    <#"(?i)Choose" SPACE>
+    effect/target
+    (
+        (
+              <"." SPACE>
+            | <SPACE "and" SPACE>
+        )
+        (
+              effect/disable
+            | effect/play
+        )
+    )?
+effect/disable = effect/target <SPACE "can't" SPACE> state/tree <SPACE> effect/span
+
+effect/contingency = <(#"(?i)While" | #"(?i)When" | #"(?i)For" | #"(?i)If") SPACE> auxiliary <"," SPACE?>?
+
+card/type = card | digimon
+card = <"card" | "card's">
+digimon = <#"(?i)Digimon">
+
+<card-attributes> =
+      card/level
+    | card/dp
+card/level = <"level"> <SPACE "of" SPACE> value/tree
+card/dp = value/tree <SPACE "DP"> (<SPACE> value/lte)?
+
+effect/zone =
+      zone/digivolution-cards
+    | zone/security-cards
+zone/security-cards =
+    value/tree
+    <SPACE "security cards">
+    (<SPACE> value/lte)?
+zone/digivolution-cards =
+    value/tree
+    <SPACE>
+    (card/type <SPACE>)?
+    <"digivolution" SPACE #"cards?">
+    (<SPACE> digivolution-card/location)?
+digivolution-card/location = <"at" SPACE "the" SPACE> (location/bottom | location/top)
+location/bottom = <"bottom">
+location/top = <"top">
+
+card/color = ((red | blue | yellow | green | purple | black | white) / multicolored)
+
+red = <#"(?i)red">
+blue = <#"(?i)blue">
+yellow = <#"(?i)yellow">
+green = <#"(?i)green">
+purple = <#"(?i)purple">
+black = <#"(?i)black">
+white = <#"(?i)white">
+multicolored = <"multicolored">
+
+mention = (!effect/timing #"[\[][^\]]*[\]]")
+
+player/memory = value/tree <SPACE> <"memory">
+
+effect/span = effect/duration / effect/until
+effect/duration =
+        duration/the-turn
+      | duration/the-end-of-your-next-turn
+      | duration/the-end-of-your-opponent-next-turn
+effect/until = <"until" SPACE> effect/duration
+
+duration/the-turn = <"for the turn">
+duration/the-end-of-your-next-turn = <"the end of your next turn">
+duration/the-end-of-your-opponent-next-turn = <"the end of your opponent's next turn">
