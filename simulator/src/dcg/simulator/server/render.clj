@@ -155,7 +155,7 @@
                              (+ 6))
                 :lengthAdjust "spacingAndGlyphs"
                 :textLength (cond
-                              (and (> (count name) 13)
+                              (and (> (count name) 12)
                                    digimon?) 205
                               (and (> (count name) 20)
                                    (not digimon?)) 220
@@ -319,7 +319,7 @@
       (when (some string? [form attribute type])
         [:text {:lang language
                 :font-family "Roboto"
-                :font-size 8
+                :font-size 7.5
                 :font-weight 900
                 :kerning 1
                 :x 370
