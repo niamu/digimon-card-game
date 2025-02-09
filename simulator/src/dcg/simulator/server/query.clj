@@ -27,7 +27,7 @@
 (pc/defresolver area
   [{{{current-player-id ::player/id} :player} :session
     {:keys [game-id]} :path-params
-    :as request} {::area/keys [of-player privacy] :as area
+    :as request} {::area/keys [of-player privacy]
                   area-name ::area/name
                   {::player/keys [language]} :current/user}]
   {::pc/input #{::area/name
@@ -40,13 +40,14 @@
   (let [{::game/keys [available-actions players cards-lookup]
          :as game} (get-in @state/state [::state/games-by-id
                                          (UUID/fromString game-id)])
-        {::area/keys [cards stacks]} (get-in (helpers/players-by-id players)
-                                             [of-player
-                                              ::player/areas
-                                              (case area-name
-                                                ::area/tamer-and-option
-                                                ::area/battle
-                                                area-name)])
+        {::area/keys [cards stacks]
+         :as area} (get-in (helpers/players-by-id players)
+                           [of-player
+                            ::player/areas
+                            (case area-name
+                              ::area/tamer-and-option
+                              ::area/battle
+                              area-name)])
         visible? (or (= privacy :public)
                      (and (= of-player current-player-id)
                           (= privacy :owner)))
@@ -256,16 +257,18 @@
                                   ::player/areas
                                   (fn [{battle ::area/battle :as areas}]
                                     (-> areas
-                                        (update-vals (fn [area]
-                                                       (dissoc area
-                                                               ::area/cards
-                                                               ::area/stacks)))
                                         (assoc ::area/tamer-and-option
                                                (-> battle
                                                    (assoc ::area/name
                                                           ::area/tamer-and-option)
                                                    (dissoc ::area/cards
-                                                           ::area/stacks)))))))
+                                                           ::area/stacks)))
+                                        (update-vals
+                                         (fn [area]
+                                           (-> area
+                                               (assoc ::area/of-player id)
+                                               (dissoc ::area/cards
+                                                       ::area/stacks))))))))
                         players))))))
 
 (def resolver-registry

@@ -20,10 +20,11 @@ effect =
                 <SPACE>?
             )*
             (
-                  effect/gain
-                | effect/lose
+                  effect/gain-memory
+                | effect/lose-memory
+                | effect/gain
                 | effect/play
-                | effect/activate
+                | effect/activate-effect
                 | effect/trigger
                 | effect/delete
                 | effect/trash
@@ -267,20 +268,28 @@ state/attack = <"attack">
 state/deleted = <"deleted"> (<SPACE> deleted/by)?
 deleted/by = <("by dropping to" | "having") SPACE> card/dp
 
+effect/gain-memory =
+    effect/contingency?
+    <#"(?i)Gains?" SPACE>
+    player/memory
+effect/lose-memory =
+    effect/contingency?
+    <#"(?i)Lose" SPACE>
+    player/memory
+
 effect/gain =
     effect/contingency?
     (effect/target <SPACE>)?
     <(#"gets?" | #"(?i)Gains?") SPACE>
-    (card-attributes | player/memory | effect/keyword)
+    (card-attributes | effect/keyword)
     (<SPACE> effect/contingency)?
     (<SPACE> effect/span)?
-effect/lose = effect/contingency? <#"(?i)Lose"> <SPACE> player/memory
 
 effect/play = effect/contingency? <#"(?i)Play" SPACE> effect/target (<SPACE> play/as)? (<SPACE> play/cost)
 play/as = <"as" SPACE "another" SPACE> card/type
 play/cost = value/tree
 
-effect/activate = <#"(?i)Activate" SPACE> effect/target <SPACE> effect/timing <SPACE "effect">
+effect/activate-effect = <#"(?i)Activate" SPACE> effect/target <SPACE> effect/timing <SPACE "effect">
 effect/trigger = effect/contingency? <#"(?i)Trigger" SPACE> effect/keyword
 
 effect/delete = <#"(?i)Delete" SPACE> effect/target

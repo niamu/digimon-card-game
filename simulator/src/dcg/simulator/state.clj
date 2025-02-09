@@ -52,86 +52,6 @@
           []
           cards))
 
-(defn private-state-for-player-id
-  [{::game/keys [available-actions players db]
-    {::game-in/keys [turn]} ::game/in
-    :as game} player-id]
-  {:pre [(s/valid? ::simulator/game game)
-         (s/valid? ::player/id player-id)]}
-  (let [players (map #(get-in db %) players)
-        player-language (get-in (helpers/players-by-id players)
-                                [player-id ::player/language]
-                                "en")
-        available-actions (reduce (fn [accl [_ [_ id] _ :as action]]
-                                    (cond-> accl
-                                      (= id player-id)
-                                      (conj action)))
-                                  #{}
-                                  available-actions)
-        visible-cards
-        (reduce (fn [accl {::player/keys [id areas]}]
-                  (->> areas
-                       (mapcat (fn [[_ {::area/keys [privacy cards stacks]}]]
-                                 (->> (or cards
-                                          (mapcat (fn [stack]
-                                                    (-> (get-in db stack)
-                                                        ::stack/cards))
-                                                  stacks))
-                                      (filter (fn [card]
-                                                (let [p (get card
-                                                             ::card/privacy
-                                                             privacy)]
-                                                  (or (= p :public)
-                                                      (and (= id player-id)
-                                                           (= p :owner)))))))))
-                       (concat accl)
-                       (into #{})))
-                #{}
-                players)
-        actions-by-ident
-        (reduce (fn [accl [_ _ params :as action]]
-                  (let [expanded-params
-                        (when (vector? params)
-                          (mapv (fn [k]
-                                  (if-let [[t uuid] (and (vector? k) k)]
-                                    (case t
-                                      ::card/uuid
-                                      (get-in db k)
-                                      ::stack/uuid
-                                      (let [{::stack/keys [cards]
-                                             :as stack} (get-in db k)]
-                                        (update stack
-                                                ::stack/cards
-                                                (fn [cards]
-                                                  (mapv (fn [card]
-                                                          (get-in db card))
-                                                        cards))))
-                                      ::player/id
-                                      (get-in db k))
-                                    k))
-                                params))]
-                    (cond-> accl
-                      (vector? params)
-                      (update (first params) conj
-                              {:action/action action
-                               :action/params expanded-params}))))
-                {}
-                available-actions)
-        players-by-id
-        (->> players
-             (reduce (fn [accl {::player/keys [id] :as player}]
-                       (assoc accl id player))
-                     {}))]
-    (-> game
-        (dissoc ::game/random
-                ::game/instant
-                ::game/db)
-        (update ::game/players (fn [players]
-                                 (mapv (fn [[_ id]]
-                                         (players-by-id id))
-                                       players)))
-        (assoc ::game/available-actions available-actions))))
-
 (defn initialize-player
   [^Random r {::player/keys [deck-code id] :as player}]
   (let [{:deck/keys [digi-eggs deck language]
@@ -155,7 +75,12 @@
                                          (map update-card)
                                          (random/shuffle r)
                                          (split-at 5))
-        player-id (or id (random/uuid r))]
+        player-id (if id
+                    ;; Generate UUID and discard to keep replays in sync for
+                    ;; player-ids that are provided ahead of time
+                    (do (random/uuid r)
+                        id)
+                    (random/uuid r))]
     (-> player
         (assoc ::player/id player-id
                ::player/turn-index 0
@@ -163,86 +88,85 @@
                ::player/memory 0
                ::player/areas {::area/digi-eggs
                                {::area/name ::area/digi-eggs
-                                ::area/of-player player-id
                                 ::area/privacy :private
                                 ::area/cards initial-digi-eggs}
                                ::area/deck
                                {::area/name ::area/deck
-                                ::area/of-player player-id
                                 ::area/privacy :private
                                 ::area/cards initial-deck}
                                ::area/breeding
                                {::area/name ::area/breeding
-                                ::area/of-player player-id
                                 ::area/privacy :public
                                 ::area/stacks []}
                                ::area/trash
                                {::area/name ::area/trash
-                                ::area/of-player player-id
                                 ::area/privacy :public
                                 ::area/cards []}
                                ::area/battle
                                {::area/name ::area/battle
-                                ::area/of-player player-id
                                 ::area/privacy :public
                                 ::area/stacks []}
                                ::area/security
                                {::area/name ::area/security
-                                ::area/of-player player-id
                                 ::area/privacy :private
                                 ::area/cards []}
                                ::area/hand
                                {::area/name ::area/hand
-                                ::area/of-player player-id
                                 ::area/privacy :owner
                                 ::area/cards initial-hand}}
                ::player/timings #{}
                ::player/cards-by-uuid cards-by-uuid))))
 
 (defn initialize-game
-  [players constraint-code]
-  {:pre [(s/valid? (s/coll-of (s/keys :req [::player/name
-                                            ::player/deck-code])
-                              :distinct true
-                              :min-count 2) players)
-         (s/valid? ::game/constraint-code constraint-code)]
-   :post [(s/valid? ::simulator/game %)]}
-  (let [game-id (random-uuid)
-        r (Random. (.getMostSignificantBits game-id))
-        players (->> players
-                     (random/shuffle r)
-                     (mapv (fn [player]
-                             (initialize-player r player))))
-        turn-index 0
-        player-id (::player/id (nth players turn-index))
-        cards-by-uuid (->> players
-                           (map ::player/cards-by-uuid)
-                           (apply merge))
-        card-languages (conj (->> players
-                                  (map ::player/language)
-                                  (into #{}))
-                             "en")
-        cards-lookup (helpers/load-cards cards-by-uuid
-                                         card-languages)
-        available-actions (->> players
-                               (mapcat (fn [{::player/keys [id]}]
-                                         [[:action/re-draw? [::player/id id] true]
-                                          [:action/re-draw? [::player/id id] false]]))
-                               set)]
-    {::game/random r
-     ::game/id game-id
-     ::game/instant (Instant/now)
-     ::game/turn-counter 0
-     ::game/constraint-code constraint-code
-     ::game/log [[:phase/pre-game [::game/id game-id] [constraint-code]]]
-     ::game/pending-effects clojure.lang.PersistentQueue/EMPTY
-     ::game/available-actions available-actions
-     ::game/in {::game-in/turn-index turn-index
-                ::game-in/state-id :phase/pre-game}
-     ::game/players (mapv (fn [player]
-                            (dissoc player ::player/cards-by-uuid))
-                          players)
-     ::game/cards-lookup cards-lookup}))
+  ([players constraint-code]
+   (initialize-game players constraint-code (random-uuid)))
+  ([players constraint-code game-id]
+   {:pre [(s/valid? (s/coll-of (s/keys :req [::player/name
+                                             ::player/deck-code])
+                               :distinct true
+                               :min-count 2) players)
+          (s/valid? ::game/constraint-code constraint-code)]
+    :post [(s/valid? ::simulator/game %)]}
+   (let [r (Random. (.getMostSignificantBits game-id))
+         players (->> players
+                      (random/shuffle r)
+                      (mapv (fn [player]
+                              (initialize-player r player))))
+         turn-index 0
+         player-id (::player/id (nth players turn-index))
+         cards-by-uuid (->> players
+                            (map ::player/cards-by-uuid)
+                            (apply merge))
+         card-languages (conj (->> players
+                                   (map ::player/language)
+                                   (into #{}))
+                              "en")
+         cards-lookup (helpers/load-cards cards-by-uuid
+                                          card-languages)
+         available-actions (->> players
+                                (mapcat (fn [{::player/keys [id]}]
+                                          [[:action/re-draw? [::player/id id] true]
+                                           [:action/re-draw? [::player/id id] false]]))
+                                set)
+         instant (Instant/now)]
+     {::game/random r
+      ::game/id game-id
+      ::game/instant instant
+      ::game/turn-counter 0
+      ::game/constraint-code constraint-code
+      ::game/log [[:phase/pre-game [::game/id game-id]
+                   (-> (mapv (fn [{::player/keys [id]}]
+                               [::player/id id])
+                             players)
+                       (conj instant constraint-code))]]
+      ::game/pending-effects clojure.lang.PersistentQueue/EMPTY
+      ::game/available-actions available-actions
+      ::game/in {::game-in/turn-index turn-index
+                 ::game-in/state-id :phase/pre-game}
+      ::game/players (mapv (fn [player]
+                             (dissoc player ::player/cards-by-uuid))
+                           players)
+      ::game/cards-lookup cards-lookup})))
 
 (defn initialize-from-queue!
   []
@@ -266,7 +190,7 @@
    :action/re-draw? #'action/re-draw?
    :action/hatch #'action/hatch
    :action/move #'action/move
-   :action/use #'action/play
+   :action/use #'action/use
    :action/play #'action/play
    :action/digivolve #'action/digivolve
    :action/attack.declare #'action/declare-attack
@@ -276,6 +200,7 @@
    :action/attack.security #'action/security-attack
    :action/pass #'action/pass
    :action/update-memory #'action/update-memory
+   :action/effect #'action/effect
    ;; Phases
    :phase/start-turn #'phase/start-of-turn
    :phase/unsuspend #'phase/unsuspend
@@ -307,32 +232,96 @@
       (flow (first available-actions)))))
 
 (comment
-  (let [game-db (get-in @state [::games-by-id
-                                #uuid "19ac6500-1740-4406-960b-6b36fe1ed459"
-                                ::game/db])
-        stack-paths (get-in game-db [::player/id
-                                     #uuid "8427e599-51d6-4d7e-883c-d625cad0962a"
-                                     ::player/areas
-                                     ::area/battle
-                                     ::area/stacks])
-        stacks (->> stack-paths
-                    (map (fn [path]
-                           (-> (get-in game-db path)
-                               (update ::stack/cards
-                                       (fn [cards]
-                                         (->> cards
-                                              (map #(get-in game-db %)))))))))]
-    stacks)
+  (let [game (-> (initialize-game [{::player/id #uuid "d7838557-f640-4380-9746-b8090c6ecfb2"
+                                    ::player/name "niamu"
+                                    ::player/deck-code "DCGAREdU1QxIEHBU1QxIE_CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ"}
+                                   {::player/id #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"
+                                    ::player/name "AI"
+                                    ::player/deck-code "DCGARMhU1QyIEHBU1QyIE_CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0"}]
+                                  nil
+                                  #uuid "e2ae2331-7922-40ea-8a19-bcb3d5c1d960")
+                 (flow [:action/re-draw?
+                        [:dcg.simulator.player/id
+                         #uuid "d7838557-f640-4380-9746-b8090c6ecfb2"]
+                        false])
+                 (flow [:action/re-draw?
+                        [:dcg.simulator.player/id
+                         #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"]
+                        true])
+                 (flow [:action/hatch
+                        [:dcg.simulator.player/id
+                         #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"]
+                        nil])
+                 (flow [:action/digivolve
+                        [:dcg.simulator.player/id
+                         #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"]
+                        [[:dcg.simulator.card/uuid
+                          #uuid "4db63699-447c-1570-3327-cdb7231a89ce"]
+                         0
+                         [:dcg.simulator.stack/uuid
+                          #uuid "35cbb895-de70-99f0-565b-de0403e3c87e"]]])
+                 (flow [:action/digivolve
+                        [:dcg.simulator.player/id
+                         #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"]
+                        [[:dcg.simulator.card/uuid
+                          #uuid "d4eed8c9-03a1-cc06-d9c9-d22b6e9bc792"]
+                         0
+                         [:dcg.simulator.stack/uuid
+                          #uuid "35cbb895-de70-99f0-565b-de0403e3c87e"]]])
+                 (flow [:action/hatch
+                        [:dcg.simulator.player/id
+                         #uuid "d7838557-f640-4380-9746-b8090c6ecfb2"]
+                        nil])
+                 (flow [:action/digivolve
+                        [:dcg.simulator.player/id
+                         #uuid "d7838557-f640-4380-9746-b8090c6ecfb2"]
+                        [[:dcg.simulator.card/uuid
+                          #uuid "b990360c-2de6-aeba-cc8a-7b3b42ec3de6"]
+                         0
+                         [:dcg.simulator.stack/uuid
+                          #uuid "e5ba51aa-f54d-907b-9862-2bfc6a80eea5"]]])
+                 (flow [:action/digivolve
+                        [:dcg.simulator.player/id
+                         #uuid "d7838557-f640-4380-9746-b8090c6ecfb2"]
+                        [[:dcg.simulator.card/uuid
+                          #uuid "ffc76a31-581d-966f-5abc-28005d4b0109"]
+                         0
+                         [:dcg.simulator.stack/uuid
+                          #uuid "e5ba51aa-f54d-907b-9862-2bfc6a80eea5"]]])
+                 (flow [:action/play
+                        [:dcg.simulator.player/id
+                         #uuid "d7838557-f640-4380-9746-b8090c6ecfb2"]
+                        [:dcg.simulator.card/uuid
+                         #uuid "eea93772-71d2-96ca-4874-2b5175b85ace"]])
+                 (flow [:action/move
+                        [:dcg.simulator.player/id
+                         #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"]
+                        [:dcg.simulator.stack/uuid
+                         #uuid "35cbb895-de70-99f0-565b-de0403e3c87e"]])
+                 #_(flow [:action/use
+                          [:dcg.simulator.player/id
+                           #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"]
+                          [:dcg.simulator.card/uuid
+                           #uuid "d317abf8-d015-aff0-406a-28661daab9a0"]])
+                 #_(flow [:action/use
+                          [:dcg.simulator.player/id
+                           #uuid "a3347b2b-8016-4c36-b170-4e77cc7b33f3"]
+                          [:dcg.simulator.card/uuid
+                           #uuid "30a28c4f-b2a0-5f10-bc9d-3714a7939037"]]))]
 
-  (initialize-game [{::player/id (random-uuid)
-                     ::player/name "niamu"
-                     ::player/deck-code "DCGAREdU1QxIEHBU1QxIE_CwcHBwUHBwUFBwcHBQUFTdGFydGVyIERlY2ssIEdhaWEgUmVkIFtTVC0xXQ"}
-                    {::player/id (random-uuid)
-                     ::player/name "AI"
-                     ::player/deck-code "DCGARMhU1QyIEHBU1QyIE_CwcHBQcHBwUFBwcFBwUFTdGFydGVyIERlY2ssIENvY3l0dXMgQmx1ZSBbU1QtMl0"}]
-                   nil)
+    #_(swap! state assoc-in
+             [::games-by-id #uuid "e2ae2331-7922-40ea-8a19-bcb3d5c1d960"]
+             game)
 
-  (get-in @state
-          [::games-by-id #uuid "4970cb51-99a5-47d1-b9ce-15942b6efcc5"])
+    (-> game
+        ::game/log
+        last)
+
+    (get-in game [::game/players 0 ::player/memory]))
+
+  (->> (get-in @state
+               [::games-by-id #uuid "e2ae2331-7922-40ea-8a19-bcb3d5c1d960"
+                ::game/log])
+       last)
 
   )

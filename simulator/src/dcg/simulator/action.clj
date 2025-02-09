@@ -1,4 +1,5 @@
 (ns dcg.simulator.action
+  (:refer-clojure :exclude [use])
   (:require
    [clojure.spec.alpha :as s]
    [dcg.simulator :as-alias simulator]
@@ -10,6 +11,7 @@
    [dcg.simulator.helpers :as helpers]
    [dcg.simulator.player :as-alias player]
    [dcg.simulator.stack :as-alias stack]
+   [dcg.simulator.effect :as effect]
    [dcg.simulator.random :as random]))
 
 (defn set-memory
@@ -135,14 +137,15 @@
          (s/valid? ::simulator/action action)]
    :post [(s/valid? ::simulator/game %)]}
   (let [card {::card/uuid card-uuid}
-        {:card/keys [play-cost use-cost]} (get-in cards-lookup [card-uuid "en"])
+        {:card/keys [play-cost]
+         :as card-info} (get-in cards-lookup [card-uuid "en"])
         {current-player-id ::player/id} (nth players turn-index)
         stack-uuid (random/uuid random)]
     (-> game
         (update-memory [:action/update-memory
                         current-player-id
                         [- (or (:cost override)
-                               play-cost use-cost)]])
+                               play-cost)]])
         (update-in [::game/players turn-index ::player/areas]
                    (fn [{::area/keys [hand] :as areas}]
                      (-> areas
@@ -158,6 +161,43 @@
                                      ::stack/cards [card]}))))
         (assoc ::game/available-actions
                #{[:phase/main [::player/id current-player-id] nil]}))))
+
+(defn use
+  [{::game/keys [random players cards-lookup]
+    {::game-in/keys [turn-index]} ::game/in
+    :as game} [_ _ [_ card-uuid & [override]] :as action]]
+  {:pre [(s/valid? ::simulator/game game)
+         (s/valid? ::simulator/action action)]
+   :post [(s/valid? ::simulator/game %)]}
+  (let [card {::card/uuid card-uuid}
+        {:card/keys [use-cost]
+         :as card-info} (get-in cards-lookup [card-uuid "en"])
+        {current-player-id ::player/id} (nth players turn-index)
+        stack-uuid (random/uuid random)]
+    (-> game
+        (update-memory [:action/update-memory
+                        current-player-id
+                        [- (or (:cost override)
+                               use-cost)]])
+        (update-in [::game/players turn-index ::player/areas]
+                   (fn [{::area/keys [hand] :as areas}]
+                     (-> areas
+                         (update-in [::area/hand ::area/cards]
+                                    (fn [cards]
+                                      (->> cards
+                                           (remove (partial = card))
+                                           (into []))))
+                         (update-in [::area/trash ::area/cards]
+                                    (fn [cards]
+                                      (->> (concat [card]
+                                                   cards)
+                                           (into [])))))))
+        (assoc ::game/available-actions
+               (if-let [[field index] (effect/effect-path card-info
+                                                          :timing/main)]
+                 #{[:action/effect [::player/id current-player-id]
+                    [[::card/uuid card-uuid] field index]]}
+                 #{[:phase/main [::player/id current-player-id] nil]})))))
 
 (defn digivolve
   [{::game/keys [players cards-lookup] {::game-in/keys [turn-index]} ::game/in
@@ -537,3 +577,16 @@
   (assoc stack
          ::stack/suspended? false
          ::stack/summoned? false))
+
+(defn effect
+  [{::game/keys [random players cards-lookup]
+    {::game-in/keys [turn-index state-id]} ::game/in
+    :as game} [_ _ [[_ card-uuid] field index] :as action]]
+  {:pre [(s/valid? ::simulator/game game)
+         (s/valid? ::simulator/action action)]
+   :post [(s/valid? ::simulator/game %)]}
+  (let [{current-player-id ::player/id} (nth players turn-index)]
+    (-> game
+        (effect/transform action)
+        (assoc ::game/available-actions
+               #{[state-id [::player/id current-player-id] nil]}))))

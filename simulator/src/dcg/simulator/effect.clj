@@ -1,8 +1,11 @@
-(ns dcg.simulator.effect.parser
+(ns dcg.simulator.effect
   (:require
    [clojure.java.io :as io]
    [clojure.string :as string]
    [dcg.db.db :as db]
+   [dcg.simulator.card :as-alias card]
+   [dcg.simulator.game :as-alias game]
+   [dcg.simulator.player :as-alias player]
    [instaparse.core :as insta]
    [hickory.select :as select]))
 
@@ -28,47 +31,76 @@
                [])))
 
 (defn transform
-  [parsed]
-  (->> parsed
-       (insta/transform
-        {:target/this (constantly :target/this)
-         :target/previously-mentioned (constantly :target/previously-mentioned)
-         :value/number parse-long
-         :value/gte (constantly #'<=)
-         :value/lte (constantly #'>=)
-         :value/one (constantly 1)
-         :value/none (constantly 0)
-         :digimon (constantly :digimon)
-         :option (constantly :option)
-         :digi-egg (constantly :digi-egg)
-         :tamer (constantly :tamer)
-         :card/type (fn [v] {:card/type v})
-         :card/dp (fn
-                    ([v] {:card/dp v})
-                    ([a1 a2]
-                     {:card/dp (cons #'partial
-                                     (sort-by number? [a1 a2]))}))
-         :zone/security-cards (fn
-                                ([v] {:card/dp v})
-                                ([a1 a2]
-                                 {:zone/security-cards (cons #'partial
-                                                             (sort-by number? [a1 a2]))}))
-         :player/memory (fn [v] {:player/memory v})
-         :value/tree (fn
-                       ([v] v)
-                       ([a1 a2]
-                        (cons #'partial
-                              (sort-by number? [a1 a2]))))})))
+  [{::game/keys [cards-lookup]
+    :as game} [_ [_ player-id] [[_ card-uuid] field index] :as action]]
+  (let [text (get-in cards-lookup [card-uuid "en" field])
+        parse-tree (nth (parse text) index)
+        passthru (fn
+                   ([v] v)
+                   ([a & rest] (cons a rest)))]
+    (-> (insta/transform
+         {:effect passthru
+          :value/number parse-long
+          :value/gte (constantly #'<=)
+          :value/lte (constantly #'>=)
+          :value/one (constantly 1)
+          :value/none (constantly 0)
+          :value/tree passthru
+          :effect/gain-memory
+          (fn [{memory ::player/memory}]
+            (fn [game]
+              (update-in game
+                         [::game/players]
+                         (fn [players]
+                           (mapv (fn [{::player/keys [id] :as player}]
+                                   (update player ::player/memory
+                                           (if (= id player-id)
+                                             +
+                                             -)
+                                           memory))
+                                 players)))))
+          :player/memory (fn [v] {::player/memory v})}
+         parse-tree)
+        (->> (filter fn?)
+             (reduce (fn [game effect-fn]
+                       (effect-fn game))
+                     game)))))
+
+(defn effect-path
+  "Parse all effect text bodies on a card and return a [field index] path
+  that matches the timing"
+  [card timing]
+  ;; TODO: This function relies on a single timing match per card, but
+  ;; there may be multiple effect matches that need to be supported.
+  (->> (update-vals (select-keys card [:card/effect
+                                       :card/inherited-effect
+                                       :card/security-effect])
+                    (fn [text]
+                      (->> (parse text)
+                           (keep-indexed
+                            (fn [idx effect]
+                              (when (seq (select/select
+                                          (select/child
+                                           (select/tag :effect)
+                                           (select/tag :effect/timing)
+                                           (select/tag timing))
+                                          effect))
+                                idx)))
+                           first)))
+       (remove (fn [[_ idx]] (nil? idx)))
+       first))
 
 (comment
-  (->> (parse "[Your Turn][Once Per Turn] When an opponent's Digimon is deleted by dropping to 0 DP, this Digimon gets +1000 DP for the turn.\nGain 1 memory.")
-       (filter (fn [effect]
-                 (->> effect
-                      (select/select
-                       (select/child (select/tag :effect/timing)
-                                     (select/tag :timing/your-turn)))
-                      seq)))
-       transform)
+  (some->> (parse "[Main] Delete 1 of your opponent's Digimon.")
+           (filter (fn [effect]
+                     (->> effect
+                          (select/select
+                           (select/child (select/tag :effect)
+                                         (select/tag :effect/timing)
+                                         (select/tag :timing/main)))
+                          seq)))
+           seq
+           transform)
 
   (->> (db/q '{:find [[(pull ?c [:card/id
                                  :card/number
@@ -77,7 +109,7 @@
                                  :card/security-effect]) ...]]
                :where [[?c :card/number ?n]
                        (or [(clojure.string/starts-with? ?n "ST1-")]
-                           #_[(clojure.string/starts-with? ?n "ST2-")]
+                           [(clojure.string/starts-with? ?n "ST2-")]
                            #_[(clojure.string/starts-with? ?n "ST3-")]
                            #_[(clojure.string/starts-with? ?n "ST4-")])
                        [?c :card/parallel-id 0]
@@ -98,7 +130,9 @@
        (filter (fn [{:card/keys [effect inherited-effect security-effect]}]
                  (or effect inherited-effect security-effect)))
        #_(filter (fn [{effects ::card-effects}]
-                   (some #(some insta/failure? %) (vals effects)))))
+                   (some #(some insta/failure? %) (vals effects))))
+       (mapcat (comp vals ::card-effects))
+       count)
 
   (db/import-from-file!)
   (time (let [cards (db/q '{:find [[(pull ?c [:card/number
