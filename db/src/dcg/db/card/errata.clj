@@ -13,6 +13,10 @@
 (def repair
   {"BT8-110" (fn [s]
                (string/replace s "[Security]You" "[Security] You"))
+   "BT10-093" (fn [s]
+                (string/replace s
+                                "[Your turn] [Once per turn]"
+                                "[Your Turn][Once Per Turn]"))
    "BT14-023" (fn [s]
                 (string/replace s "(Once Per Turn)" "[Once Per Turn]"))
    "EX3-001" (fn [s]

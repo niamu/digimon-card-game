@@ -26,6 +26,101 @@
    "옵션"        :option
    "选项"        :option})
 
+(defn- timing-translations
+  [cards]
+  (let [sorted-cards
+        (->> cards
+             (filter (fn [{:card/keys [parallel-id language highlights]
+                          {image-language :image/language} :card/image}]
+                       (and (= language image-language)
+                            (zero? parallel-id)
+                            (->> highlights
+                                 (filter (fn [{htype :highlight/type}]
+                                           (= htype :timing)))
+                                 count
+                                 pos?))))
+             (sort-by (juxt (comp (fn [releases]
+                                    (or (some->> (sort-by :release/date
+                                                          releases)
+                                                 first
+                                                 :release/date)
+                                        (java.util.Date.)))
+                                  :card/releases)
+                            (fn [{:card/keys [highlights]}]
+                              (->> highlights
+                                   (filter (fn [{htype :highlight/type}]
+                                             (= htype :timing)))
+                                   count))
+                            :card/number
+                            :card/parallel-id)))
+        tr-map
+        (->> sorted-cards
+             (reduce (fn [accl {:card/keys [number language highlights]}]
+                       (assoc-in accl
+                                 [number language]
+                                 (->> highlights
+                                      (filter (fn [{htype :highlight/type}]
+                                                (= htype :timing)))
+                                      (sort-by (juxt :highlight/field
+                                                     :highlight/index))
+                                      (map :highlight/text))))
+                     (sorted-map))
+             (reduce-kv
+              (fn [accl number m]
+                (->> (keys (dissoc m "ja"))
+                     (map (fn [l]
+                            (let [new-texts (remove (fn [text] (get accl text))
+                                                    (get m l))]
+                              (->> (interleave
+                                    new-texts
+                                    (or (->> (get m "ja")
+                                             (remove (fn [text] (get (set/map-invert accl)
+                                                                    text)))
+                                             seq)
+                                        (->> (keep-indexed (fn [idx text]
+                                                             (when (contains? (set new-texts)
+                                                                              text)
+                                                               idx))
+                                                           (get m l))
+                                             (map #(nth (get m "ja") %)))))
+                                   (apply hash-map)))))
+                     (apply merge accl)))
+              {}))]
+    (-> (group-by :card/number sorted-cards)
+        (update-vals (fn [cards]
+                       (let [l-map
+                             (reduce
+                              (fn [accl {:card/keys [language highlights]}]
+                                (update accl
+                                        language
+                                        (fnil (comp set concat) [])
+                                        (->> highlights
+                                             (filter (fn [{htype :highlight/type}]
+                                                       (= htype :timing)))
+                                             (map :highlight/text))))
+                              {}
+                              cards)]
+                         (reduce-kv (fn [m l texts]
+                                      (let [result
+                                            (remove
+                                             (fn [text]
+                                               (contains? (get l-map "ja")
+                                                          (get tr-map text)))
+                                             texts)]
+                                        (cond-> m
+                                          (and (not= l "ja")
+                                               (seq result))
+                                          (assoc l result))))
+                                    {}
+                                    (dissoc l-map "ja")))))
+        (as-> #__ xs
+          (reduce-kv (fn [m number v]
+                       (cond-> m
+                         (seq v)
+                         (assoc number v)))
+                     (sorted-map)
+                     xs)))))
+
 (defn- highlights
   "Card highlights that differ across languages"
   [cards]
@@ -269,6 +364,9 @@
   (assert (empty? (card-categories cards))
           (format "Card categories differ across languages:\n%s"
                   (card-categories cards)))
+  (assert (empty? (timing-translations cards))
+          (format "Card timings do not match across languages:\n%s"
+                  (timing-translations cards)))
   (assert (= (highlights cards)
              {"BT10-099"
               {"card/en_BT10-099_P0" {:timing 3 :keyword-effect 1}
@@ -311,12 +409,9 @@
   cards)
 
 (comment
-  (highlights dcg.db.core/*cards)
-
   (->> dcg.db.core/*cards
-       (filter (fn [{:card/keys [number]}]
-                 (= number "BT20-090")))
-       (map (juxt :card/effect)))
+       card-assertions)
+
   ;; Card values analysis
   (map (fn [[k v]]
          (let [issues (->> (partition 2 1

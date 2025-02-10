@@ -60,12 +60,13 @@
           (string/replace #"^《?조그레스:\s*(.*?Lv\.[0-9].*?Lv\.[0-9]에서\s*[0-9])》?"
                           "〔조그레스〕$1")
           (string/replace #"《진화:?(.*[0-9]+)》" "【진화】 $1")
+          (string/replace #"(爆裂进化):" "【$1】")
           (string/replace #"(進化|进化|진화)\s?:" "【$1】")
           (string/replace #"[〔［](進化|进化|진화)[］〕]" "【$1】")
           (string/replace #"(Burst Digivolve):" "[$1]")
           (string/replace #"(Digivolve):" "[$1]")
-          (string/replace #"(爆裂进化):" "【$1】")
           (string/replace #"《(진화):(.*?)》" "【$1】$2")
+          (string/replace "{Security}" "[Security]")
           ;; https://world.digimoncard.com/rule/card_text/
           (string/replace "X-Antibody" "X Antibody")
           (as-> s

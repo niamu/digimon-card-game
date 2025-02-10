@@ -13,10 +13,12 @@
       (case b
         "\u201C" :mention
         "「" :mention
+        "\uFF62" :mention
         "【" :timing
         "〔" :timing
         "["  :precondition
         "［" :precondition
+        "{"  :precondition
         "<"  (when (not= language "zh-Hans")
                :keyword-effect)
         "≪"  :keyword-effect
@@ -32,6 +34,7 @@
                        \( "\\("
                        \) "\\)"}
         squares [["\u300C" "\u300D"]
+                 ["\uFF62" "\uFF63"]
                  ["\u3010" "\u3011"]
                  ["[" "]"]
                  ["\u3014" "\u3015"]
@@ -220,7 +223,8 @@
          "Garurumon" "ガルルモン"
          "Legend-Arms" "Legend-Arms"
          "Ballistamon" "バリスタモン"
-         "Shoutmon" "シャウトモン"}
+         "Shoutmon" "シャウトモン"
+         "Sistermon" "シスタモン"}
    "zh-Hans" {"天使型" "天使型"
               "大天使型" "天使型"
               "堕天使型" "天使型"
@@ -267,6 +271,7 @@
                                                     (string/escape
                                                      close re-escape-map)))
                                           [["\u300C" "\u300D"]
+                                           ["\uFF62" "\uFF63"]
                                            ["\u3010" "\u3011"]
                                            ["[" "]"]
                                            ["\u3014" "\u3015"]
@@ -317,6 +322,7 @@
                                                  (string/escape
                                                   close re-escape-map)))
                                        [["\u300C" "\u300D"]
+                                        ["\uFF62" "\uFF63"]
                                         ["\u3010" "\u3011"]
                                         ["[" "]"]
                                         ["\u3014" "\u3015"]
