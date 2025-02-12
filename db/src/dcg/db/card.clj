@@ -225,7 +225,7 @@
                    ;; ko cards sometimes have the name preceeded by a space
                    (string/replace #"\s.*" ""))
         category (or (some-> (nth header 2)
-                             (string/replace "DIgimon" "Digimon")
+                             (string/replace #"(?i)digimon" "Digimon")
                              (string/replace "Opiton" "Option"))
                      "Unknown")
         alternate-art? (let [header-set (set header)]
@@ -378,10 +378,10 @@
         [attribute type] (if (and (contains? #{"Variable"
                                                "Free"
                                                "Data"
-                                               "Unidentified"
                                                "Unknown"
                                                "Vaccine"
-                                               "Virus"} type)
+                                               "Virus"
+                                               "NO DATA"} type)
                                   attribute)
                            [type attribute]
                            [attribute type])
@@ -629,7 +629,7 @@
                        :card/parallel-id parallel-id
                        :card/rarity (last (re-find #"（(.*)）" rareDegree))
                        :card/category belongsType
-                       :card/name name
+                       :card/name (card-utils/normalize-string name)
                        :card/image {:image/language card-image-language
                                     :image/source (URI. imageCover)}}
                 play-cost (assoc (if (= belongsType "选项")

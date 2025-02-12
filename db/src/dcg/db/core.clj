@@ -35,7 +35,9 @@
                            (remove :release/image-uri)
                            count
                            (= 1)))
-                    r) "Not every release matched with a product")
+                    r)
+            (str "Not every release matched with a product. "
+                 "Consider refreshing Korean product listing."))
     r))
 
 (defn process-cards
@@ -127,7 +129,9 @@
                                                                   error-index
                                                                   nil))]
                                          (cond-> m
-                                           (and (string? v) error correction)
+                                           (and (string? v) error correction
+                                                (string/includes? v error)
+                                                (not (string/includes? v correction)))
                                            (assoc k
                                                   (string/replace v
                                                                   error
@@ -176,6 +180,8 @@
   (logging/info "DB Ingestion completed."))
 
 (comment
+  (db/import-from-file!)
+
   (set! *print-namespace-maps* false)
 
   (def *cards (time (process-cards)))

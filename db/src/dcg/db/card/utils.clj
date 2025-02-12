@@ -66,6 +66,7 @@
         (string/replace "\uFF01" "!")
         (string/replace "’" "'")
         (string/replace "\uFF0C" ",")
+        (string/replace #"(\s?)A(?i)ce$" "$1ACE")
         (string/replace (->> (:spaces text-punctuation)
                              (string/join "|" )
                              re-pattern) " ")

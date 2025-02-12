@@ -270,97 +270,122 @@
                                            [?r :release/image-uri _]]})
                     (sort-by :release/date)
                     (drop-last 15))
-             (concat [#:release{:name "스타트 덱 가이아 레드 [STK-01]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-02-24T05:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/185/8915a4ed667c1b149d8c42f1dfb87e4b.png"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/185")}
-                      #:release{:name "스타트 덱 코큐토스 블루 [STK-02]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-02-24T05:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/204/79d9787194c7d5e81af6fecb8c22b663.png"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/204")}
-                      #:release{:name "스타트 덱 헤븐즈 옐로 [STK-03]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-02-24T05:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/232/0294d62b827e44573af4710e71fce0d2.png"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/232")}
-                      #:release{:name "스페셜 부스터 버전 1.0 [BTK-1.0]",
-                                :genre "확장팩",
-                                :date #inst "2023-03-10T05:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/074/001/0f83ff7b83a84674b993e9f9d523dc95.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/1074")}
-                      #:release{:name "스페셜 부스터 버전 1.5 [BTK-1.5]",
-                                :genre "확장팩",
-                                :date #inst "2023-05-12T05:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/279/002/283ca3e5b0683fb1dafaccf199379b64.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/2279")}
-                      #:release{:name "기가 그린 [STK-04]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-06-16T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/098/003/30fb31e6c12eb56ce02f4d6704520cfb.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/3098")}
-                      #:release{:name "파워 블랙 [STK-05]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-06-16T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/107/003/031008bf158bca8fa2384e6303f95ce6.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/3107")}
-                      #:release{:name "베놈 바이올렛 [STK-06]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-06-16T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/116/003/a0e40753e6528e030b690377ad839c07.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/3116")}
-                      #:release{:name "팩 그레이트 레전드 [BTK-04]",
-                                :genre "확장팩",
-                                :date #inst "2023-07-14T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/451/003/2bfdfa1cb6729465f3edf58d0c02cfd3.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/3451")}
-                      #:release{:name "팩 배틀 오브 오메가 [BTK-05]",
-                                :genre "확장팩",
-                                :date #inst "2023-08-18T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/176/005/6fe977e28afaf290caf423f340966c3e.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/5176")}
-                      #:release{:name "듀크몬 [STK-07]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-09-15T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/824/005/f6766fa0be789383325ac6c499ba8aeb.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/5824")}
-                      #:release{:name "알포스브이드라몬 [STK-08]",
-                                :genre "구축완료 덱",
-                                :date #inst "2023-09-15T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/829/005/d1e0bf91d4f6c7f4817ff80023fd1385.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/5829")}
-                      #:release{:name "팩 더블 다이아몬드 [BTK-06]",
-                                :genre "확장팩",
-                                :date #inst "2023-10-20T00:00:00.000-00:00",
-                                :image-uri
-                                (URI. "https://digimoncard.co.kr/files/extravar_upload/135/121/006/f630d7cd3151ab3f2cb7ce8f64c793ae.jpg"),
-                                :product-uri
-                                (URI. "https://digimoncard.co.kr/products/6121")}]))
+             (concat [{:release/name "스타트 덱 가이아 레드 [STK-01]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-02-24T05:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/185/8915a4ed667c1b149d8c42f1dfb87e4b.png"),
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/185")}
+                      {:release/name "스타트 덱 코큐토스 블루 [STK-02]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-02-24T05:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/204/79d9787194c7d5e81af6fecb8c22b663.png"),
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/204")}
+                      {:release/name "스타트 덱 헤븐즈 옐로 [STK-03]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-02-24T05:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/232/0294d62b827e44573af4710e71fce0d2.png"),
+                       :release/product-uri (URI. "https://digimoncard.co.kr/products/232")}
+                      {:release/name "스페셜 부스터 버전 1.0 [BTK-1.0]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2023-03-10T05:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/074/001/0f83ff7b83a84674b993e9f9d523dc95.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/1074")}
+                      {:release/name "스페셜 부스터 버전 1.5 [BTK-1.5]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2023-05-12T05:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/279/002/283ca3e5b0683fb1dafaccf199379b64.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/2279")}
+                      {:release/name "기가 그린 [STK-04]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-06-16T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/098/003/30fb31e6c12eb56ce02f4d6704520cfb.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/3098")}
+                      {:release/name "파워 블랙 [STK-05]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-06-16T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/107/003/031008bf158bca8fa2384e6303f95ce6.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/3107")}
+                      {:release/name "베놈 바이올렛 [STK-06]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-06-16T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/116/003/a0e40753e6528e030b690377ad839c07.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/3116")}
+                      {:release/name "팩 그레이트 레전드 [BTK-04]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2023-07-14T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/451/003/2bfdfa1cb6729465f3edf58d0c02cfd3.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/3451")}
+                      {:release/name "팩 배틀 오브 오메가 [BTK-05]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2023-08-18T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/176/005/6fe977e28afaf290caf423f340966c3e.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/5176")}
+                      {:release/name "듀크몬 [STK-07]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-09-15T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/824/005/f6766fa0be789383325ac6c499ba8aeb.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/5824")}
+                      {:release/name "알포스브이드라몬 [STK-08]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2023-09-15T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/829/005/d1e0bf91d4f6c7f4817ff80023fd1385.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/5829")}
+                      {:release/name "팩 더블 다이아몬드 [BTK-06]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2023-10-20T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/121/006/f630d7cd3151ab3f2cb7ce8f64c793ae.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/6121")}
+                      {:release/name "클래식 컬렉션 [EXK-01]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2023-11-17T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.krhttps://digimoncard.co.kr/files/thumbnails/422/008/200x407.ratio.jpg?20231117093442"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/8422")}
+                      {:release/name "팩 넥스트 어드벤처 [BTK-07]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2023-12-15T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/246/009/0aaacb03567b3620a7708afb440bc071.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/9246")}
+                      {:release/name "궁극의 고대용 [STK-09]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2024-01-19T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/329/010/a19c762235e02826ca9155bee0afc811.png"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/10329")}
+                      {:release/name "이세계의 군사 [STK-10]",
+                       :release/genre "구축완료 덱",
+                       :release/date #inst "2024-01-19T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/341/010/81b09fdea73051ba31fdbb3a43830af1.png"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/10341")}]))
         cardlist-releases (->> (utils/http-get (str url "/cardlist/")
                                                http-opts)
                                hickory/parse

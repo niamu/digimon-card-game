@@ -10,7 +10,14 @@
    [java.text ParseException SimpleDateFormat]
    [java.net URI]))
 
-(def repair
+(defn- partition-at
+  [f coll]
+  (lazy-seq
+   (when-let [s (seq coll)]
+     (let [run (cons (first s) (take-while #(not (f %)) (rest s)))]
+       (cons run (partition-at f (drop (count run) s)))))))
+
+(def ^:private repair
   {"BT8-110" (fn [s]
                (string/replace s "[Security]You" "[Security] You"))
    "BT10-093" (fn [s]
@@ -155,87 +162,63 @@
        hickory/as-hickory
        (select/select (select/descendant (select/id "inner")
                                          (select/class "article")))
-       first
-       :content
-       (filter map?)
-       rest
-       (reduce (fn [accl element]
-                 (let [title? (some->> (select/select
-                                        (select/descendant (select/tag :h4))
-                                        element)
-                                       first)]
-                   (if (or title?
-                           (empty? accl))
-                     (conj accl [element])
-                     (update-in accl [(dec (count accl))] conj element))))
-               [])
-       (mapcat
-        (fn [[heading & contents]]
-          (let [date-string (some->> (select/select
-                                      (select/descendant (select/tag :h4))
-                                      heading)
-                                     first
-                                     :content
-                                     first)
-                date (try (.parse (SimpleDateFormat. "MM.dd.yy") date-string)
-                          (catch ParseException e nil))]
-            (->> (partition-all 2 contents)
-                 (map (fn [[image text]]
-                        [(-> (select/select (select/descendant
-                                             (select/tag "img"))
-                                            image)
-                             first
-                             (get-in [:attrs :src])
-                             string/upper-case
-                             (string/replace "_" "-")
-                             (string/replace #"([A-Z]{2})0" "$1")
-                             (as-> #__ src
-                               (re-find card-utils/card-number-re src)))
-                         (->> (select/select (select/descendant
-                                              (select/tag "dl")
-                                              (select/tag "dd")
-                                              (select/or
-                                               (select/class "beforeCol")
-                                               (select/class "afterCol")))
-                                             text)
-                              (map (comp
-                                    (fn [s]
-                                      (-> s
-                                          (string/replace "Before" "")
-                                          (string/replace "After" "")
-                                          string/trim
-                                          (string/replace #"^Start of Your"
-                                                          "[Start of Your")))
-                                    card-utils/text-content)))
-                         (->> (select/select
-                               (select/or
-                                (select/descendant
-                                 (select/and
-                                  (select/tag "dl")
-                                  (select/has-child
-                                   (select/find-in-text #"Errata Notes")))
-                                 (select/tag "dd"))
-                                (select/descendant (select/class "note")))
-                               text)
-                              (map card-utils/text-content)
-                              (string/join "\n"))]))
-                 (map (fn [[number [error correction] notes]]
-                        (let [repair-fn (get repair number)
-                              error (cond->> (if (apply = (string/split-lines error))
-                                               (first (string/split-lines error))
-                                               error)
-                                      repair-fn repair-fn)
-                              correction (cond->> (if (apply = (string/split-lines correction))
-                                                    (first (string/split-lines correction))
-                                                    correction)
-                                           repair-fn repair-fn)]
-                          {:errata/id (format "errata/%s_%s" language number)
-                           :errata/language language
-                           :errata/date date
-                           :errata/card-number number
-                           :errata/error error
-                           :errata/correction correction
-                           :errata/notes notes})))))))
+       first :content (filter map?) rest
+       (mapcat (fn [el]
+                 (select/select
+                  (select/or (select/tag :h4)
+                             (select/tag :img)
+                             (select/class "beforeCol")
+                             (select/class "afterCol")
+                             (select/has-child
+                              (select/find-in-text #"^Errata Notes$")))
+                  el)))
+       (partition-at #(= (:tag %) :h4))
+       (mapcat (fn [elements]
+                 (let [div {:type :element
+                            :tag :div
+                            :content elements}
+                       card-numbers (some->> (select/select (select/tag :h4) div)
+                                             first
+                                             card-utils/text-content
+                                             (re-seq card-utils/card-number-re))
+                       date-string (some->> (select/select (select/tag :h4) div)
+                                            first :content first)
+                       date (try (.parse (SimpleDateFormat. "MM.dd.yy") date-string)
+                                 (catch ParseException e nil))
+                       text-fixes (fn [s]
+                                    (-> s
+                                        (string/replace #"^Start of Your Main Phase\]"
+                                                        "[Start of Your Main Phase]")
+                                        (string/replace #"^Before\n\s*" "")
+                                        (string/replace #"^After\n\s*" "")
+                                        (string/replace "⟨" "＜")
+                                        (string/replace "⟩" "＞")))
+                       error (->> (select/select (select/class "beforeCol") div)
+                                  (map (comp text-fixes
+                                             card-utils/text-content)))
+                       fixed (->> (select/select (select/class "afterCol") div)
+                                  (map (comp text-fixes
+                                             card-utils/text-content)))
+                       notes (->> (select/select (select/tag :dd) div)
+                                  (map card-utils/text-content)
+                                  (string/join "\n"))]
+                   (map-indexed
+                    (fn [idx number]
+                      (let [repair-fn (get repair number)]
+                        (cond-> {:errata/id (format "errata/%s_%s"
+                                                    language number)
+                                 :errata/language language
+                                 :errata/date date
+                                 :errata/card-number number
+                                 :errata/error (cond-> (nth error idx nil)
+                                                 repair-fn
+                                                 repair-fn)
+                                 :errata/correction (cond-> (nth fixed idx nil)
+                                                      repair-fn
+                                                      repair-fn)}
+                          (not (string/blank? notes))
+                          (assoc :errata/notes notes))))
+                    card-numbers))))
        (reduce (fn [accl {:errata/keys [language card-number] :as errata}]
                  (assoc-in accl [card-number language]
                            (dissoc errata

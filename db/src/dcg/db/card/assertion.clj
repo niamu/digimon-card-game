@@ -53,6 +53,35 @@
                                    count))
                             :card/number
                             :card/parallel-id)))
+        ;; TODO: Add field-match-demo as separate function to check other field translations
+        field-match-demo
+        (let [field :card/attribute
+              all-tr-map (->> sorted-cards
+                              (reduce (fn [accl {:card/keys [number language]
+                                                :as card}]
+                                        (assoc-in accl
+                                                  [number language]
+                                                  (get card field)))
+                                      (sorted-map))
+                              (reduce-kv
+                               (fn [accl number m]
+                                 (->> (keys (dissoc m "ja"))
+                                      (map (fn [l]
+                                             (let [text (get m l)]
+                                               (when-not (get-in accl [l text])
+                                                 {l {text (get m "ja")}}))))
+                                      (apply merge-with merge accl
+                                             {"ja" {(get m "ja") (get m "ja")}})))
+                               {}))]
+          (reduce-kv (fn [accl language tr-map]
+                       (let [[missing-ja _ _]
+                             (data/diff (set (vals (get all-tr-map "ja")))
+                                        (set (vals tr-map)))]
+                         (cond-> accl
+                           (seq missing-ja)
+                           (assoc language missing-ja))))
+                     {}
+                     (dissoc all-tr-map "ja")))
         tr-map
         (->> sorted-cards
              (reduce (fn [accl {:card/keys [number language highlights]}]
@@ -121,13 +150,31 @@
                      (sorted-map)
                      xs)))))
 
+(defn- digixros-highlights
+  "DigiXros highlights should never be the first"
+  [cards]
+  (let [ignored-card-numbers #{"BT10-063"}]
+    (->> cards
+         (remove (fn [{:card/keys [number]}]
+                   (contains? ignored-card-numbers
+                              number)))
+         (filter (fn [{:card/keys [highlights]}]
+                   (some (fn [{highlight-type :highlight/type
+                              :highlight/keys [index]}]
+                           (and (= :digixros highlight-type)
+                                (zero? index)))
+                         highlights)))
+         (map (juxt :card/language :card/number))
+         set
+         (sort-by second))))
+
 (defn- highlights
   "Card highlights that differ across languages"
   [cards]
   (->> cards
-       (filter (fn [{:card/keys [image language]}]
-                 (= language
-                    (:image/language image))))
+       (filter (fn [{:card/keys [language]
+                    {image-language :image/language}:card/image}]
+                 (= language image-language)))
        (group-by :card/number)
        (reduce-kv (fn [accl number card-group]
                     (let [result
@@ -276,7 +323,7 @@
                    (some (fn [correction]
                            (-> s
                                string/lower-case
-                               (string/replace "\n" " ")
+                               (string/replace "\n" "")
                                (string/replace #"\s+" " ")
                                (string/includes? correction)))
                          corrections))))
@@ -338,7 +385,7 @@
          (filter (fn [{:card/keys [language image]}]
                    (= language (:image/language image))))
          (reduce (fn [accl {:card/keys [id number block-icon]
-                           :as card}]
+                            :as card}]
                    (update-in accl [(string/replace number #"\-[0-9]+" "")
                                     block-icon]
                               (fnil conj #{})
@@ -375,6 +422,9 @@
                "card/ko_BT10-099_P0" {:timing 3 :keyword-effect 1}}})
           (format "Card highlights differ across languages:\n%s"
                   (highlights cards)))
+  (assert (empty? (digixros-highlights cards))
+          (format "Card DigiXros highlights are incorrectly the first match:\n%s"
+                  (digixros-highlights cards)))
   (let [missing-block-icons
         (first
          (data/diff (card-block-icons cards)
@@ -391,19 +441,19 @@
                   (card-rarities cards)))
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
-                     "BT4-041"
                      "P-071"
-                     "EX1-073"}
-              "ja" #{"BT10-051"
-                     "BT10-092"
+                     "BT4-041"
+                     "EX1-073"},
+              "ja" #{"BT6-084"
                      "EX1-001"
-                     "BT11-099"
-                     "BT6-084"
-                     "BT7-005"
-                     "BT7-049"
-                     "BT7-055"
                      "BT7-083"
-                     "BT9-073"}})
+                     "BT9-073"
+                     "BT7-005"
+                     "BT10-092"
+                     "BT7-055"
+                     "BT11-099"
+                     "BT10-051"
+                     "BT7-049"}})
           (format "Card errata not accounted for:\n%s"
                   (card-errata cards)))
   cards)
@@ -416,7 +466,7 @@
   (map (fn [[k v]]
          (let [issues (->> (partition 2 1
                                       (vals v))
-                           (map #(apply clojure.data/diff %))
+                           (map #(apply data/diff %))
                            (remove (fn [[only-in-a only-in-b in-both]]
                                      (and (nil? only-in-a)
                                           (nil? only-in-b))))
@@ -426,23 +476,21 @@
                               (map #(select-keys % issue-keys))
                               frequencies
                               (sort-by val)
-                              ffirst)]
+                              ffirst)
+               incorrect-fn (fn [[k v]]
+                              (= (select-keys v issue-keys)
+                                 incorrect))]
            {k {:issue/keys issue-keys
-               :issue/incorrect (->> (filter (fn [[k v]]
-                                               (= (select-keys v issue-keys)
-                                                  incorrect))
-                                             v)
+               :issue/incorrect (->> (filter incorrect-fn v)
                                      (map (fn [[k v]]
                                             {k (select-keys v issue-keys)}))
                                      first)
-               :issue/correct (->> (filter (fn [[k v]]
-                                             (not= (select-keys v issue-keys)
-                                                   incorrect))
-                                           v)
+               :issue/correct (->> (remove incorrect-fn v)
                                    (map (fn [[k v]]
                                           (select-keys v issue-keys)))
                                    first)}}))
        (card-values dcg.db.core/*cards))
+
   ;; Update block-icons.edn resource
   (let [block-icons (edn/read (PushbackReader.
                                (io/reader

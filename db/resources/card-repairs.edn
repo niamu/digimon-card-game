@@ -253,6 +253,12 @@
            (not inherited-effect)
            (assoc :card/inherited-effect
                   "【상대의 턴】 이 디지몬의 DP를 +1000 한다.")))}
+ "BT3-093"
+ {"en" (fn [card]
+         (update card
+                 :card/effect
+                 (fn [s]
+                   (string/replace s ".On Play]" ".[On Play]"))))}
  "BT3-092"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "R"))}
@@ -371,6 +377,9 @@
  "BT6-022"
  {"ko" (fn [card]
          (assoc card :card/attribute "배리어블"))}
+ "BT6-024"
+ {"en" (fn [card]
+         (assoc card :card/type "Rare Animal"))}
  "BT6-027"
  {"ko" (fn [card]
          (cond-> card
@@ -1139,7 +1148,7 @@
                 [{:digivolve/id "digivolve/BT9-073_index0",
                   :digivolve/index 0
                   :digivolve/cost 2
-                  :digivolve/level 4
+                  :digivolve/level 3
                   :digivolve/color #{:purple}}]))}
  "BT9-075"
  {"zh-Hans" (fn [card]
@@ -1195,7 +1204,9 @@
                           (str "【进化】名称中包含“奥米加兽” 起3")))))}
  "BT9-104"
  {"en" (fn [card]
-         (assoc card :card/type "X Antibody"))
+         (assoc card
+                :card/name "X-Digivolution!"
+                :card/type "X Antibody"))
   "ko" (fn [card]
          (assoc card :card/type "X항체"))}
  "BT9-106"
@@ -1268,7 +1279,21 @@
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
                           (str "【进化】拥有“Xros Heart”特征的Lv.2 起0")))))}
  "BT10-009"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [Shoutmon] + [Ballistamon] + [Dorulumon] + [Starmons] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [Shoutmon] + [Ballistamon] + [Dorulumon] + [Starmons] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
+  "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
                         (some-> s
@@ -1284,7 +1309,21 @@
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
                           (str "【进化】名称中包含“伽马兽”的Lv.4 起3")))))}
  "BT10-012"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [Shoutmon X4] + [Beelzemon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [Shoutmon X4] + [Beelzemon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫「샤우트몬X4」×「베르제브몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫「샤우트몬X4」×「베르제브몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
+  "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
                         (some-> s
@@ -1301,6 +1340,20 @@
                  {:color/id "color/BT10-013_index1"
                   :color/index 1
                   :color/color :black}]))
+  "en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [Shoutmon] + [Ballistamon] + [Dorulumon] + [Starmons] + [Sparrowmon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [Shoutmon] + [Ballistamon] + [Dorulumon] + [Starmons] + [Sparrowmon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」×「스패로우몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」×「스패로우몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
   "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
@@ -1311,7 +1364,21 @@
                                      "“高吼兽”×“弩炮兽”×“多鲁路兽”×"
                                      "“星星兽S”×“麻雀兽”")))))}
  "BT10-015"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [Shoutmon X5] + [Beelzemon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [Shoutmon X5] + [Beelzemon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫「샤우트몬X5」×「베르제브몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫「샤우트몬X5」×「베르제브몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
+  "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
                         (some-> s
@@ -1334,7 +1401,21 @@
                        (string/replace "[On Deletion] ("
                                        "[On Deletion] ＜Save＞ (")))))}
  "BT10-024"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [Greymon] + [MailBirdramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [Greymon] + [MailBirdramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫「그레이몬」×「메일버드라몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫「그레이몬」×「메일버드라몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
+  "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
                         (some-> s
@@ -1349,6 +1430,20 @@
                            (string/replace (re-pattern ".?デジクロス.*\\n?") "")
                            (str "\n≪デジクロス-2≫"
                                 " 「メタルグレイモン」×「デッカードラモン」 登場するとき、手札/バトルエリアからこのカードの下に置ける。1枚ごとに登場コストをマイナスする")))))
+  "en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [MetalGreymon] + [Deckerdramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [MetalGreymon] + [Deckerdramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫「메탈그레이몬」×「데커드라몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫「메탈그레이몬」×「데커드라몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
   "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
@@ -1425,6 +1520,13 @@
                                            "")
                            (str "\n"
                                 "<DigiXros -1> [SkullKnightmon] + [DeadlyAxemon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-1≫「스컬나이트몬」×「데들리액스몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-1≫「스컬나이트몬」×「데들리액스몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
   "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
@@ -1447,21 +1549,42 @@
                      (not effect)
                      (str "≪디지크로스-2≫ 「모니터몬」x「모니터몬」x「모니터몬」\n"
                           "등장함때,패/배들에어리어에서이카드아래에놓을수있다. 1장마다등장코스트를마이너스한다")))))}
- "BT10-067"
- {"zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (cond->> s
-                          (not (re-find (re-pattern "^.?进化[】〕]") s))
-                          (str "【进化】名称中包含“正义兽” 起1")))))}
  "BT10-066"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [SkullKnightmon] + [DeadlyAxemon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [SkullKnightmon] + [DeadlyAxemon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫「스컬나이트몬」×「데들리액스몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫「스컬나이트몬」×「데들리액스몬」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
+  "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
                         (some-> s
                                 (string/replace (re-pattern "^.?数码合体.*?\\n") "")
                                 (str "\n≪数码合体-2≫"
                                      " “骷髅骑士兽”×“致命巨斧兽”")))))}
+ "BT10-067"
+ {"en" (fn [card]
+         (update card
+                 :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   "with Justimon in its name"
+                                   "with [Justimon] in its name"))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (cond->> s
+                          (not (re-find (re-pattern "^.?进化[】〕]") s))
+                          (str "【进化】名称中包含“正义兽” 起1")))))}
  "BT10-068"
  {"en" (fn [card]
          (update card :card/color
@@ -1484,7 +1607,21 @@
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
                           (str "【进化】“黑暗骑士兽” 起4")))))}
  "BT10-077"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> 1 Digimon card w/[Bagra Army] in traits\nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> 1 Digimon card w/[Bagra Army] in traits\nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫특징으로 「바그라군」을 가진 디지몬 카드 1장 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫특징으로 「바그라군」을 가진 디지몬 카드 1장 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
+  "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
                         (some-> s
@@ -1596,7 +1733,21 @@
          (assoc card :card/use-cost 8))}
  "BT10-111"
  {"en" (fn [card]
-         (assoc card :card/level 4))
+         (-> card
+             (assoc :card/level 4)
+             (update :card/effect
+                     (fn [s]
+                       (-> s
+                           (string/replace "<DigiXros -2> 1 Digimon card w/[Xros Heart] in traits \nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                           "")
+                           (str "\n<DigiXros -2> 1 Digimon card w/[Xros Heart] in traits \nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."))))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "≪디지크로스-2≫특징으로 「크로스 하트」를 가진 디지몬 카드 1장 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                       "")
+                       (str "\n≪디지크로스-2≫특징으로 「크로스 하트」를 가진 디지몬 카드 1장 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
   "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
@@ -1646,7 +1797,14 @@
                             (URI. "https://world.digimoncard.com/images/cardlist/card/BT12-012_P1.png")
                             source)))
              (assoc :card/effect
-                    "＜Material Save 2＞ (When this Digimon is deleted, you may place 2 cards in this Digimon's DigiXros conditions from this Digimon's digivolution cards under 1 of your Tamers.)[Start of Your Turn] By deleting this Digimon, gain 1 memory.[On Play] Reveal the top 3 cards of your deck. Add 2 cards with [Xros Heart] and/or [Blue Flare] in their traits among them to your hand. Place the rest at the bottom of your deck in any order.\n<DigiXros -2> [Shoutmon] × [Ballistamon] × [Dorulumon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))}
+                    "＜Material Save 2＞ (When this Digimon is deleted, you may place 2 cards in this Digimon's DigiXros conditions from this Digimon's digivolution cards under 1 of your Tamers.)[Start of Your Turn] By deleting this Digimon, gain 1 memory.[On Play] Reveal the top 3 cards of your deck. Add 2 cards with [Xros Heart] and/or [Blue Flare] in their traits among them to your hand. Place the rest at the bottom of your deck in any order.\n<DigiXros -2> [Shoutmon] × [Ballistamon] × [Dorulumon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“高吼兽”X“弩炮兽”X“多鲁路兽”\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“高吼兽”X“弩炮兽”X“多鲁路兽”")))))}
  "BT11-016"
  {"en" (fn [card]
          (update card :card/effect
@@ -1680,7 +1838,15 @@
                                 "<DigiXros -2> "
                                 "[OmniShoutmon] × [ZeigGreymon] × "
                                 "[Ballistamon] × [Dorulumon] × "
-                                "[Starmons] × [Sparrowmon]")))))}
+                                "[Starmons] × [Sparrowmon]")))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“奥米加高吼兽”X“吉克暴龙兽”X“弩炮兽”X“多鲁路兽”X“星星兽S”X“麻雀兽”\n"
+                                            "")
+                            string/trim
+                            (str "\n≪数码合体-2≫“奥米加高吼兽”X“吉克暴龙兽”X“弩炮兽”X“多鲁路兽”X“星星兽S”X“麻雀兽”")))))}
  "BT11-030"
  {"en" (fn [card]
          (update card :card/effect
@@ -1706,6 +1872,36 @@
                  {:color/id "color/BT11-064_index1"
                   :color/index 1
                   :color/color :red}]))}
+ "BT11-071"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [DarkKnightmon] × [Tuwarmon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [DarkKnightmon] × [Tuwarmon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“黑暗骑士兽”X“强者兽”\n \n此卡牌/数码宝贝也视为“黑暗骑士兽”和“强者兽”。\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“黑暗骑士兽”X“强者兽”\n \n此卡牌/数码宝贝也视为“黑暗骑士兽”和“强者兽”。")))))}
+ "BT11-081"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [MadLeomon] × 1 Digimon card w/[Bagra Army] in traits When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                       "")
+                       (str "\n<DigiXros -2> [MadLeomon] × 1 Digimon card w/[Bagra Army] in traits When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“疯狂狮子兽”X1张拥有“巴格拉军”特征的数码宝贝卡牌\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“疯狂狮子兽”X1张拥有“巴格拉军”特征的数码宝贝卡牌")))))}
  "BT11-082"
  {"ko" (fn [card]
          (assoc card :card/color
@@ -1715,6 +1911,20 @@
                  {:color/id "color/BT11-082_index1"
                   :color/index 1
                   :color/color :black}]))}
+ "BT11-086"
+ {"en" (fn [card]
+         (assoc card :card/effect
+                "[On Play][When Digivolving] You may play 1 purple level 4 or lower Digimon card or 1 level 4 or lower Digimon card with [Xros Heart] in its traits from your trash without paying the cost. If DigiXrosing, add 1 to the number of cards you play with this effect.\n[All Turns] All of your Digimon with [Xros Heart] in their traits or with ＜Retaliation＞ gain ＜Rush＞ and ＜Blocker＞.\n<DigiXros -3> 1 Digimon card w/[Xros Heart] in traits\nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.\nWhen you would play this card, you can also place cards from your trash in digivolution cards for a DigiXros."))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "【≪数码合体-3≫1张拥有“Xros Heart”特征的数码宝贝卡牌当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用】"
+                                            "")
+                            (string/replace "≪数码合体-3≫1张拥有“Xros Heart”特征的数码宝贝卡牌\n"
+                                            "")
+                            string/trim
+                            (str "\n≪数码合体-3≫1张拥有“Xros Heart”特征的数码宝贝卡牌当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
  "BT11-089"
  {"en" (fn [card]
          (update card :card/effect
@@ -1786,7 +1996,9 @@
  {"zh-Hans" (fn [card]
               (assoc card :card/dp 1000))}
  "BT12-011"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (update card :card/name (fn [s] (string/replace s "." ""))))
+  "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
                         (some-> s
@@ -1816,7 +2028,12 @@
                            (string/replace "there is a green card"
                                            "it has a green digivolution card")))))}
  "BT12-034"
- {"ko" (fn [card]
+ {"en" (fn [card]
+         (update card
+                 :card/effect
+                 (fn [s]
+                   (string/replace s "from Koromon" "from [Koromon]"))))
+  "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id "color/BT12-034_index0"
                   :color/index 0
@@ -1983,7 +2200,14 @@
                                    "[Your Turn]"
                                    "[Opponent's Turn]"))))
   "ko" (fn [card]
-         (assoc card :card/rarity "U"))}
+         (assoc card :card/rarity "U"))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌\n"
+                                            "")
+                            (str "\n≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
  "BT12-064"
  {"en" (fn [card]
          (update card
@@ -2038,7 +2262,22 @@
            (= source (URI. "https://world.digimoncard.com/images/cardlist/card/BT12-074_P1.png"))
            (assoc-in [:card/image
                       :image/source]
-                     (URI. "https://world.digimoncard.com/images/cardlist/card/BT6-056_P3.png"))))}
+                     (URI. "https://world.digimoncard.com/images/cardlist/card/BT6-056_P3.png"))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
+ "BT12-075"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
  "BT12-076"
  {"ko" (fn [card]
          (assoc card :card/effect
@@ -2077,6 +2316,13 @@
                            (str "\n"
                                 "<DigiXros -3> "
                                 "[Mervamon] × [Sparrowmon]")))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-3≫“梅尔瓦兽”×“麻雀兽”\n\n"
+                                            "")
+                            (str "\n≪数码合体-3≫“梅尔瓦兽”×“麻雀兽”")))))
   "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id "color/BT12-084_index0"
@@ -2162,7 +2408,22 @@
  "BT12-110"
  {"ko" (fn [card] (assoc card :card/type "7대마왕"))}
  "BT12-111"
- {"ko" (fn [card]
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (some-> s
+                           (string/replace "<DigiXros -3> [DarkKnightmon] × [Bagramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
+                                           "")
+                           (str "\n<DigiXros -3> [DarkKnightmon] × [Bagramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (some-> s
+                                (string/replace "≪数码合体-3≫“巴格拉兽”X“黑暗骑士兽”\n"
+                                                "")
+                                string/trim
+                                (str "\n≪数码合体-3≫“巴格拉兽”X“黑暗骑士兽”")))))
+  "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id "color/BT12-111_index0"
                   :color/index 0
@@ -2175,8 +2436,9 @@
          (update card :card/effect
                  (fn [s]
                    (some-> s
-                           (string/replace "trait & different"
-                                           "trait and different")))))
+                           (string/replace "<DigiXros -1> ∞ Digimon cards w/[Xros Heart] or [Blue Flare] trait & different card numbers When you would play this card from your hand, by placing 1 of your [Shoutmon] as a digivolution card under this Digimon, reduce its play cost by 1 and place the cards in your trash as digivolution cards for a DigiXros."
+                                           "")
+                           (str "\n<DigiXros -1> ∞ Digimon cards w/[Xros Heart] or [Blue Flare] trait and different card numbers When you would play this card from your hand, by placing 1 of your [Shoutmon] as a digivolution card under this Digimon, reduce its play cost by 1 and place the cards in your trash as digivolution cards for a DigiXros.")))))
   "zh-Hans" (fn [card]
               (assoc card
                      :card/effect
@@ -2198,6 +2460,9 @@
                  {:color/id "color/BT13-040_index1"
                   :color/index 1
                   :color/color :blue}]))}
+ "BT13-053"
+ {"en" (fn [card]
+         (assoc card :card/type "Holy Beast/Deva"))}
  "BT13-059"
  {"en" (fn [card]
          (update card
@@ -2205,6 +2470,12 @@
                  (fn [s]
                    (str "[DNA Digivolution] 0 from green Lv.6 + blue Lv.6\n"
                         s))))}
+ "BT13-075"
+ {"en" (fn [card]
+         (assoc card :card/type "Holy Warrior/Royal Knight/X Antibody"))}
+ "BT13-093"
+ {"en" (fn [card]
+         (assoc card :card/type "Puppet/X Antibody"))}
  "BT13-110"
  {"zh-Hans" (fn [{:card/keys [type] :as card}]
               (cond-> card
@@ -2248,7 +2519,14 @@
                    (str s
                         "\n"
                         "<DigiXros -1> "
-                        "[Shoutmon] × [Ballistamon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."))))}
+                        "[Shoutmon] × [Ballistamon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-1≫“高吼兽”×“弩炮兽”；\n\n"
+                                            "")
+                            (str "\n≪数码合体-1≫“高吼兽”×“弩炮兽”")))))}
  "BT15-024"
  {"en" (fn [card]
          (update card
@@ -2267,7 +2545,14 @@
                    (str s
                         "\n"
                         "<DigiXros -1> "
-                        "[Agumon]/[Greymon] × [Gabumon]/[Garurumon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."))))}
+                        "[Agumon]/[Greymon] × [Gabumon]/[Garurumon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-1≫“亚古兽”/“暴龙兽”×“加布兽”/“加鲁鲁兽”；\n\n"
+                                            "")
+                            (str "\n≪数码合体-1≫“亚古兽”/“暴龙兽”×“加布兽”/“加鲁鲁兽”")))))}
  "BT15-073"
  {"en" (fn [card]
          (update card
@@ -2300,6 +2585,22 @@
                  {:color/id "color/BT16-102_index2"
                   :color/index 2
                   :color/color :black}]))}
+ "BT17-017"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                            "")
+                            (str "\n≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ "BT17-028"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                            "")
+                            (str "\n≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
  "BT17-041"
  {"en" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
@@ -2309,6 +2610,14 @@
               (cond-> card
                 (= parallel-id 2)
                 (assoc :card/block-icon 3)))}
+ "BT17-057"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“无限龙兽”×1张拥有“改造型”特征的Lv.5数码宝贝卡牌；\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“无限龙兽”×1张拥有“改造型”特征的Lv.5数码宝贝卡牌")))))}
  "BT17-070"
  {"zh-Hans" (fn [{:card/keys [parallel-id] :as card}]
               (cond-> card
@@ -2469,8 +2778,8 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
@@ -2506,14 +2815,16 @@
  "BT20-090"
  {"ja" (fn [card]
          (-> card
-             (dissoc :card/form)
+             (dissoc :card/form
+                     :card/dp
+                     :card/level)
              (update :card/effect
                      (fn [s]
-                       (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))
-             (assoc
-              :card/level 3
-              :card/dp 1000)))
-  "en" (fn [card] (dissoc card :card/form))}
+                       (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
+  "en" (fn [card] (dissoc card
+                         :card/form
+                         :card/dp
+                         :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -2677,15 +2988,16 @@
                                    "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
                                    "You may DNA digivolve this Digimon and one of your other Digimon in play into a Digimon card in your hand for its DNA digivolve cost."))))}
  "EX3-014"
- {"en"      (fn [card]
-              (update card
-                      :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "[DigiXros -2]"
-                                            "<DigiXros -2>")
-                            (string/replace "3000 or less"
-                                            "3000 DP or less")))))
+ {"en" (fn [card]
+         (update card
+                 :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "3000 or less"
+                                       "3000 DP or less")
+                       (string/replace "[DigiXros -2] 5 Digimon cards w/different names + [Dragon], [saur], or [Ceratopsian] in one of its traitsOn play, place from hand/battle area under this card. Reduce play cost per card."
+                                       "")
+                       (str "\n<DigiXros -2> 5 Digimon cards w/different names + [Dragon], [saur], or [Ceratopsian] in one of its traitsOn play, place from hand/battle area under this card. Reduce play cost per card.")))))
   "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
@@ -2694,6 +3006,14 @@
                                 (str "\n"
                                      "≪数码合体-2≫"
                                      "5张特征中包含“龙”且名称不同的数码宝贝卡牌")))))}
+ "EX3-030"
+ {"en" (fn [card]
+         (update card
+                 :card/inherited-effect
+                 (fn [s]
+                   (string/replace s
+                                   (re-pattern "^\\[Inherited Effect\\]")
+                                   ""))))}
  "EX3-035"
  {"en" (fn [card]
          (update card
@@ -2814,7 +3134,14 @@
                    (str s
                         "\n"
                         "<DigiXros -2> "
-                        "Blue [Greymon] × [MailBirdramon]"))))}
+                        "Blue [Greymon] × [MailBirdramon]"))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫蓝色“暴龙兽”×“铠甲鸟龙兽”\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫蓝色“暴龙兽”×“铠甲鸟龙兽”")))))}
  "EX4-021"
  {"en" (fn [card]
          (update card
@@ -2823,7 +3150,14 @@
                    (str s
                         "\n"
                         "<DigiXros -2> "
-                        "Blue [MetalGreymon] × [DarkKnightmon]"))))}
+                        "Blue [MetalGreymon] × [DarkKnightmon]"))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫蓝色“机械暴龙兽”×“黑暗骑士兽”\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫蓝色“机械暴龙兽”×“黑暗骑士兽”")))))}
  "EX4-024"
  {"en" (fn [card]
          (update card :card/effect
@@ -2864,15 +3198,36 @@
                         (cond->> s
                           (not (re-find (re-pattern "^.?Digivolve") s))
                           (str "[Digivolve] 4 from Lv.5 w/[Rapidmon] in name or 2-color w/green"))))))}
+ "EX4-047"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -2> [SkullKnightmon] × [DeadlyAxemon]\n"
+                                       "")
+                       (str "\n<DigiXros -2> [SkullKnightmon] × [DeadlyAxemon]")))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“骷髅骑士兽”×“致命巨斧兽”\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“骷髅骑士兽”×“致命巨斧兽”")))))}
  "EX4-063"
  {"en" (fn [card]
-         (assoc card :card/color
-                [{:color/id    "color/EX4-063_index0"
-                  :color/index 0
-                  :color/color :green}
-                 {:color/id    "color/EX4-063_index1"
-                  :color/index 1
-                  :color/color :yellow}]))}
+         (-> card
+             (assoc :card/color
+                    [{:color/id    "color/EX4-063_index0"
+                      :color/index 0
+                      :color/color :green}
+                     {:color/id    "color/EX4-063_index1"
+                      :color/index 1
+                      :color/color :yellow}])
+             (update :card/effect
+                     (fn [s]
+                       (string/replace s
+                                       "or [Lopmon] in digivolution"
+                                       "or [Lopmon] in its digivolution")))))}
  "EX5-001"
  {"en" (fn [card]
          (dissoc card :card/effect))}
@@ -2936,6 +3291,38 @@
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
                 "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))}
+ "EX6-023"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“三藏兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“三藏兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ "EX6-024"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“三藏兽”/“悟空兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“三藏兽”/“悟空兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ "EX6-025"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“悟空兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“悟空兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ "EX6-026"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“三藏兽”/“悟空兽”/“沙悟兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“三藏兽”/“悟空兽”/“沙悟兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
  "EX6-027"
  {"en"      (fn [{:card/keys [parallel-id] :as card}]
               (cond-> card
@@ -2963,8 +3350,14 @@
                 :card/dp 12000))}
  "EX6-031"
  {"en" (fn [card]
-         (assoc card
-                :card/level 7))}
+         (assoc card :card/level 7))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "≪数码合体-2≫“三藏兽”×“悟空兽”×“沙悟兽”×“猪八戒兽”；\n\n"
+                                            "")
+                            (str "\n≪数码合体-2≫“三藏兽”×“悟空兽”×“沙悟兽”×“猪八戒兽”")))))}
  "EX6-035"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
@@ -3555,8 +3948,24 @@
   "ko"      (fn [card]
               (assoc card :card/type "수인형"))}
  "P-094"
- {"zh-Hans" (fn [card]
-              (assoc card :card/level 5))
+ {"en" (fn [card]
+         (update card
+                 :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "<DigiXros -1> [Snatchmon] × 4 [Vemmon]\nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the cost.\n"
+                                       "")
+                       (str "\n<DigiXros -1> [Snatchmon] × 4 [Vemmon]\nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the cost.")))))
+  "zh-Hans" (fn [card]
+              (-> card
+                  (assoc :card/level 5)
+                  (update :card/effect
+                          (fn [s]
+                            (-> s
+                                (string/replace
+                                 (re-pattern "^≪数码合体-1≫“抢夺兽”×4张“贝姆兽”\\n\\n")
+                                 "")
+                                (str "\n≪数码合体-1≫“抢夺兽”×4张“贝姆兽”"))))))
   "ko"      (fn [card]
               (assoc card :card/type "불명"))}
  "P-097"
