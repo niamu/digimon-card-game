@@ -8,6 +8,7 @@
    [dcg.db.card.highlight :as highlight]
    [dcg.db.card.limitation :as limitation]
    [dcg.db.card.release :as release]
+   [dcg.db.card.rule :as rule]
    [dcg.db.card.translation :as translation]
    [dcg.db.db :as db]
    [taoensso.timbre :as logging]))
@@ -15,9 +16,9 @@
 (def origins
   [{:origin/url "https://digimoncard.com"
     :origin/language "ja"}
-   {:origin/url "https://en.digimoncard.com"
-    :origin/language "en"
-    :origin/card-image-language "ja"}
+   #_{:origin/url "https://en.digimoncard.com"
+      :origin/language "en"
+      :origin/card-image-language "ja"}
    {:origin/url "https://world.digimoncard.com"
     :origin/language "en"}
    {:origin/url "https://www.digimoncard.cn"
@@ -144,9 +145,29 @@
                                :unrestrict))
                     (assoc :card/limitation limitation))))
               unrefined-cards)
+        rule-revisions (->> (pmap rule/rules origins)
+                            doall
+                            (apply merge-with merge))
+        cards-with-rule-revisions
+        (->> cards-with-errata-and-limitations
+             (map (fn [{:card/keys [language number] :as card}]
+                    (let [{:keys [before after]
+                           :as rule-rev} (get-in rule-revisions
+                                                 [number language])]
+
+                      (cond-> card
+                        rule-rev
+                        (update :card/effect
+                                (fn [s]
+                                  (-> s
+                                      (string/replace #"\s*\(Rule\)" "⟨Rule⟩")
+                                      (string/replace before "")
+                                      (string/replace after "")
+                                      string/trim
+                                      (str "\n" after)))))))))
         {:keys [mentions
                 treats
-                highlights]} (highlight/all cards-with-errata-and-limitations)
+                highlights]} (highlight/all cards-with-rule-revisions)
         cards
         (pmap (fn [{:card/keys [id language] :as card}]
                 (let [highlights (get-in highlights [id language])
@@ -164,10 +185,10 @@
                                          :treat/field :card/name}]))
                       mentions (get-in mentions [id language])]
                   (cond-> card
-                    highlights (assoc :card/highlights highlights)
-                    (not (empty? treats)) (assoc :card/treats treats)
-                    mentions (assoc :card/mentions mentions))))
-              cards-with-errata-and-limitations)]
+                    (seq highlights) (assoc :card/highlights highlights)
+                    (seq treats) (assoc :card/treats treats)
+                    (seq mentions) (assoc :card/mentions mentions))))
+              cards-with-rule-revisions)]
     (sort-by :card/id cards)))
 
 (defn -main

@@ -31,7 +31,7 @@
   (let [sorted-cards
         (->> cards
              (filter (fn [{:card/keys [parallel-id language highlights]
-                          {image-language :image/language} :card/image}]
+                           {image-language :image/language} :card/image}]
                        (and (= language image-language)
                             (zero? parallel-id)
                             (->> highlights
@@ -58,7 +58,7 @@
         (let [field :card/attribute
               all-tr-map (->> sorted-cards
                               (reduce (fn [accl {:card/keys [number language]
-                                                :as card}]
+                                                 :as card}]
                                         (assoc-in accl
                                                   [number language]
                                                   (get card field)))
@@ -104,7 +104,7 @@
                                     new-texts
                                     (or (->> (get m "ja")
                                              (remove (fn [text] (get (set/map-invert accl)
-                                                                    text)))
+                                                                     text)))
                                              seq)
                                         (->> (keep-indexed (fn [idx text]
                                                              (when (contains? (set new-texts)
@@ -160,7 +160,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                              :highlight/keys [index]}]
+                               :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -173,7 +173,7 @@
   [cards]
   (->> cards
        (filter (fn [{:card/keys [language]
-                    {image-language :image/language}:card/image}]
+                     {image-language :image/language}:card/image}]
                  (= language image-language)))
        (group-by :card/number)
        (reduce-kv (fn [accl number card-group]
@@ -181,9 +181,7 @@
                           (->> card-group
                                (map (comp #(apply hash-map %)
                                           (juxt :card/id
-                                                (comp #(dissoc %
-                                                               :treat
-                                                               :mention)
+                                                (comp #(dissoc % :mention)
                                                       frequencies
                                                       #(map :highlight/type %)
                                                       :card/highlights))))
@@ -385,7 +383,7 @@
          (filter (fn [{:card/keys [language image]}]
                    (= language (:image/language image))))
          (reduce (fn [accl {:card/keys [id number block-icon]
-                            :as card}]
+                           :as card}]
                    (update-in accl [(string/replace number #"\-[0-9]+" "")
                                     block-icon]
                               (fnil conj #{})
@@ -461,6 +459,20 @@
 (comment
   (->> dcg.db.core/*cards
        card-assertions)
+
+  (->> dcg.db.core/*cards
+       (filter (fn [{:card/keys [treats highlights]}]
+                 treats))
+       (map (juxt :card/id
+                  :card/treats
+                  (comp (fn [highlights]
+                          (->> highlights
+                               (filter (fn [{highlight-type :highlight/type}]
+                                         (= highlight-type :treat)))))
+                        :card/highlights)))
+       (remove (fn [[_ treats highlights]]
+                 (= (count treats)
+                    (count highlights)))))
 
   ;; Card values analysis
   (map (fn [[k v]]

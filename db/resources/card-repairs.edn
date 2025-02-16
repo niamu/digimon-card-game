@@ -517,6 +517,14 @@
            (= source
               (URI. "https://world.digimoncard.com/images/cardlist/card/BT7-081_P5.png"))
            (assoc :card/block-icon 1)))}
+ "BT7-083"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (cond-> s
+                     (not (or (string/includes? s "〈규칙〉")
+                              (string/includes? s "〈룰〉")))
+                     (str "\n〈규칙〉명칭: 「시스터몬 시엘(각성)」, 속성: 「데이터종」 으로도 취급한다.")))))}
  "BT7-085"
  {"ja" (fn [{:card/keys [inherited-effect] :as card}]
          (cond-> card
@@ -1660,6 +1668,9 @@
   "ko" (fn [card]
          (assoc card
                 :card/level 7))}
+ "BT10-087"
+ {"ja" (fn [card]
+         (assoc card :card/type "ジェネラル/クロスハート"))}
  "BT10-092"
  {"zh-Hans" (fn [card]
               (assoc card :card/type "指挥官/黑军"))}
@@ -1770,6 +1781,10 @@
                         (cond->> s
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
                           (str "【进化】拥有“皇家骑士”特征的Lv.6 起5")))))}
+ "BT11-007"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "[On Deletion] If you have a red Tamer in play, gain 1 memory."))}
  "BT11-009"
  {"en" (fn [card]
          (update card :card/effect
@@ -1863,6 +1878,13 @@
                                 (string/replace (re-pattern "^.?数码合体.*?\\n") "")
                                 (str "\n"
                                      "≪数码合体-2≫“机械暴龙兽”X“电子龙兽”")))))}
+ "BT11-063"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (cond-> s
+                     (not (string/includes? s "〈룰〉 명칭:「워메몬」으로도 취급한다. "))
+                     (str "\n〈룰〉 명칭:「워메몬」으로도 취급한다. ")))))}
  "BT11-064"
  {"en" (fn [card]
          (assoc card :card/color
@@ -2382,7 +2404,8 @@
  "BT12-093"
  {"ko" (fn [card] (assoc card :card/type "헌터"))}
  "BT12-096"
- {"ko" (fn [card] (assoc card :card/type "헌터"))}
+ {"ja" (fn [card] (assoc card :card/type "ハンター"))
+  "ko" (fn [card] (assoc card :card/type "헌터"))}
  "BT12-097"
  {"ko" (fn [card] (assoc card :card/type "헌터"))}
  "BT12-104"
@@ -2567,6 +2590,10 @@
                  (fn [s]
                    (-> s
                        (string/replace "Lv.5 w/Garurumon]" "Lv.5 w/[Garurumon]")))))}
+ "BT16-031"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "[Your Turn] All of your opponent's Security Digimon get -3000 DP."))}
  "BT16-076"
  {"zh-Hans" (fn [card]
               (update card
@@ -2758,7 +2785,9 @@
            (assoc :card/block-icon 4)))}
  "BT19-002"
  {"en" (fn [card]
-         (dissoc card :card/attribute))}
+         (-> card
+             (dissoc :card/attribute)
+             (assoc :card/type "Lesser/LIBERATOR")))}
  "BT19-004"
  {"en" (fn [card]
          (-> card
@@ -2784,34 +2813,34 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -2822,9 +2851,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                         :card/form
-                         :card/dp
-                         :card/level))}
+                          :card/form
+                          :card/dp
+                          :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3385,10 +3414,22 @@
  "EX8-006"
  {"zh-Hans" (fn [card]
               (dissoc card :card/attribute))}
+ "EX8-026"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)"))}
  "EX8-032"
  {"zh-Hans" (fn [card]
               (assoc card :card/effect
                      "【进化】拥有“NSo”特征的Lv.3:费用2"))}
+ "EX8-044"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)"))}
+ "EX8-062"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)"))}
  "LM-005"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
@@ -3672,12 +3713,52 @@
  "ST16-08"
  {"en" (fn [card]
          (dissoc card :card/security-effect))}
+ "ST18-02"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Vaccine"))}
+ "ST18-03"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Vaccine"))}
+ "ST18-04"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-05"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-06"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-07"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-08"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-09"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-10"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-11"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Vaccine"))}
+ "ST18-12"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Data"))}
+ "ST18-13"
+ {"en" (fn [card]
+         (assoc card :card/attribute "Vaccine"))}
  "ST18-15"
  {"en" (fn [card]
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 5)
              (assoc :card/category "Option")))}
+ "ST19-01"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "[When Attacking][Once Per Turn] If you have another Digimon, ＜Draw 1＞. (Draw 1 card from your deck.)"))}
  "ST19-10"
  {"zh-Hans" (fn [card]
               (update card :card/effect

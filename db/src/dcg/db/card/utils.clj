@@ -150,6 +150,7 @@
                  :else (text-content e)))
              (:content element))
         string/join
+        (string/replace "ofthis" "of this")
         (string/replace "\u3000" " ")
         (string/replace #"\h+" " ")
         (string/replace "\r" "")
