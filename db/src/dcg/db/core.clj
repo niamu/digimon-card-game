@@ -148,47 +148,24 @@
         rule-revisions (->> (pmap rule/rules origins)
                             doall
                             (apply merge-with merge))
-        cards-with-rule-revisions
+        cards
         (->> cards-with-errata-and-limitations
              (map (fn [{:card/keys [language number] :as card}]
                     (let [{:keys [before after]
                            :as rule-rev} (get-in rule-revisions
                                                  [number language])]
-
                       (cond-> card
                         rule-rev
                         (update :card/effect
                                 (fn [s]
                                   (-> s
                                       (string/replace #"\s*\(Rule\)" "⟨Rule⟩")
-                                      (string/replace before "")
+                                      (string/replace "<规则>" "\u3008规则\u3009")
                                       (string/replace after "")
+                                      (string/replace before "")
                                       string/trim
-                                      (str "\n" after)))))))))
-        {:keys [mentions
-                treats
-                highlights]} (highlight/all cards-with-rule-revisions)
-        cards
-        (pmap (fn [{:card/keys [id language] :as card}]
-                (let [highlights (get-in highlights [id language])
-                      aka (reduce-kv (fn [s k v]
-                                       (string/replace s k v))
-                                     (:card/name card)
-                                     tr-map)
-                      treats (get-in treats [id language])
-                      treats (concat treats
-                                     (when (not= aka (:card/name card))
-                                       [{:treat/id (format "treat/%s_%s"
-                                                           id
-                                                           "aka")
-                                         :treat/as aka
-                                         :treat/field :card/name}]))
-                      mentions (get-in mentions [id language])]
-                  (cond-> card
-                    (seq highlights) (assoc :card/highlights highlights)
-                    (seq treats) (assoc :card/treats treats)
-                    (seq mentions) (assoc :card/mentions mentions))))
-              cards-with-rule-revisions)]
+                                      (str "\n" after))))))))
+             highlight/process-highlights)]
     (sort-by :card/id cards)))
 
 (defn -main
@@ -202,6 +179,12 @@
 
 (comment
   (db/import-from-file!)
+
+  (def *cards
+    (clojure.edn/read {:readers {'uri #(java.net.URI. ^String %)}}
+                      (java.io.PushbackReader.
+                       (clojure.java.io/reader
+                        (clojure.java.io/resource "db.edn")))))
 
   (set! *print-namespace-maps* false)
 

@@ -6,93 +6,55 @@
    [clojure.set :as set]
    [clojure.string :as string])
   (:import
-   [java.io PushbackReader]))
+   [java.io PushbackReader]
+   [java.util Date]))
 
-(def category-keyword
-  {"Digi-Egg"    :digi-egg
-   "デジタマ"    :digi-egg
-   "디지타마"    :digi-egg
-   "数码蛋"      :digi-egg
-   "Digimon"     :digimon
-   "デジモン"    :digimon
-   "디지몬"      :digimon
-   "数码宝贝"    :digimon
-   "Tamer"       :tamer
-   "テイマー"    :tamer
-   "테이머"      :tamer
-   "驯兽师"      :tamer
-   "Option"      :option
-   "オプション"  :option
-   "옵션"        :option
-   "选项"        :option})
+(defn- field-translations
+  [field cards]
+  (let [all-tr-map (->> cards
+                        (reduce (fn [accl {:card/keys [number language]
+                                          :as card}]
+                                  (assoc-in accl
+                                            [number language]
+                                            (get card field)))
+                                (sorted-map))
+                        (reduce-kv
+                         (fn [accl number m]
+                           (->> (keys (dissoc m "ja"))
+                                (map (fn [l]
+                                       (let [text (get m l)]
+                                         (when-not (get-in accl [l text])
+                                           {l {text (get m "ja")}}))))
+                                (apply merge-with merge accl
+                                       {"ja" {(get m "ja") (get m "ja")}})))
+                         {}))]
+    (reduce-kv (fn [accl language tr-map]
+                 (let [[missing-ja _ _]
+                       (data/diff (set (vals (get all-tr-map "ja")))
+                                  (set (vals tr-map)))]
+                   (cond-> accl
+                     (seq missing-ja)
+                     (assoc language missing-ja))))
+               {}
+               (dissoc all-tr-map "ja"))))
 
-(defn- timing-translations
+(defn- highlight-translations
   [cards]
-  (let [sorted-cards
-        (->> cards
-             (filter (fn [{:card/keys [parallel-id language highlights]
-                           {image-language :image/language} :card/image}]
-                       (and (= language image-language)
-                            (zero? parallel-id)
-                            (->> highlights
-                                 (filter (fn [{htype :highlight/type}]
-                                           (= htype :timing)))
-                                 count
-                                 pos?))))
-             (sort-by (juxt (comp (fn [releases]
-                                    (or (some->> (sort-by :release/date
-                                                          releases)
-                                                 first
-                                                 :release/date)
-                                        (java.util.Date.)))
-                                  :card/releases)
-                            (fn [{:card/keys [highlights]}]
-                              (->> highlights
-                                   (filter (fn [{htype :highlight/type}]
-                                             (= htype :timing)))
-                                   count))
-                            :card/number
-                            :card/parallel-id)))
-        ;; TODO: Add field-match-demo as separate function to check other field translations
-        field-match-demo
-        (let [field :card/attribute
-              all-tr-map (->> sorted-cards
-                              (reduce (fn [accl {:card/keys [number language]
-                                                 :as card}]
-                                        (assoc-in accl
-                                                  [number language]
-                                                  (get card field)))
-                                      (sorted-map))
-                              (reduce-kv
-                               (fn [accl number m]
-                                 (->> (keys (dissoc m "ja"))
-                                      (map (fn [l]
-                                             (let [text (get m l)]
-                                               (when-not (get-in accl [l text])
-                                                 {l {text (get m "ja")}}))))
-                                      (apply merge-with merge accl
-                                             {"ja" {(get m "ja") (get m "ja")}})))
-                               {}))]
-          (reduce-kv (fn [accl language tr-map]
-                       (let [[missing-ja _ _]
-                             (data/diff (set (vals (get all-tr-map "ja")))
-                                        (set (vals tr-map)))]
-                         (cond-> accl
-                           (seq missing-ja)
-                           (assoc language missing-ja))))
-                     {}
-                     (dissoc all-tr-map "ja")))
+  (let [filter-fn (fn [{htype :highlight/type}]
+                    ;; TODO: Add support for all highlight types
+                    (or (= htype :timing)
+                        (= htype :precondition)))
         tr-map
-        (->> sorted-cards
+        (->> cards
              (reduce (fn [accl {:card/keys [number language highlights]}]
                        (assoc-in accl
                                  [number language]
                                  (->> highlights
-                                      (filter (fn [{htype :highlight/type}]
-                                                (= htype :timing)))
+                                      (filter filter-fn)
                                       (sort-by (juxt :highlight/field
                                                      :highlight/index))
-                                      (map :highlight/text))))
+                                      (map (juxt :highlight/type
+                                                 :highlight/text)))))
                      (sorted-map))
              (reduce-kv
               (fn [accl number m]
@@ -104,7 +66,7 @@
                                     new-texts
                                     (or (->> (get m "ja")
                                              (remove (fn [text] (get (set/map-invert accl)
-                                                                     text)))
+                                                                    text)))
                                              seq)
                                         (->> (keep-indexed (fn [idx text]
                                                              (when (contains? (set new-texts)
@@ -115,7 +77,7 @@
                                    (apply hash-map)))))
                      (apply merge accl)))
               {}))]
-    (-> (group-by :card/number sorted-cards)
+    (-> (group-by :card/number cards)
         (update-vals (fn [cards]
                        (let [l-map
                              (reduce
@@ -124,9 +86,9 @@
                                         language
                                         (fnil (comp set concat) [])
                                         (->> highlights
-                                             (filter (fn [{htype :highlight/type}]
-                                                       (= htype :timing)))
-                                             (map :highlight/text))))
+                                             (filter filter-fn)
+                                             (map (juxt :highlight/type
+                                                        :highlight/text)))))
                               {}
                               cards)]
                          (reduce-kv (fn [m l texts]
@@ -137,8 +99,7 @@
                                                           (get tr-map text)))
                                              texts)]
                                         (cond-> m
-                                          (and (not= l "ja")
-                                               (seq result))
+                                          (seq result)
                                           (assoc l result))))
                                     {}
                                     (dissoc l-map "ja")))))
@@ -160,7 +121,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                               :highlight/keys [index]}]
+                              :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -173,7 +134,7 @@
   [cards]
   (->> cards
        (filter (fn [{:card/keys [language]
-                     {image-language :image/language}:card/image}]
+                    {image-language :image/language}:card/image}]
                  (= language image-language)))
        (group-by :card/number)
        (reduce-kv (fn [accl number card-group]
@@ -266,31 +227,6 @@
               accl
               (assoc accl number result))))
         (sorted-map))))
-
-(defn- card-categories
-  [cards]
-  (->> cards
-       (group-by :card/number)
-       (reduce-kv
-        (fn [accl number card-group]
-          (let [result
-                (->> card-group
-                     (map (comp #(apply hash-map %)
-                                (juxt :card/id
-                                      (comp category-keyword :card/category))))
-                     (apply merge)
-                     (into (sorted-map)))]
-            (if (apply = (vals result))
-              accl
-              (assoc accl number result))))
-        (sorted-map))))
-
-(defn- card-rarities
-  [cards]
-  (->> cards
-       (reduce (fn [accl {:card/keys [language rarity]}]
-                 (update-in accl [language] (fnil conj #{}) rarity))
-               {})))
 
 (defn- card-errata
   [cards]
@@ -406,18 +342,50 @@
   (assert (empty? (text-fields cards))
           (format "Card text fields differ across languages:\n%s"
                   (text-fields cards)))
-  (assert (empty? (card-categories cards))
+  (assert (empty? (field-translations :card/category cards))
           (format "Card categories differ across languages:\n%s"
-                  (card-categories cards)))
-  (assert (empty? (timing-translations cards))
-          (format "Card timings do not match across languages:\n%s"
-                  (timing-translations cards)))
+                  (field-translations :card/category cards)))
+  (assert (empty? (field-translations :card/form cards))
+          (format "Card forms differ across languages:\n%s"
+                  (field-translations :card/form cards)))
+  (assert (empty? (field-translations :card/rarity cards))
+          (format "Card rarities differ across languages:\n%s"
+                  (field-translations :card/rarity cards)))
+  (assert (empty? (highlight-translations cards))
+          (format "Card highlights do not match across languages:\n%s"
+                  (highlight-translations cards)))
   (assert (= (highlights cards)
              {"BT10-099"
-              {"card/en_BT10-099_P0" {:timing 3 :keyword-effect 1}
-               "card/ja_BT10-099_P0" {:timing 3 :keyword-effect 1}
-               "card/zh-Hans_BT10-099_P0" {:timing 3 :keyword-effect 3}
-               "card/ko_BT10-099_P0" {:timing 3 :keyword-effect 1}}})
+              {"card/en_BT10-099_P0" {:timing 3, :keyword-effect 1},
+               "card/ja_BT10-099_P0" {:timing 3, :keyword-effect 1},
+               "card/ko_BT10-099_P0" {:timing 3, :keyword-effect 1},
+               "card/zh-Hans_BT10-099_P0" {:timing 3, :keyword-effect 3}},
+              "BT11-054"
+              {"card/en_BT11-054_P0"
+               {:timing 2, :rule 1, :precondition 1, :keyword-effect 1},
+               "card/en_BT11-054_P1"
+               {:timing 2, :rule 1, :precondition 1, :keyword-effect 1},
+               "card/ja_BT11-054_P0"
+               {:timing 2, :rule 1, :precondition 1, :keyword-effect 1},
+               "card/ko_BT11-054_P0"
+               {:timing 2, :precondition 1, :keyword-effect 1},
+               "card/zh-Hans_BT11-054_P0"
+               {:timing 2, :rule 1, :precondition 1, :keyword-effect 1}},
+              "EX4-057"
+              {"card/en_EX4-057_P0"
+               {:timing 3, :keyword-effect 2, :precondition 1},
+               "card/en_EX4-057_P1"
+               {:timing 3, :keyword-effect 1, :precondition 1},
+               "card/ja_EX4-057_P0"
+               {:timing 3, :keyword-effect 2, :precondition 1},
+               "card/ja_EX4-057_P1"
+               {:timing 3, :keyword-effect 1, :precondition 1},
+               "card/ko_EX4-057_P0"
+               {:timing 3, :keyword-effect 2, :precondition 1},
+               "card/zh-Hans_EX4-057_P0"
+               {:timing 3, :keyword-effect 2, :precondition 1},
+               "card/zh-Hans_EX4-057_P1"
+               {:timing 3, :keyword-effect 1, :precondition 1}}})
           (format "Card highlights differ across languages:\n%s"
                   (highlights cards)))
   (assert (empty? (digixros-highlights cards))
@@ -432,11 +400,6 @@
     (assert (empty? missing-block-icons)
             (format "Card block icons do not match expected output:\n%s"
                     missing-block-icons)))
-  (assert (every? (fn [[_ rarities]]
-                    (= rarities #{"C" "U" "R" "SR" "SEC" "P"}))
-                  (card-rarities cards))
-          (format "Card rarity fields across languages do not amount to 6:\n%s"
-                  (card-rarities cards)))
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
                      "P-071"
@@ -459,20 +422,6 @@
 (comment
   (->> dcg.db.core/*cards
        card-assertions)
-
-  (->> dcg.db.core/*cards
-       (filter (fn [{:card/keys [treats highlights]}]
-                 treats))
-       (map (juxt :card/id
-                  :card/treats
-                  (comp (fn [highlights]
-                          (->> highlights
-                               (filter (fn [{highlight-type :highlight/type}]
-                                         (= highlight-type :treat)))))
-                        :card/highlights)))
-       (remove (fn [[_ treats highlights]]
-                 (= (count treats)
-                    (count highlights)))))
 
   ;; Card values analysis
   (map (fn [[k v]]
@@ -503,6 +452,13 @@
                                    first)}}))
        (card-values dcg.db.core/*cards))
 
+  ;; Block Icon issues
+  (first
+   (data/diff (card-block-icons dcg.db.core/*cards)
+              (edn/read (PushbackReader.
+                         (io/reader
+                          (io/resource "block-icons.edn"))))))
+
   ;; Update block-icons.edn resource
   (let [block-icons (edn/read (PushbackReader.
                                (io/reader
@@ -513,4 +469,6 @@
                       (into (sorted-map)
                             (first
                              (data/diff (card-block-icons dcg.db.core/*cards)
-                                        block-icons)))))))
+                                        block-icons))))))
+
+  )

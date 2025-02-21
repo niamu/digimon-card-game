@@ -101,12 +101,6 @@
     {:db/ident :card/limitation
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/one}
-    {:db/ident :card/treats
-     :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/many}
-    {:db/ident :card/mentions
-     :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/many}
     {:db/ident :card/highlights
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}]
@@ -219,28 +213,6 @@
      :db/valueType :db.type/tuple
      :db/tupleType :db.type/string
      :db/cardinality :db.cardinality/one}]
-   ;; Treat
-   [{:db/ident :treat/id
-     :db/valueType :db.type/string
-     :db/unique :db.unique/identity
-     :db/cardinality :db.cardinality/one}
-    {:db/ident :treat/as
-     :db/valueType :db.type/string
-     :db/cardinality :db.cardinality/one}
-    {:db/ident :treat/field
-     :db/valueType :db.type/keyword
-     :db/cardinality :db.cardinality/one}]
-   ;; Mention
-   [{:db/ident :mention/id
-     :db/valueType :db.type/string
-     :db/unique :db.unique/identity
-     :db/cardinality :db.cardinality/one}
-    {:db/ident :mention/text
-     :db/valueType :db.type/string
-     :db/cardinality :db.cardinality/one}
-    {:db/ident :mention/cards
-     :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/many}]
    ;; Highlight
    [{:db/ident :highlight/id
      :db/valueType :db.type/string
@@ -257,12 +229,6 @@
      :db/cardinality :db.cardinality/one}
     {:db/ident :highlight/text
      :db/valueType :db.type/string
-     :db/cardinality :db.cardinality/one}
-    {:db/ident :highlight/treat
-     :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/one}
-    {:db/ident :highlight/mention
-     :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/one}]))
 
 (def db-uri "datomic:mem://digimoncard")

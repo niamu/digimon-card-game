@@ -96,6 +96,11 @@
  "BT1-094"
  {"ko" (fn [card]
          (assoc card :card/use-cost 5))}
+ "BT1-104"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s ".“" ".”"))))}
  "BT1-106"
  {"en" (fn [card]
          (assoc card :card/name "Symphony No. 1 <Polyphony>"))}
@@ -128,6 +133,11 @@
                                    number
                                    3)
                   :card/parallel-id 3)))}
+ "BT1-112"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s ".“" ".”"))))}
  "BT2-001"
  {"zh-Hans" (fn [card]
               (assoc card
@@ -262,6 +272,11 @@
  "BT3-092"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "R"))}
+ "BT3-109"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s "activate“" "activate”"))))}
  "BT3-112"
  {"zh-Hans" (fn [card]
               (assoc card :card/name "奥米加兽 Alter-S"))}
@@ -451,6 +466,13 @@
  "BT6-081"
  {"ko" (fn [card]
          (assoc card :card/type "신인형"))}
+ "BT6-084"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "〈룰〉명칭 :"
+                                       "〈룰〉명칭:")))))}
  "BT6-090"
  {"ko" (fn [card]
          (assoc card :card/security-effect
@@ -1185,7 +1207,7 @@
                       (fn [s]
                         (cond->> s
                           (not (re-find (re-pattern "^.?合步") s))
-                          (str "〔合步〕紫Lv.6+黄Lv.6起0"
+                          (str "【合步】紫Lv.6+黄Lv.6起0"
                                "将指定的2只数码宝贝重叠,"
                                "以活跃状态进化\n")))))
   "ko" (fn [card]
@@ -1202,7 +1224,7 @@
                        (cond-> s
                          (string/starts-with? s "조그레스")
                          (string/replace "조그레스 : 퍼플 Lv.6+옐로 Lv.6에서 0"
-                                         "〔조그레스〕 퍼플 Lv.6+옐로 Lv.6에서 0\n"))))))}
+                                         "【조그레스】 퍼플 Lv.6+옐로 Lv.6에서 0\n"))))))}
  "BT9-083"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -1878,13 +1900,6 @@
                                 (string/replace (re-pattern "^.?数码合体.*?\\n") "")
                                 (str "\n"
                                      "≪数码合体-2≫“机械暴龙兽”X“电子龙兽”")))))}
- "BT11-063"
- {"ko" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (cond-> s
-                     (not (string/includes? s "〈룰〉 명칭:「워메몬」으로도 취급한다. "))
-                     (str "\n〈룰〉 명칭:「워메몬」으로도 취급한다. ")))))}
  "BT11-064"
  {"en" (fn [card]
          (assoc card :card/color
@@ -3299,6 +3314,11 @@
            (= source
               (URI. "https://world.digimoncard.com/images/cardlist/card/EX5-024.png"))
            (assoc :card/block-icon 3)))}
+ "EX5-064"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s "Night claw" "Night Claw"))))}
  "EX5-071"
  {"zh-Hans" (fn [card]
               (-> card
@@ -3603,6 +3623,11 @@
  "ST8-06"
  {"zh-Hans" (fn [card]
               (assoc card :card/dp 5000))}
+ "ST9-05"
+ {"ja" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s "〔ジョグレス進化〕" "【ジョグレス】"))))}
  "ST9-11"
  {"ko" (fn [card]
          (assoc card :card/color
@@ -3628,6 +3653,31 @@
                  {:color/id    "color/ST12-09_index1"
                   :color/index 1
                   :color/color :black}]))}
+ "ST12-13"
+ {"ja" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "※名称:「シスタモン シエル」特徴:「データ種」としても扱う"
+                                       "\n〈ルール〉名称:「シスタモン シエル」特徴:「データ種」としても扱う。")))))
+  "en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "*Also treat as if name is [Sistermon Noir] and traits include [Virus]."
+                                       "\n⟨Rule⟩ Also treated as Name: [Sistermon Noir] and Trait: [Virus].")))))
+  "zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "\n\n*也视为名称:“修女兽 天蓝”特征:“数据种”"
+                                            "\n\n〈规则〉也视为名称:“修女兽 天蓝” 特征:“数据种”。")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (-> s
+                       (string/replace "※명칭: 「시스터몬 시엘」, 특징: 「데이터종」으로도 취급한다."
+                                       "\n〈규칙〉명칭: 「시스터몬 시엘」, 특징: 「데이터종」으로도 취급한다.")))))}
  "ST12-15"
  {"ko" (fn [card]
          (-> card
@@ -3646,7 +3696,7 @@
                       (fn [s]
                         (cond->> s
                           (not (string/starts-with? s "≪ジョグレス:"))
-                          (str "〔ジョグレス〕赤Lv.6+黒Lv.6から0"
+                          (str "【ジョグレス】赤Lv.6+黒Lv.6から0"
                                "指定のデジモン2体を重ね、"
                                "アクティブで進化する\n")))))
   "zh-Hans" (fn [card]
@@ -3654,7 +3704,7 @@
                       (fn [s]
                         (cond->> s
                           (not (re-find (re-pattern "^.?合步") s))
-                          (str "〔合步〕红Lv.6+黑Lv.6起0"
+                          (str "【合步】红Lv.6+黑Lv.6起0"
                                "将指定的2只数码宝贝重叠,"
                                "以活跃状态进化\n")))))}
  "ST13-12"
@@ -3790,7 +3840,7 @@
                 (not inherited-effect))
            (-> (assoc :card/inherited-effect effect)
                (assoc :card/effect
-                      "【어택 시】 [턴에 1회] 이 디지몬의 진화원에 「가루몬」이 있을 때, 이 디지몬을 액티브로 한다."))))}
+                      "【어택 시】 ［턴에 1회］ 이 디지몬의 진화원에 「가루몬」이 있을 때, 이 디지몬을 액티브로 한다."))))}
  "P-009"
  {"ko" (fn [{:card/keys [effect inherited-effect] :as card}]
          (cond-> card
@@ -4051,10 +4101,14 @@
               (assoc card :card/type "불명"))}
  "P-097"
  {"en" (fn [card]
-         (assoc card :card/color
-                [{:color/id    "color/P-097_index0"
-                  :color/index 0
-                  :color/color :red}]))}
+         (-> card
+             (update :card/inherited-effect
+                     (fn [s]
+                       (string/replace s "Legend Arms" "Legend-Arms")))
+             (assoc :card/color
+                    [{:color/id    "color/P-097_index0"
+                      :color/index 0
+                      :color/color :red}])))}
  "P-099"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -4147,6 +4201,15 @@
  "P-114"
  {"ja" (fn [card]
          (assoc card :card/rarity "P"))}
+ "P-115"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-115_index0",
+                  :color/index 0,
+                  :color/color :purple}
+                 {:color/id "color/P-115_index1",
+                  :color/index 1,
+                  :color/color :black}]))}
  "P-132"
  {"zh-Hans" (fn [card]
               (assoc card

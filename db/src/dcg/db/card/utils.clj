@@ -66,6 +66,8 @@
         (string/replace "\uFF01" "!")
         (string/replace "’" "'")
         (string/replace "\uFF0C" ",")
+        (string/replace #"\s*\(Rule\)" "⟨Rule⟩")
+        (string/replace "<规则>" "\u3008规则\u3009")
         (string/replace #"(\s?)A(?i)ce$" "$1ACE")
         (string/replace (->> (:spaces text-punctuation)
                              (string/join "|" )

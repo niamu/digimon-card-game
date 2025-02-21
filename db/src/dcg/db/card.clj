@@ -407,16 +407,6 @@
                             (get info-bottom "セキュリティ効果")
                             (get info-bottom "시큐리티 효과")
                             (get info-bottom "하단 텍스트"))
-        limitation
-        (and (string? effect)
-             (or (some->> effect
-                          (re-find #"はデッキに([0-9]+)枚まで入れられる")
-                          last
-                          parse-long)
-                 (some->> effect
-                          (re-find #"include up to ([0-9]+) copies of")
-                          last
-                          parse-long)))
         repair-fn (-> repair/text-fixes-by-number-by-language
                       (get-in [number language]))]
     (cond-> {:card/id card-id
@@ -493,12 +483,6 @@
                (string/starts-with? security-effect
                                     "【시큐리티】")))
       (assoc :card/security-effect security-effect)
-      limitation (assoc :card/limitation
-                        {:limitation/id (format "limitation/%s_%s"
-                                                language
-                                                number)
-                         :limitation/type :card
-                         :limitation/allowance limitation})
       notes (assoc :card/notes
                    (-> (->> notes
                             (map (fn [{:keys [content] :as note}]
@@ -613,12 +597,6 @@
                                           card-utils/normalize-string
                                           repair/text-fixes
                                           (string/replace "enter" "\n"))
-                  limitation
-                  (and effect
-                       (some->> effect
-                                (re-find #"中可以放入最多([0-9]+)张卡牌编号与此卡")
-                                last
-                                parse-long))
                   repair-fn (-> repair/text-fixes-by-number-by-language
                                 (get-in [number language]))]
               (cond-> {:card/id card-id
@@ -646,12 +624,6 @@
                 (assoc :card/inherited-effect inherited-effect)
                 (not (empty? security-effect)) (assoc :card/security-effect
                                                       security-effect)
-                limitation (assoc :card/limitation
-                                  {:limitation/id (format "limitation/%s_%s"
-                                                          language
-                                                          number)
-                                   :limitation/type :card
-                                   :limitation/allowance limitation})
                 :pack-type (as-> #__ card
                              (if-let [pt (pack-type release card)]
                                (assoc card :card/pack-type pt)

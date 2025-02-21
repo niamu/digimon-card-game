@@ -2,6 +2,7 @@
   (:require
    [clojure.string :as string]
    [dcg.db.card.utils :as card-utils]
+   [dcg.db.card.repair :as repair]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
@@ -119,7 +120,8 @@
                                           (select/tag "dd")))
                                         card)
                                        first
-                                       card-utils/text-content)
+                                       card-utils/text-content
+                                       repair/text-fixes)
                          correction (if error
                                       (some-> (select/select
                                                (select/descendant
@@ -130,7 +132,8 @@
                                                  (select/tag "dd")))
                                                card)
                                               first
-                                              card-utils/text-content)
+                                              card-utils/text-content
+                                              repair/text-fixes)
                                       (some->> (select/select
                                                 (select/descendant
                                                  (select/and
@@ -138,7 +141,8 @@
                                                   (select/class "mt_s")))
                                                 card)
                                                (map card-utils/text-content)
-                                               (string/join "\n")))]
+                                               (string/join "\n")
+                                               repair/text-fixes))]
                      (cond-> {:errata/id (format "errata/%s_%s"
                                                  language number)
                               :errata/language language
