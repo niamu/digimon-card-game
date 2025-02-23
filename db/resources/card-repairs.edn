@@ -31,16 +31,25 @@
  "BT1-047"
  {"zh-Hans" (fn [card]
               (assoc card :card/dp 3000))}
+ "BT1-048"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/attribute "数据种"))}
  "BT1-054"
  {"ja" (fn [card]
          (update card :card/digivolution-requirements
                  (fn [requirements]
                    (map (fn [d] (assoc d :digivolve/cost 3)) requirements))))}
+ "BT1-075"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/attribute "数据种"))}
  "BT1-076"
  {"zh-Hans" (fn [{:card/keys [effect inherited-effect] :as card}]
               (cond-> (dissoc card :card/effect)
                 effect
                 (assoc :card/inherited-effect effect)))}
+ "BT1-078"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/form "完全体"))}
  "BT1-084"
  {"ko" (fn [card]
          (assoc card :card/type "성기사형/로얄 나이츠"))
@@ -250,6 +259,9 @@
                 (= source
                    (URI. "https://source.windoent.com/DTCG/BTC2_BT3-043P_D%C2%A0%C2%A0%E6%BA%90.png"))
                 (assoc :card/block-icon 0)))}
+ "BT3-050"
+ {"ko" (fn [card]
+         (assoc card :card/form "성숙기"))}
  "BT3-057"
  {"en" (fn [card]
          (update-in card [:card/image :image/source]
@@ -336,6 +348,9 @@
               (assoc card
                      :card/dp 5000
                      :card/play-cost 6))}
+ "BT5-020"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/attribute "数据种"))}
  "BT5-023"
  {"ko" (fn [card]
          (assoc card :card/rarity "C"))}
@@ -2535,6 +2550,9 @@
               (update card :card/effect
                       (fn [s]
                         (string/replace s "）" "） "))))}
+ "BT14-049"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/attribute "数据种"))}
  "BT14-060"
  {"en" (fn [card]
          (update-in card [:card/image :image/source]
@@ -2885,6 +2903,9 @@
                       (fn [s]
                         (-> s
                             (string/replace "“大河“" "“大河”")))))}
+ "EX1-013"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/attribute "自由"))}
  "EX1-024"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "U"))}
@@ -3628,6 +3649,9 @@
          (update card :card/effect
                  (fn [s]
                    (string/replace s "〔ジョグレス進化〕" "【ジョグレス】"))))}
+ "ST9-10"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/attribute "疫苗种"))}
  "ST9-11"
  {"ko" (fn [card]
          (assoc card :card/color
@@ -4252,6 +4276,9 @@
                              (cond->> s
                                (not (re-find (re-pattern "^.?进化") s))
                                (str "【进化】登场费用不高于4的 “高吼會”/“多會路善”：费用0"))))))}
+ "P-153"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/form "混合体"))}
  "P-155"
  {"zh-Hans" (fn [card]
               (assoc card :card/type "装置"))}}

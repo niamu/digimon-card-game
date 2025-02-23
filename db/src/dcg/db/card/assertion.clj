@@ -11,32 +11,52 @@
 
 (defn- field-translations
   [field cards]
-  (let [all-tr-map (->> cards
-                        (reduce (fn [accl {:card/keys [number language]
-                                          :as card}]
-                                  (assoc-in accl
-                                            [number language]
-                                            (get card field)))
-                                (sorted-map))
-                        (reduce-kv
-                         (fn [accl number m]
-                           (->> (keys (dissoc m "ja"))
-                                (map (fn [l]
-                                       (let [text (get m l)]
-                                         (when-not (get-in accl [l text])
-                                           {l {text (get m "ja")}}))))
-                                (apply merge-with merge accl
-                                       {"ja" {(get m "ja") (get m "ja")}})))
-                         {}))]
-    (reduce-kv (fn [accl language tr-map]
-                 (let [[missing-ja _ _]
-                       (data/diff (set (vals (get all-tr-map "ja")))
-                                  (set (vals tr-map)))]
-                   (cond-> accl
-                     (seq missing-ja)
-                     (assoc language missing-ja))))
-               {}
-               (dissoc all-tr-map "ja"))))
+  (let [tr-map (->> cards
+                    (reduce (fn [accl {:card/keys [number language]
+                                       :as card}]
+                              (assoc-in accl
+                                        [number language]
+                                        (get card field)))
+                            (sorted-map))
+                    (reduce-kv
+                     (fn [accl number m]
+                       (->> (keys (dissoc m "ja"))
+                            (map (fn [l]
+                                   (let [text (get m l)]
+                                     (when-not (get-in accl [l text])
+                                       {l {text (get m "ja")}}))))
+                            (apply merge-with merge accl
+                                   {"ja" {(get m "ja") (get m "ja")}})))
+                     {}))]
+    (->> cards
+         (reduce (fn [accl {:card/keys [id number language] :as card}]
+                   (let [value (get card field)
+                         ja-text (get-in tr-map [language value])]
+                     (update accl number merge
+                             {[id value] ja-text})))
+                 {})
+         (reduce-kv (fn [m number v]
+                      (cond-> m
+                        (not (apply = (vals v)))
+                        (assoc number
+                               (let [most-common (->> (vals v)
+                                                      frequencies
+                                                      (sort-by val >)
+                                                      ffirst)
+                                     en-common (-> (get tr-map "en")
+                                                   set/map-invert
+                                                   (get most-common))]
+                                 {:expected (reduce-kv (fn [accl l m]
+                                                         (assoc accl l
+                                                                (get (set/map-invert m)
+                                                                     most-common)))
+                                                       {}
+                                                       tr-map)
+                                  :errors (->> v
+                                               (remove (fn [[_ ja]]
+                                                         (= ja most-common)))
+                                               (into {}))}))))
+                    (sorted-map)))))
 
 (defn- highlight-translations
   [cards]
@@ -66,7 +86,7 @@
                                     new-texts
                                     (or (->> (get m "ja")
                                              (remove (fn [text] (get (set/map-invert accl)
-                                                                    text)))
+                                                                     text)))
                                              seq)
                                         (->> (keep-indexed (fn [idx text]
                                                              (when (contains? (set new-texts)
@@ -121,7 +141,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                              :highlight/keys [index]}]
+                               :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -134,7 +154,7 @@
   [cards]
   (->> cards
        (filter (fn [{:card/keys [language]
-                    {image-language :image/language}:card/image}]
+                     {image-language :image/language}:card/image}]
                  (= language image-language)))
        (group-by :card/number)
        (reduce-kv (fn [accl number card-group]
@@ -348,6 +368,29 @@
   (assert (empty? (field-translations :card/form cards))
           (format "Card forms differ across languages:\n%s"
                   (field-translations :card/form cards)))
+  (assert (= (field-translations :card/attribute cards)
+             {"BT6-084" {:expected {"ja" "ウィルス種"
+                                    "en" "Virus"
+                                    "ko" "바이러스종"
+                                    "zh-Hans" "病毒种"},
+                         :errors {["card/en_BT6-084_P0" "Data"] "データ種",
+                                  ["card/en_BT6-084_P2" "Data"] "データ種",
+                                  ["card/en_BT6-084_P1" "Data"] "データ種"}},
+              "BT7-083" {:expected
+                         {"ja" "ウィルス種"
+                          "en" "Virus"
+                          "ko" "바이러스종"
+                          "zh-Hans" "病毒种"},
+                         :errors {["card/en_BT7-083_P0" "Data"] "データ種"}},
+              "ST12-13" {:expected {"ja" "ウィルス種"
+                                    "en" "Virus"
+                                    "ko" "바이러스종"
+                                    "zh-Hans" "病毒种"},
+                         :errors {["card/en_ST12-13_P0" "Data"] "データ種",
+                                  ["card/en_ST12-13_P1" "Data"] "データ種",
+                                  ["card/en_ST12-13_P2" "Data"] "データ種"}}})
+          (format "Card attributes differ across languages:\n%s"
+                  (field-translations :card/attribute cards)))
   (assert (empty? (field-translations :card/rarity cards))
           (format "Card rarities differ across languages:\n%s"
                   (field-translations :card/rarity cards)))
@@ -414,7 +457,8 @@
                      "BT7-055"
                      "BT11-099"
                      "BT10-051"
-                     "BT7-049"}})
+                     "BT7-049"}
+              "zh-Hans" #{"LM-020"}})
           (format "Card errata not accounted for:\n%s"
                   (card-errata cards)))
   cards)

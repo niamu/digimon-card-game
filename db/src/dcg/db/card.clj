@@ -174,22 +174,24 @@
 
 (defn image-processing
   [cards]
-  (let [cards (pmap (fn [{:card/keys [language image parallel-id id] :as card}]
-                      (cond-> (update card
-                                      :card/image (comp #_download-icon!
-                                                        download-image!))
-                        (and (= language "ja")
-                             (zero? parallel-id)) cv/digivolution-requirements
-                        (= language
-                           (:image/language image)) cv/block-icon))
-                    cards)]
-    (logging/info "Adding cards to FLANN DB...")
-    (doseq [card cards]
-      (cv/add! card))
-    (logging/info "Training FLANN DB...")
-    (cv/train!)
-    (logging/info "FLANN DB Trained.")
-    cards))
+  (doall (pmap (fn [{:card/keys [language image parallel-id id] :as card}]
+                 (cond-> (update card
+                                 :card/image (comp #_download-icon!
+                                                   download-image!))
+                   (and (= language "ja")
+                        (zero? parallel-id)) cv/digivolution-requirements
+                   (= language
+                      (:image/language image)) cv/block-icon))
+               cards)))
+
+(defn init-image-db!
+  [cards]
+  (logging/info "Adding cards to FLANN DB...")
+  (doseq [card cards]
+    (cv/add! card))
+  (logging/info "Training FLANN DB...")
+  (cv/train!)
+  (logging/info "FLANN DB Trained."))
 
 (defn- pack-type
   [{:release/keys [genre] :as release} {:card/keys [notes number] :as card}]

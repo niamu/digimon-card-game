@@ -86,13 +86,11 @@
                 {}
                 unrefined-cards)
         cards-with-errata-and-limitations
-        (pmap (fn [{:card/keys [number language image] :as card}]
-                (let [limitation (get-in limitations
-                                         [number (:image/language image)])
+        (pmap (fn [{:card/keys [number language] :as card}]
+                (let [card-limitations (or (get-in limitations [number language])
+                                           (get-in limitations [number :default]))
                       {:errata/keys [error correction]
-                       :as errata-for-card} (get-in errata
-                                                    [number
-                                                     (:image/language image)])
+                       :as errata-for-card} (get-in errata [number language])
                       titles-re #"(?i)\s*\[?((Inherited|Security)\s)?Effect\]?\s+"
                       errors (some-> error
                                      (string/replace titles-re "\n")
@@ -130,7 +128,9 @@
                                                                   error-index
                                                                   nil))]
                                          (cond-> m
-                                           (and (string? v) error correction
+                                           (and (string? v)
+                                                error
+                                                correction
                                                 (string/includes? v error)
                                                 (not (string/includes? v correction)))
                                            (assoc k
@@ -140,10 +140,8 @@
                                      c
                                      c)
                           (assoc :card/errata errata-for-card)))
-                    (and limitation
-                         (not= (:limitation/type limitation)
-                               :unrestrict))
-                    (assoc :card/limitation limitation))))
+                    (seq card-limitations)
+                    (assoc :card/limitations card-limitations))))
               unrefined-cards)
         rule-revisions (->> (pmap rule/rules origins)
                             doall
@@ -189,6 +187,8 @@
   (set! *print-namespace-maps* false)
 
   (def *cards (time (process-cards)))
+
+  (time (card/init-image-db! *cards))
 
   (->> *cards
        assertion/card-assertions

@@ -98,9 +98,9 @@
     {:db/ident :card/errata
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/one}
-    {:db/ident :card/limitation
+    {:db/ident :card/limitations
      :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/one}
+     :db/cardinality :db.cardinality/many}
     {:db/ident :card/highlights
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}]

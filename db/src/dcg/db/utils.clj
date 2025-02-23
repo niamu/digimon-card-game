@@ -102,3 +102,10 @@
                                                 (.getHost url)))))
   ([url options]
    (last-modified* url options)))
+
+(defn partition-at
+  [f coll]
+  (lazy-seq
+   (when-let [s (seq coll)]
+     (let [run (cons (first s) (take-while #(not (f %)) (rest s)))]
+       (cons run (partition-at f (drop (count run) s)))))))
