@@ -1,10 +1,12 @@
 (ns dcg.db.core
   (:gen-class)
   (:require
+   [clojure.java.io :as io]
    [clojure.string :as string]
    [dcg.db.card :as card]
    [dcg.db.card.assertion :as assertion]
    [dcg.db.card.errata :as errata]
+   [dcg.db.card.faq :as faq]
    [dcg.db.card.highlight :as highlight]
    [dcg.db.card.limitation :as limitation]
    [dcg.db.card.release :as release]
@@ -54,8 +56,9 @@
         tr-map (translation/card-name-replacement-map cards-per-origin)
         unrefined-cards (->> cards-per-origin
                              (reduce (fn [accl cards-in-origin]
-                                       (->> (reduce (fn [accl2 card]
-                                                      (assoc accl2 (:card/id card) card))
+                                       (->> (reduce (fn [accl2 {:card/keys [id]
+                                                               :as card}]
+                                                      (assoc accl2 id card))
                                                     {}
                                                     cards-in-origin)
                                             (merge-with merge accl)))
@@ -65,6 +68,9 @@
         limitations (->> (pmap limitation/limitations origins)
                          doall
                          (apply merge-with merge))
+        faqs (->> (pmap faq/faqs origins)
+                  doall
+                  (apply merge-with merge))
         errata (->> (pmap errata/errata origins)
                     doall
                     (apply merge-with merge))
@@ -151,7 +157,8 @@
              (map (fn [{:card/keys [language number] :as card}]
                     (let [{:keys [before after]
                            :as rule-rev} (get-in rule-revisions
-                                                 [number language])]
+                                                 [number language])
+                          card-faqs (get-in faqs [number language])]
                       (cond-> card
                         rule-rev
                         (update :card/effect
@@ -162,10 +169,22 @@
                                       (string/replace after "")
                                       (string/replace before "")
                                       string/trim
-                                      (str "\n" after))))))))
+                                      (str "\n" after))))
+                        (seq card-faqs)
+                        (assoc :card/faqs
+                               (map-indexed (fn [idx faq]
+                                              (assoc faq :faq/id
+                                                     (format "faq/%s_%s_%d"
+                                                             language
+                                                             number
+                                                             idx)))
+                                            card-faqs))))))
              rule/process-rules
              highlight/process-highlights)]
-    (sort-by :card/id cards)))
+    (->> cards
+         (filter (fn [{{:image/keys [path]} :card/image}]
+                   (io/resource (subs path 1))))
+         (sort-by :card/id))))
 
 (defn -main
   [& _args]

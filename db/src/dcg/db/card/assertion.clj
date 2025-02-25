@@ -34,7 +34,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                      :as card}]
+                                       :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -164,7 +164,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                              :highlight/keys [index]}]
+                               :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))

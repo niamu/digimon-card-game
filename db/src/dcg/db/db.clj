@@ -106,6 +106,9 @@
      :db/cardinality :db.cardinality/many}
     {:db/ident :card/rules
      :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/many}
+    {:db/ident :card/faqs
+     :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}]
    ;; Color
    [{:db/ident :color/id
@@ -246,6 +249,20 @@
      :db/cardinality :db.cardinality/one}
     {:db/ident :rule/limitation
      :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/one}]
+   ;; FAQs
+   [{:db/ident :faq/id
+     :db/valueType :db.type/string
+     :db/unique :db.unique/identity
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :faq/date
+     :db/valueType :db.type/instant
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :faq/question
+     :db/valueType :db.type/string
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :faq/answer
+     :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}]))
 
 (def db-uri "datomic:mem://digimoncard")

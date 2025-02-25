@@ -8,8 +8,7 @@
    [hickory.select :as select]
    [taoensso.timbre :as logging])
   (:import
-   [java.text ParseException SimpleDateFormat]
-   [java.net URI]))
+   [java.text ParseException SimpleDateFormat]))
 
 (def ^:private repair
   {"BT8-110" (fn [s]

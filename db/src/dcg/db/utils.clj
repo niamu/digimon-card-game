@@ -32,6 +32,34 @@
       (:body response)
       (logging/error (format "Error downloading: %s" url)))))
 
+(defonce http-post*
+  (memoize (fn [url form-params options]
+             (logging/debug (format "POST: %s %s %s"
+                                    url form-params (pr-str options)))
+             (-> (client/post url
+                              (assoc options
+                                     :cookie-policy :standard
+                                     :throw-exceptions false
+                                     :connection-manager connection-manager
+                                     :retry-handler
+                                     (fn [ex try-count _]
+                                       (if (> try-count 2)
+                                         (do (logging/error
+                                               (format "Failed POST: %s %s after %d attempts"
+                                                       url
+                                                       (pr-str options)
+                                                       try-count))
+                                             false)
+                                         true))
+                                     :form-params form-params))
+                 :body))))
+
+(defn http-post
+  ([url form-params]
+   (http-post url form-params {}))
+  ([url form-params options]
+   (http-post* url form-params options)))
+
 (defonce http-get*
   (memoize (fn [url options]
              (logging/debug (format "Downloading: %s %s" url (pr-str options)))

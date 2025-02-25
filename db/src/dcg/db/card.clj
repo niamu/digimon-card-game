@@ -150,12 +150,10 @@
                                          :card/parallel-id parallel-id)
                                   (update :card/image
                                           (fn [image]
-                                            (assoc image
-                                                   :image/id
-                                                   (string/replace
-                                                    card-id
-                                                    #"^card/"
-                                                    "image/")
+                                            (assoc image :image/id
+                                                   (string/replace card-id
+                                                                   #"^card/"
+                                                                   "image/")
                                                    :image/path
                                                    (format
                                                     "/images/cards/%s/%s.png"
@@ -531,7 +529,7 @@
                                          (some->> href
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))]
-    (concat (pmap (partial card release) cards-dom-tree)
+    (concat (doall (pmap (partial card release) cards-dom-tree))
             (mapcat (fn [href]
                       (pmap (partial card release)
                             (->> (utils/http-get href
@@ -556,83 +554,87 @@
                     (recur (inc page)
                            (concat cards cardlist))
                     (concat cards cardlist))))]
-    (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                      dp rareDegree entryConsumeValue envolutionConsumeTwo
-                      cardLevel effect envolutionEffect safeEffect
-                      imageCover cardGroup]}]
-            (let [number (-> model
-                             (string/replace #"_.*" "")
-                             string/trim)
-                  parallel-id (if (not= parallCard "0")
-                                0
-                                (or (some-> (re-find #"_([0-9]+)" imageCover)
-                                            (nth 1 nil)
-                                            parse-long)
-                                    nil))
-                  card-id (format "card/%s_%s_P%s"
-                                  language
-                                  number
-                                  (str parallel-id))
-                  level (some->> cardLevel
-                                 card-utils/normalize-string
-                                 (re-find #"[0-9]+")
-                                 parse-long)
-                  attribute (some-> attribute card-utils/normalize-string)
-                  type (some-> type card-utils/normalize-string)
-                  form (some-> form card-utils/normalize-string)
-                  play-cost (or (some-> entryConsumeValue
+    (->> cards
+         (pmap (fn [{:strs [parallCard belongsType name model form attribute type
+                           dp rareDegree entryConsumeValue envolutionConsumeTwo
+                           cardLevel effect envolutionEffect safeEffect
+                           imageCover cardGroup]}]
+                 (when imageCover
+                   (let [number (-> model
+                                    (string/replace #"_.*" "")
+                                    string/trim)
+                         parallel-id (if (not= parallCard "0")
+                                       0
+                                       (or (some-> (re-find #"_([0-9]+)"
+                                                            imageCover)
+                                                   (nth 1 nil)
+                                                   parse-long)
+                                           nil))
+                         card-id (format "card/%s_%s_P%s"
+                                         language
+                                         number
+                                         (str parallel-id))
+                         level (some->> cardLevel
                                         card-utils/normalize-string
+                                        (re-find #"[0-9]+")
                                         parse-long)
-                                (some-> envolutionConsumeTwo
+                         attribute (some-> attribute card-utils/normalize-string)
+                         type (some-> type card-utils/normalize-string)
+                         form (some-> form card-utils/normalize-string)
+                         play-cost (or (some-> entryConsumeValue
+                                               card-utils/normalize-string
+                                               parse-long)
+                                       (some-> envolutionConsumeTwo
+                                               card-utils/normalize-string
+                                               parse-long))
+                         dp (some-> dp card-utils/normalize-string parse-long)
+                         effect (some-> effect
                                         card-utils/normalize-string
-                                        parse-long))
-                  dp (some-> dp card-utils/normalize-string parse-long)
-                  effect (some-> effect
-                                 card-utils/normalize-string
-                                 repair/text-fixes
-                                 (string/replace "enter" "\n"))
-                  inherited-effect (some-> envolutionEffect
-                                           card-utils/normalize-string
-                                           repair/text-fixes
-                                           (string/replace "enter" "\n"))
-                  security-effect (some-> safeEffect
-                                          card-utils/normalize-string
-                                          repair/text-fixes
-                                          (string/replace "enter" "\n"))
-                  repair-fn (-> repair/text-fixes-by-number-by-language
-                                (get-in [number language]))]
-              (cond-> {:card/id card-id
-                       :card/release (dissoc release
-                                             :release/card-image-language)
-                       :card/language language
-                       :card/number number
-                       :card/parallel-id parallel-id
-                       :card/rarity (last (re-find #"（(.*)）" rareDegree))
-                       :card/category belongsType
-                       :card/name (card-utils/normalize-string name)
-                       :card/image {:image/language card-image-language
-                                    :image/source (URI. imageCover)}}
-                play-cost (assoc (if (= belongsType "选项")
-                                   :card/use-cost
-                                   :card/play-cost) play-cost)
-                level (assoc :card/level level)
-                dp (assoc :card/dp dp)
-                form (assoc :card/form form)
-                attribute (assoc :card/attribute
-                                 (card-utils/normalize-string attribute))
-                type (assoc :card/type type)
-                (not (empty? effect)) (assoc :card/effect effect)
-                (not (empty? inherited-effect))
-                (assoc :card/inherited-effect inherited-effect)
-                (not (empty? security-effect)) (assoc :card/security-effect
-                                                      security-effect)
-                :pack-type (as-> #__ card
-                             (if-let [pt (pack-type release card)]
-                               (assoc card :card/pack-type pt)
-                               card))
-                repair-fn (as-> #__ card
-                            (try (repair-fn card)
-                                 (catch Exception e
-                                   (logging/error card e)
-                                   (throw e)))))))
-          cards)))
+                                        repair/text-fixes
+                                        (string/replace "enter" "\n"))
+                         inherited-effect (some-> envolutionEffect
+                                                  card-utils/normalize-string
+                                                  repair/text-fixes
+                                                  (string/replace "enter" "\n"))
+                         security-effect (some-> safeEffect
+                                                 card-utils/normalize-string
+                                                 repair/text-fixes
+                                                 (string/replace "enter" "\n"))
+                         repair-fn (-> repair/text-fixes-by-number-by-language
+                                       (get-in [number language]))]
+                     (cond-> {:card/id card-id
+                              :card/release (dissoc release
+                                                    :release/card-image-language)
+                              :card/language language
+                              :card/number number
+                              :card/parallel-id parallel-id
+                              :card/rarity (last (re-find #"（(.*)）" rareDegree))
+                              :card/category belongsType
+                              :card/name (card-utils/normalize-string name)
+                              :card/image {:image/language card-image-language
+                                           :image/source (URI. imageCover)}}
+                       play-cost (assoc (if (= belongsType "选项")
+                                          :card/use-cost
+                                          :card/play-cost) play-cost)
+                       level (assoc :card/level level)
+                       dp (assoc :card/dp dp)
+                       form (assoc :card/form form)
+                       attribute (assoc :card/attribute
+                                        (card-utils/normalize-string attribute))
+                       type (assoc :card/type type)
+                       (not (empty? effect)) (assoc :card/effect effect)
+                       (not (empty? inherited-effect))
+                       (assoc :card/inherited-effect inherited-effect)
+                       (not (empty? security-effect)) (assoc :card/security-effect
+                                                             security-effect)
+                       :pack-type (as-> #__ card
+                                    (if-let [pt (pack-type release card)]
+                                      (assoc card :card/pack-type pt)
+                                      card))
+                       repair-fn (as-> #__ card
+                                   (try (repair-fn card)
+                                        (catch Exception e
+                                          (logging/error card e)
+                                          (throw e)))))))))
+         (remove nil?)
+         doall)))

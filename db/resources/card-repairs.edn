@@ -2648,21 +2648,25 @@
                   :color/index 2
                   :color/color :black}]))}
  "BT17-017"
- {"zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
-                                            "")
-                            (str "\n≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ {"zh-Hans" (fn [{:card/keys [effect] :as card}]
+              (cond-> card
+                effect
+                (update :card/effect
+                        (fn [s]
+                          (-> s
+                              (string/replace "≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                              "")
+                              (str "\n≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "BT17-028"
- {"zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
-                                            "")
-                            (str "\n≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ {"zh-Hans" (fn [{:card/keys [effect] :as card}]
+              (cond-> card
+                effect
+                (update :card/effect
+                        (fn [s]
+                          (-> s
+                              (string/replace "≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                              "")
+                              (str "\n≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "BT17-041"
  {"en" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
@@ -2842,40 +2846,40 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -2886,9 +2890,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                          :card/form
-                          :card/dp
-                          :card/level))}
+                         :card/form
+                         :card/dp
+                         :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3364,37 +3368,45 @@
          (assoc card :card/inherited-effect
                 "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))}
  "EX6-023"
- {"zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "≪数码合体-2≫“三藏兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n"
-                                            "")
-                            (str "\n≪数码合体-2≫“三藏兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ {"zh-Hans" (fn [{:card/keys [effect] :as card}]
+              (cond-> card
+                effect
+                (update :card/effect
+                        (fn [s]
+                          (-> s
+                              (string/replace "≪数码合体-2≫“三藏兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n"
+                                              "")
+                              (str "\n≪数码合体-2≫“三藏兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "EX6-024"
- {"zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "≪数码合体-2≫“三藏兽”/“悟空兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
-                                            "")
-                            (str "\n≪数码合体-2≫“三藏兽”/“悟空兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ {"zh-Hans" (fn [{:card/keys [effect] :as card}]
+              (cond-> card
+                effect
+                (update :card/effect
+                        (fn [s]
+                          (-> s
+                              (string/replace "≪数码合体-2≫“三藏兽”/“悟空兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                              "")
+                              (str "\n≪数码合体-2≫“三藏兽”/“悟空兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "EX6-025"
- {"zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "≪数码合体-2≫“悟空兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
-                                            "")
-                            (str "\n≪数码合体-2≫“悟空兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ {"zh-Hans" (fn [{:card/keys [effect] :as card}]
+              (cond-> card
+                effect
+                (update :card/effect
+                        (fn [s]
+                          (-> s
+                              (string/replace "≪数码合体-2≫“悟空兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                              "")
+                              (str "\n≪数码合体-2≫“悟空兽”/“沙悟兽”/“猪八戒兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "EX6-026"
- {"zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "≪数码合体-2≫“三藏兽”/“悟空兽”/“沙悟兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
-                                            "")
-                            (str "\n≪数码合体-2≫“三藏兽”/“悟空兽”/“沙悟兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+ {"zh-Hans" (fn [{:card/keys [effect] :as card}]
+              (cond-> card
+                effect
+                (update :card/effect
+                        (fn [s]
+                          (-> s
+                              (string/replace "≪数码合体-2≫“三藏兽”/“悟空兽”/“沙悟兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                                              "")
+                              (str "\n≪数码合体-2≫“三藏兽”/“悟空兽”/“沙悟兽”\n\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "EX6-027"
  {"en"      (fn [{:card/keys [parallel-id] :as card}]
               (cond-> card
@@ -3423,13 +3435,15 @@
  "EX6-031"
  {"en" (fn [card]
          (assoc card :card/level 7))
-  "zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "≪数码合体-2≫“三藏兽”×“悟空兽”×“沙悟兽”×“猪八戒兽”；\n\n"
-                                            "")
-                            (str "\n≪数码合体-2≫“三藏兽”×“悟空兽”×“沙悟兽”×“猪八戒兽”")))))}
+  "zh-Hans" (fn [{:card/keys [effect] :as card}]
+              (cond-> card
+                effect
+                (update :card/effect
+                        (fn [s]
+                          (-> s
+                              (string/replace "≪数码合体-2≫“三藏兽”×“悟空兽”×“沙悟兽”×“猪八戒兽”；\n\n"
+                                              "")
+                              (str "\n≪数码合体-2≫“三藏兽”×“悟空兽”×“沙悟兽”×“猪八戒兽”"))))))}
  "EX6-035"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
