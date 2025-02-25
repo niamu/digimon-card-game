@@ -487,7 +487,9 @@
                  (fn [s]
                    (-> s
                        (string/replace "〈룰〉명칭 :"
-                                       "〈룰〉명칭:")))))}
+                                       "〈룰〉명칭:")
+                       (string/replace "특징 :"
+                                       "특징:")))))}
  "BT6-090"
  {"ko" (fn [card]
          (assoc card :card/security-effect

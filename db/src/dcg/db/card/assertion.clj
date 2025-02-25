@@ -9,11 +9,32 @@
    [java.io PushbackReader]
    [java.util Date]))
 
+(defn- rules
+  "Card rules that differ across languages"
+  [cards]
+  (->> cards
+       (filter :card/rules)
+       (group-by :card/number)
+       (reduce-kv (fn [accl number card-group]
+                    (let [result
+                          (->> card-group
+                               (map (comp #(apply hash-map %)
+                                          (juxt :card/id
+                                                (comp frequencies
+                                                      #(map :rule/type %)
+                                                      :card/rules))))
+                               (apply merge)
+                               (into (sorted-map)))]
+                      (if (apply = (vals result))
+                        accl
+                        (assoc accl number result))))
+                  (sorted-map))))
+
 (defn- field-translations
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -85,14 +106,16 @@
                               (->> (interleave
                                     new-texts
                                     (or (->> (get m "ja")
-                                             (remove (fn [text] (get (set/map-invert accl)
-                                                                     text)))
+                                             (remove (fn [text]
+                                                       (get (set/map-invert accl)
+                                                            text)))
                                              seq)
-                                        (->> (keep-indexed (fn [idx text]
-                                                             (when (contains? (set new-texts)
-                                                                              text)
-                                                               idx))
-                                                           (get m l))
+                                        (->> (keep-indexed
+                                              (fn [idx text]
+                                                (when (contains? (set new-texts)
+                                                                 text)
+                                                  idx))
+                                              (get m l))
                                              (map #(nth (get m "ja") %)))))
                                    (apply hash-map)))))
                      (apply merge accl)))
@@ -141,7 +164,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                               :highlight/keys [index]}]
+                              :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -153,9 +176,6 @@
   "Card highlights that differ across languages"
   [cards]
   (->> cards
-       (filter (fn [{:card/keys [language]
-                     {image-language :image/language}:card/image}]
-                 (= language image-language)))
        (group-by :card/number)
        (reduce-kv (fn [accl number card-group]
                     (let [result
@@ -434,6 +454,14 @@
   (assert (empty? (digixros-highlights cards))
           (format "Card DigiXros highlights are incorrectly the first match:\n%s"
                   (digixros-highlights cards)))
+  (assert (= (rules cards)
+             {"BT14-052"
+              {"card/en_BT14-052_P0" {:card/name 1},
+               "card/ja_BT14-052_P0" {:card/name 1},
+               "card/ko_BT14-052_P0" {},
+               "card/zh-Hans_BT14-052_P0" {:card/name 1}}})
+          (format "Card rules differ across languages:\n%s"
+                  (rules cards)))
   (let [missing-block-icons
         (first
          (data/diff (card-block-icons cards)

@@ -163,6 +163,7 @@
                                       (string/replace before "")
                                       string/trim
                                       (str "\n" after))))))))
+             rule/process-rules
              highlight/process-highlights)]
     (sort-by :card/id cards)))
 

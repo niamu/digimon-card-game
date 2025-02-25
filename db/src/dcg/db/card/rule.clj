@@ -2,6 +2,7 @@
   "Card rule revisions"
   (:require
    [clojure.string :as string]
+   [dcg.db.card.highlight :as highlight]
    [dcg.db.card.utils :as card-utils]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
@@ -165,10 +166,10 @@
               :after "\u3008规则\u3009名称:也视为“苍沼切羽”/“天野音音”。"}}
    "BT6-084"
    {language {:before "也视为卡牌名称“修女兽天蓝”特征“数据种”。"
-              :after "\u3008规则\u3009名称:也视为“修女兽天蓝”,特征“数据种”。"}}
+              :after "\u3008规则\u3009名称:也视为“修女兽天蓝”,特征:“数据种”。"}}
    "BT7-083"
    {language {:before "※此卡也视为卡牌名称拥有“修女兽天蓝（觉醒）”的卡牌\n※此卡也视为拥有“数据种”特征的卡牌"
-              :after "\u3008规则\u3009名称:也视为“修女兽天蓝（觉醒）”,特征“数据种”。"}}
+              :after "\u3008规则\u3009名称:也视为“修女兽天蓝（觉醒）”,特征:“数据种”。"}}
    "P-101"
    {language {:before "此卡牌/数码宝贝也视为拥有“改造型”特征。"
               :after "\u3008规则\u3009特征:拥有类型“改造型”。"}}
@@ -239,7 +240,7 @@
               :after "〈룰〉명칭: 「다크나이트몬」/「츠와몬」으로도 취급한다."}}
    "BT6-084"
    {language {:before "※ 명칭 : 「시스터몬 시엘」, 특징 「데이터종」으로도 취급한다"
-              :after "〈룰〉명칭: 「시스터몬 시엘」로도 취급하며, 특징 : 속성 「데이터종」을 가진다."}}
+              :after "〈룰〉명칭: 「시스터몬 시엘」로도 취급하며, 특징: 속성 「데이터종」을 가진다."}}
    "BT6-085"
    {language {:before "이 카드와 동일한 카드 넘버의 카드는 덱에 50장까지 넣을 수 있다."
               :after "〈룰〉이 카드와 동일한 카드 넘버의 카드는 덱에 50장까지 넣을 수 있다."}}
@@ -306,3 +307,130 @@
    "RB1-007"
    {language {:before "〈룰〉카드 넘버: 「P-010」으로도 취급하며, 덱에 「P-010」과 합계 4장까지 넣을 수 있다."
               :after "〈룰〉카드 넘버: 「P-010」으로도 취급하며, 덱에 「P-010」과 합계 4장까지 넣을 수 있다."}}})
+
+(defn process-rules
+  [cards]
+  (let [forms (->> cards
+                   (filter :card/form)
+                   (map :card/form)
+                   set)
+        attributes (->> cards
+                        (filter :card/attribute)
+                        (map :card/attribute)
+                        set)
+        types (->> cards
+                   (filter :card/type)
+                   (mapcat (comp #(string/split % #"[/,]") :card/type))
+                   set)]
+    (->> cards
+         (map (fn [{:card/keys [number language effect] :as card}]
+                (let [rule (when effect
+                             (case language
+                               "ja" (re-find #"〈ルール〉.*" effect)
+                               "en" (re-find #"⟨Rule⟩.*" effect)
+                               "zh-Hans" (re-find #"\u3008规则\u3009.*" effect)
+                               "ko" (or (re-find #"〈룰〉.*" effect)
+                                        (re-find #"〈규칙〉.*" effect))))]
+                  (cond-> card
+                    (and effect rule)
+                    (assoc :card/rules
+                           (loop [rule rule
+                                  accl []
+                                  remaining [;; traits
+                                             "特徴:"
+                                             "Trait:"
+                                             "속성:"
+                                             "특징:"
+                                             "特征:"
+                                             ;; names
+                                             "名称:"
+                                             "Name:"
+                                             "명칭:"
+                                             ;; card numbers
+                                             "カードナンバー:"
+                                             "Card Number:"
+                                             "카드 넘버:"
+                                             "卡牌编号:"
+                                             ;; allowance
+                                             "枚まで入れられる"
+                                             "You can include up to"
+                                             "넘버의 카드는 덱에"
+                                             "卡组中可以放入最多"]]
+                             (if (seq remaining)
+                               (let [rule-type (first remaining)
+                                     end-index (string/index-of rule rule-type)
+                                     highlights
+                                     (when end-index
+                                       (-> (subs rule end-index)
+                                           (highlight/highlights-in-text language)
+                                           (as-> #__ xs
+                                             (map (fn [s]
+                                                    (subs s 1 (dec (count s))))
+                                                  xs))
+                                           set))]
+                                 (recur (cond-> rule
+                                          end-index
+                                          (subs 0 end-index))
+                                        (cond->> accl
+                                          end-index
+                                          (apply conj
+                                                 (condp contains? rule-type
+                                                   #{"特徴:"
+                                                     "Trait:"
+                                                     "속성:"
+                                                     "특징:"
+                                                     "特征:"}
+                                                   (map (fn [highlight]
+                                                          (let [rule-type
+                                                                (cond
+                                                                  (contains? forms
+                                                                             highlight)
+                                                                  :card/form
+                                                                  (contains? attributes
+                                                                             highlight)
+                                                                  :card/attribute
+                                                                  (contains? types
+                                                                             highlight)
+                                                                  :card/type
+                                                                  :else :card/type)]
+                                                            {:rule/type rule-type
+                                                             :rule/value highlight}))
+                                                        highlights)
+                                                   #{"名称:"
+                                                     "Name:"
+                                                     "명칭:"}
+                                                   (map (fn [highlight]
+                                                          {:rule/type :card/name
+                                                           :rule/value highlight})
+                                                        highlights)
+                                                   #{"カードナンバー:"
+                                                     "Card Number:"
+                                                     "카드 넘버:"
+                                                     "卡牌编号:"}
+                                                   (map (fn [highlight]
+                                                          {:rule/type :card/number
+                                                           :rule/value highlight})
+                                                        highlights)
+                                                   #{"枚まで入れられる"
+                                                     "You can include up to"
+                                                     "넘버의 카드는 덱에"
+                                                     "卡组中可以放入最多"}
+                                                   [{:rule/type :card/limitations
+                                                     :rule/limitation
+                                                     {:limitation/id
+                                                      (format "limitation/rule_%s_%s"
+                                                              language
+                                                              number)
+                                                      :limitation/type :rule
+                                                      :limitation/allowance
+                                                      (->> rule
+                                                           (re-find #"[0-9]+")
+                                                           parse-long)}}])))
+                                        (rest remaining)))
+                               (map-indexed (fn [idx rule]
+                                              (assoc rule :rule/id
+                                                     (format "rule/%s_%s_%d"
+                                                             language
+                                                             number
+                                                             idx)))
+                                            accl)))))))))))

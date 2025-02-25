@@ -44,7 +44,7 @@
           "＜" :keyword-effect
           nil)))))
 
-(defn- highlights-in-text
+(defn highlights-in-text
   [text language]
   (let [re-escape-map {\[ "\\["
                        \] "\\]"

@@ -283,8 +283,6 @@
   (let [number "LM-020"]
     {number
      {language {:errata/id (format "errata/%s_%s" language number)
-                :errata/language language
                 :errata/date #inst "2024-09-12T00:00:00.000-00:00"
-                :errata/card-number number
                 :errata/error "【对方的回合开始时】宣言一种卡牌类别。此后,翻开对方卡组最上方的1张卡牌,若该卡牌为宣言的卡牌类别,则直到回合结束为止,此数码宝贝不受宣言卡牌类别的效果影响。将翻开的卡牌放回到对方的卡组最上方或最下方。"
                 :errata/correction "【对方的回合开始时】宣言一种卡牌类别。此后,翻开对方卡组最上方的1张卡牌,若该卡牌为宣言 的卡牌类别,则直到回合结束为止,此数码宝贝不受到此数码宝贝以外的宣言的卡牌类别的效果影响。将翻开的卡牌放回到对方的卡组最上方或最下方。"}}}))
