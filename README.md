@@ -13,3 +13,7 @@ The [codec](/codec) directory hosts multiple library implementations for encodin
 ## API
 
 [api](/api) is a [JSON:API](https://jsonapi.org) exposing data from the [database](/db).
+
+## Card Scanner
+
+[card-scanner](/card-scanner) is an in-browser tool that uses the webcam to match cards using a perceptual hash.
