@@ -3,17 +3,21 @@ import { loadOpenCV } from "./opencv_js.js";
 class CardScanner extends HTMLElement {
   constructor() {
     super();
+
+    this.cardWidth = 430;
+    this.cardHeight = 600;
+
     this.config = {
       audio: false,
       video: {
-        width: 450,
+        width: 620,
         height: 620,
         facingMode: { exact: "environment" },
       },
     };
 
-    this.hashThreshold = 14;
-    this.resultsLimit = 25;
+    this.hashThreshold = 15;
+    this.resultsLimit = 20;
     this.certaintyThreshold = 70;
     this.cardResults = [];
   }
@@ -39,10 +43,7 @@ class CardScanner extends HTMLElement {
   startVideo() {
     if (!this.video) {
       this.video = this.querySelector("video");
-      this.video.width = this.config.video.width;
-      this.video.height = this.config.video.height;
       this.overlay = this.querySelector("svg");
-      this.createCanvas();
     }
     if (!this.video.paused) return;
     navigator.mediaDevices
@@ -58,12 +59,12 @@ class CardScanner extends HTMLElement {
   }
 
   stopVideo() {
-    this.mediaStream.getTracks().forEach(function (track) {
+    this.mediaStream?.getTracks().forEach(function (track) {
       track.stop();
     });
-    this.video.srcObject = null;
+    if (this.video) this.video.srcObject = null;
     this.cardResults = [];
-    this.overlay.style.display = "none";
+    if (this.overlay) this.overlay.style.display = "none";
   }
 
   getPHashSegments(hash) {
@@ -94,47 +95,63 @@ class CardScanner extends HTMLElement {
   detectCardPresence(src) {
     const gray = new this.cv.Mat();
     this.cv.cvtColor(src, gray, this.cv.COLOR_RGBA2GRAY);
-    this.cv.GaussianBlur(gray, gray, new this.cv.Size(7, 7), 0, 0);
+    this.cv.GaussianBlur(gray, gray, new this.cv.Size(19, 19), 0, 0);
 
-    let edges = new this.cv.Mat();
-    this.cv.Canny(gray, edges, 10, 50);
+    const edges = new this.cv.Mat();
+    this.cv.Canny(gray, edges, 60, 90);
 
-    let lines = new this.cv.Mat();
-    this.cv.HoughLinesP(edges, lines, 1, Math.PI / 180, 80, 100, 15);
+    const lines = new this.cv.Mat();
+    this.cv.HoughLinesP(edges, lines, 1, Math.PI / 180, 50, 100, 200);
 
-    let xMin = src.cols,
-      xMax = 0,
-      yMin = src.rows,
-      yMax = 0;
+    let xMin = gray.cols / 2 + this.cardWidth / 2,
+      xMax = 5,
+      yMin = gray.rows / 2 + this.cardHeight / 2,
+      yMax = 5;
 
     for (let i = 0; i < lines.rows; ++i) {
-      let [x1, y1, x2, y2] = lines.data32S.slice(i * 4, i * 4 + 4);
-
+      const [x1, y1, x2, y2] = lines.data32S.slice(i * 4, i * 4 + 4);
       xMin = Math.min(xMin, x1, x2);
       xMax = Math.max(xMax, x1, x2);
       yMin = Math.min(yMin, y1, y2);
       yMax = Math.max(yMax, y1, y2);
     }
 
+    const detectedWidth = xMax - xMin;
+    const detectedHeight = yMax - yMin;
+
+    let result = null;
+
+    if (
+      detectedWidth > 0 &&
+      detectedHeight > 0 &&
+      detectedWidth < this.cardWidth &&
+      detectedHeight < this.cardHeight &&
+      (detectedWidth / this.cardWidth > 0.95 ||
+        detectedHeight / this.cardHeight > 0.95)
+    ) {
+      // NOTE: Uncomment for debugging the card bounding box detection
+      //
+      // this.cv.rectangle(
+      //   src,
+      //   new this.cv.Point(xMin, yMin),
+      //   new this.cv.Point(xMax, yMax),
+      //   new this.cv.Scalar(0, 255, 0, 255),
+      //   2,
+      // );
+
+      // this.cv.imshow("preview", src);
+
+      result = {
+        x: xMin,
+        y: yMin,
+        width: detectedWidth,
+        height: detectedHeight,
+      };
+    }
     gray.delete();
     edges.delete();
     lines.delete();
-
-    const expectedWidth = 430;
-    const expectedHeight = 600;
-
-    let detectedWidth = xMax - xMin;
-    let detectedHeight = yMax - yMin;
-
-    if (
-      xMin >= 5 &&
-      yMin >= 5 &&
-      detectedWidth >= expectedWidth - 50 &&
-      detectedHeight >= expectedHeight - 50
-    ) {
-      return { x: xMin, y: yMin, width: detectedWidth, height: detectedHeight };
-    }
-    return null;
+    return result;
   }
 
   showScanResults(result) {
@@ -147,33 +164,56 @@ class CardScanner extends HTMLElement {
       this.overlay.style.opacity = "";
       if (!this.video.paused) {
         this.overlay.style.display = "block";
+        this.createCanvas();
         const canvasCtx = this.canvas.getContext("2d");
         canvasCtx.drawImage(
           this.video,
           0,
           0,
-          this.config.video.width,
-          this.config.video.height,
+          this.video.videoWidth,
+          this.video.videoHeight,
         );
         const imageData = canvasCtx.getImageData(
           0,
           0,
-          this.config.video.width,
-          this.config.video.height,
+          this.video.videoWidth,
+          this.video.videoHeight,
         );
         const imageMat = new this.cv.matFromImageData(imageData);
-
-        if (this.detectCardPresence(imageMat)) {
-          const icon = imageMat.roi(
-            new this.cv.Rect(96 + 10, 64 + 10, 300, 215),
+        if (this.config.video.height != this.video.videoHeight) {
+          const scale = this.config.video.height / this.video.videoHeight;
+          this.cv.resize(
+            imageMat,
+            imageMat,
+            new this.cv.Size(
+              Math.round(imageMat.cols * scale),
+              Math.round(imageMat.rows * scale),
+            ),
+            0,
+            0,
+            this.cv.INTER_CUBIC,
           );
+        }
+
+        const detectedCard = this.detectCardPresence(imageMat);
+        if (detectedCard) {
+          this.overlay.style.opacity = 1;
+          const resizedCard = imageMat.roi(
+            new this.cv.Rect(
+              Math.round(imageMat.cols / 2 - this.cardWidth / 2),
+              Math.round(imageMat.rows / 2 - this.cardHeight / 2),
+              this.cardWidth,
+              this.cardHeight,
+            ),
+          );
+          const icon = resizedCard.roi(new this.cv.Rect(96, 64, 300, 215));
+          resizedCard.delete();
           const hash = this.getPHash(icon);
           const hashSegments = this.getPHashSegments(hash);
           const result = this.queryDB(hash, hashSegments);
           if (result.length) {
             if (this.cardResults.length < this.resultsLimit) {
               this.cardResults = this.cardResults.concat(result);
-              this.overlay.style.opacity = 1;
             }
             if (this.cardResults.length >= this.resultsLimit) {
               const finalResult = this.cardResults.reduce(function (
@@ -201,9 +241,12 @@ class CardScanner extends HTMLElement {
               } else {
                 this.showScanResults(mostAccurateMatch[0]);
               }
-              setTimeout(() => {
-                this.cardResults = [];
-              }, 2000);
+              if (!this.resetting) {
+                this.resetting = setTimeout(() => {
+                  this.cardResults = [];
+                  this.resetting = null;
+                }, 1000);
+              }
             }
           }
           icon.delete();
@@ -218,8 +261,8 @@ class CardScanner extends HTMLElement {
   createCanvas() {
     if (this.canvas) return;
     this.canvas = document.createElement("canvas");
-    this.canvas.width = this.config.video.width;
-    this.canvas.height = this.config.video.height;
+    this.canvas.width = this.video.videoWidth;
+    this.canvas.height = this.video.videoHeight;
   }
 
   async initDB() {
@@ -243,7 +286,7 @@ class CardScanner extends HTMLElement {
       .reduce((accl, entry) => {
         const h = entry[0];
         const distance = this.hammingDistance(h ^ hash);
-        if (distance < this.hashThreshold) {
+        if (distance <= this.hashThreshold) {
           const numberExists = accl.some(function (e) {
             return e[1] == entry[2];
           });
