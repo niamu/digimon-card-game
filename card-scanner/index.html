@@ -3,89 +3,43 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Digimon Card Game Scanner</title>
-        <style>
-            card-scanner {
-                position: relative;
-                display: block;
-
-                canvas,
-                video {
-                    display: block;
-                    background: #000;
-                    object-fit: cover;
-                    width: 450px;
-                    max-width: 100%;
-                    height: auto;
-                    aspect-ratio: 450 / 620;
-                    border-radius: 25px;
-                }
-                canvas,
-                svg {
-                    position: absolute;
-                    top: 0;
-                    width: 450px;
-                    max-width: 100%;
-                    height: auto;
-                }
-                svg {
-                    display: none;
-                    opacity: 0.25;
-                    transition: 0.25s ease-out opacity;
-                }
-
-                button {
-                    display: none;
-                }
-
-                :has(#scan_results) {
-                    display: none;
-                }
-
-                &:defined {
-                    button {
-                        display: revert;
-                    }
-                    form {
-                        display: none;
-                    }
-                }
-            }
-        </style>
-        <script type="module" src="card-scanner.js"></script>
+        <title>Digimon Card Game (2020): Card Scanner</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <script type="module" src="js/card-scanner.js"></script>
     </head>
     <body>
-        <h1>Digimon Card Game Scanner</h1>
+        <h1>Digimon Card Game (2020)</h1>
+        <h2>Card Scanner</h2>
         <card-scanner>
-            <video autoplay playsinline muted></video>
-            <!-- <canvas id="preview"></canvas> -->
-            <svg
-                viewBox="0 0 450 620"
-                width="450"
-                height="620"
-                role="img"
-                aria-label="card outline"
-            >
-                <rect
-                    x="20"
-                    y="20"
-                    rx="20"
-                    ry="20"
-                    width="410"
-                    height="580"
-                    stroke="#FFF"
-                    stroke-width="4"
-                    fill="transparent"
-                ></rect>
-            </svg>
-            <button type="button" name="start">Start</button>
-            <button type="button" name="stop">Stop</button>
-            <p>Last Scan Results: <span id="scan_results"></span></p>
-            <!-- TODO: Add baseline HTML form support for uploading an image for processing -->
-            <!-- <form action="#" method="POST">
-                <input type="file" name="image" accept="image/*" />
-                <input type="submit" value="Scan Image" />
-            </form> -->
+            <div>
+                <dialog>
+                    <strong id="scan_results"></strong>
+                    <form method="dialog">
+                        <button>
+                            <span><em>OK</em></span>
+                        </button>
+                    </form>
+                </dialog>
+                <form id="htmlOnly" action="#" method="POST">
+                    <p>JavaScript is currently required.</p>
+                    <!-- TODO: Add baseline HTML form support for uploading an image for processing -->
+                    <!-- <label for="fileUpload"
+                        >Upload an image for detection</label
+                    >
+                    <input
+                        disabled
+                        id="fileUpload"
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                    />
+                    <button type="submit" disabled>
+                        <span>
+                            <em>Scan Image</em>
+                        </span>
+                    </button> -->
+                </form>
+            </div>
         </card-scanner>
     </body>
 </html>

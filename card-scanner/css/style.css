@@ -1,0 +1,276 @@
+@font-face {
+    font-display: optional;
+    font-family: "Montserrat";
+    font-style: normal;
+    font-weight: 400;
+    src: url("../fonts/montserrat-v29-latin-regular.woff2") format("woff2");
+}
+
+@font-face {
+    font-display: optional;
+    font-family: "Montserrat";
+    font-style: normal;
+    font-weight: 900;
+    src: url("../fonts/montserrat-v29-latin-900.woff2") format("woff2");
+}
+
+@font-face {
+    font-display: optional;
+    font-family: "Montserrat";
+    font-style: italic;
+    font-weight: 900;
+    src: url("../fonts/montserrat-v29-latin-900italic.woff2") format("woff2");
+}
+
+@keyframes fadeIn {
+    from {
+        color: rgba(255, 255, 255, 0);
+    }
+
+    to {
+        color: rgba(255, 255, 255, 1);
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Montserrat", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: url("../images/bg.png") no-repeat fixed center top / cover;
+}
+
+h1 {
+    background: url("../images/img_logo.png") no-repeat center center / contain;
+    aspect-ratio: 348 / 96;
+    width: 250px;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    color: transparent;
+}
+
+h2 {
+    position: relative;
+    text-transform: uppercase;
+    background: linear-gradient(to bottom right, #2477dd, #0dcabf);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(-0.125ch -0.125ch 0em rgba(255, 255, 255, 1));
+    font-size: 32px;
+    margin-block: 0.25em 0.5em;
+
+    &::after {
+        content: "";
+        display: block;
+        width: 3.1ch;
+        height: 1px;
+        position: absolute;
+        bottom: 0.5em;
+        right: 0;
+        border-bottom: 1px solid #fff;
+        transform: rotate(-15deg);
+    }
+}
+
+card-scanner {
+    position: relative;
+    display: block;
+    width: 450px;
+    max-width: 100%;
+    background: linear-gradient(to bottom right, #0dcabf, #2477dd);
+    padding: 6px;
+    border-radius: 11px;
+
+    & > div {
+        position: relative;
+        width: inherit;
+        max-width: inherit;
+    }
+
+    form#htmlOnly,
+    canvas,
+    video {
+        display: block;
+        color: #fff;
+        background: #000;
+        object-fit: cover;
+        width: inherit;
+        max-width: inherit;
+        height: 100%;
+        aspect-ratio: 450 / 620;
+        border-radius: 5px;
+
+        mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewbox="0 0 450 620" width="450" height="620"><path d="M 0 0 H 20 L 30 10 H 110 L 120 0 H 450 V 620 H 430 L 420 610 H 330 L 320 620 H 0"></path></svg>');
+        mask-size: cover;
+        mask-repeat: no-repeat;
+        mask-position: center;
+    }
+
+    dialog {
+        padding: 2em;
+        border: none;
+        color: #000;
+        background: #eee;
+        border-radius: 5px;
+
+        &[open] {
+            display: flex;
+            flex-direction: column;
+        }
+
+        form[method="dialog"] button {
+            margin: 0 auto;
+        }
+
+        #scan_results {
+            padding: 1em 0 2em;
+            text-align: center;
+        }
+    }
+
+    canvas,
+    svg {
+        position: absolute;
+        top: 0;
+        width: inherit;
+        max-width: inherit;
+        height: auto;
+    }
+
+    form#htmlOnly {
+        padding: 2em;
+        width: inherit;
+        max-width: inherit;
+        animation: fadeIn 0.5s forwards ease-in;
+        text-align: center;
+
+        label {
+            display: block;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            margin-block: 1em;
+
+            &[disabled]::file-selector-button {
+                border-color: rgba(127, 127, 127, 1);
+                cursor: not-allowed;
+                filter: grayscale();
+            }
+        }
+
+        input[type="file"]::file-selector-button {
+            cursor: pointer;
+            display: inline-block;
+            width: 100%;
+            font-weight: 900;
+            background: linear-gradient(to bottom right, #0dcabf, #2477dd);
+            padding: 0.25em 1em;
+            font-size: 1.75em;
+            font-style: italic;
+            border: none;
+            color: #fff;
+            border: 0.5em solid rgba(255, 255, 255, 1);
+            border-radius: calc(40px + 0.5em);
+            transition:
+                0.25s ease-in-out background,
+                0.25s ease-in-out border-color;
+        }
+
+        input[type="file"]:not([disabled])::file-selector-button:hover {
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0.5em rgba(255, 255, 255, 1);
+        }
+    }
+
+    svg {
+        display: none;
+        opacity: 0.25;
+        transition: 0.25s ease-out opacity;
+    }
+
+    .controls {
+        position: absolute;
+        bottom: 0;
+        width: inherit;
+        max-width: inherit;
+    }
+
+    button {
+        cursor: pointer;
+        position: relative;
+        min-width: 120px;
+        display: block;
+        margin: 1.5em auto;
+        padding: 0;
+        border-radius: 40px;
+        background: none;
+        border: 0.5em solid rgba(255, 255, 255, 0.5);
+        transition:
+            0.125s ease-in-out border-color,
+            0.125s ease-in-out transform;
+
+        &:not([disabled]):hover {
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0.5em rgba(255, 255, 255, 1);
+
+            em {
+                filter: drop-shadow(0 0 0.125em rgba(255, 255, 255, 0.125));
+            }
+        }
+
+        &:not([disabled]):active {
+            transform: scale(0.95);
+        }
+
+        span {
+            display: block;
+            font-weight: 900;
+            background: linear-gradient(to bottom right, #0dcabf, #2477dd);
+            padding: 0.25em 1em;
+            font-size: 1.75em;
+            color: #fff;
+            border-radius: calc(40px + 0.5em);
+            filter: drop-shadow(0 0 0.125em rgba(0, 0, 0, 0.5));
+
+            em {
+                filter: drop-shadow(0 0 0.125em rgba(0, 0, 0, 0.75));
+            }
+        }
+
+        &[disabled] {
+            cursor: not-allowed;
+
+            span {
+                filter: grayscale();
+            }
+        }
+    }
+
+    .controls button[name="stop"] {
+        display: none;
+    }
+
+    &[playing] .controls button[name="stop"] {
+        display: block;
+    }
+
+    &:has(dialog[open]) button[name="start"] {
+        display: none;
+    }
+
+    &:has(video) {
+        & form#htmlOnly {
+            display: none;
+        }
+    }
+}
