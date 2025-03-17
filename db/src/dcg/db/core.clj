@@ -99,12 +99,14 @@
                        :as errata-for-card} (get-in errata [number language])
                       titles-re #"(?i)\s*\[?((Inherited|Security)\s)?Effect\]?\s+"
                       errors (some-> error
+                                     (string/replace "…" "")
                                      (string/replace titles-re "\n")
                                      string/trim
                                      string/split-lines
                                      (as-> #__ coll
                                        (map string/trim coll)))
                       corrections (some-> correction
+                                          (string/replace "…" "")
                                           (string/replace titles-re "\n")
                                           string/trim
                                           string/split-lines

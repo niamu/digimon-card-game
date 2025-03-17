@@ -277,6 +277,7 @@
        (remove (fn [{{:errata/keys [correction]} :card/errata :as card}]
                  (let [corrections (-> correction
                                        string/lower-case
+                                       (string/replace "…" "")
                                        (string/replace "’" "'")
                                        (string/replace #"\]([A-Z])" "] $1")
                                        (string/replace #"(?i)\s*\[?((Inherited|Security)\s)?Effect\]?\s+"
@@ -494,6 +495,9 @@
 (comment
   (->> dcg.db.core/*cards
        card-assertions)
+
+  (->> dcg.db.core/*cards
+       card-errata)
 
   ;; Card values analysis
   (map (fn [[k v]]

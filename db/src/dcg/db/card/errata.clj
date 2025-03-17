@@ -28,7 +28,9 @@
                                "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
                                "You may DNA digivolve this Digimon and one of your other Digimon in play into a Digimon card in your hand for its DNA digivolve cost."))
    "EX3-057" (fn [s]
-               (string/replace s "3000 or" "3000 DP or"))})
+               (string/replace s "3000 or" "3000 DP or"))
+   "LM-013" (fn [s]
+              (string/replace s "…at" "…At"))})
 
 (defmulti errata
   (fn [{:origin/keys [language card-image-language] :as params}]
@@ -235,6 +237,7 @@
                                    (catch ParseException e nil))
                          text-fixes (fn [s]
                                       (-> s
+                                          (string/replace "’" "'")
                                           (string/replace #"^Start of Your Main Phase\]"
                                                           "[Start of Your Main Phase]")
                                           (string/replace #"^Before\n\s*" "")
@@ -260,10 +263,12 @@
                                    :errata/language language
                                    :errata/date date
                                    :errata/card-number number
-                                   :errata/error (cond-> (nth error idx nil)
+                                   :errata/error (cond-> (nth error idx
+                                                              (first error))
                                                    repair-fn
                                                    repair-fn)
-                                   :errata/correction (cond-> (nth fixed idx nil)
+                                   :errata/correction (cond-> (nth fixed idx
+                                                                   (first fixed))
                                                         repair-fn
                                                         repair-fn)}
                             (not (string/blank? notes))
