@@ -201,16 +201,26 @@
   (def *cards
     (clojure.edn/read {:readers {'uri #(java.net.URI. ^String %)}}
                       (java.io.PushbackReader.
-                       (clojure.java.io/reader
-                        (clojure.java.io/resource "db.edn")))))
+                       (io/reader
+                        (io/resource "db.edn")))))
+
+  ;; Populate JSON PHash DB
+  (->> (db/q '{:find [?hash ?number]
+               :where [[?c :card/number ?number]
+                       [?c :card/image ?i]
+                       [?i :image/hash ?hash]]})
+       (map (fn [[hash number]]
+              [(str hash) number]))
+       (clojure.data.json/write-str)
+       (spit (io/file "resources/hash_db.json")))
 
   (set! *print-namespace-maps* false)
 
   (def *cards (time (process-cards)))
 
-  (time (card/init-image-db! *cards))
-
   (->> *cards
        assertion/card-assertions
        db/save-to-file!
-       db/import!))
+       db/import!)
+
+  )

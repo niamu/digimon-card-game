@@ -2,12 +2,9 @@
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
-   [clojure.set :as set]
    [clojure.string :as string]
-   [dcg.db.utils :as utils]
    [taoensso.timbre :as logging])
   (:import
-   [java.io File]
    [jnr.ffi LibraryLoader]))
 
 (def ^:private native-library
@@ -20,10 +17,7 @@
         interface (gen-interface
                    :name "dcg.card.cv.INativeLibrary"
                    :methods
-                   [[db_init [] void]
-                    [db_add [String] int]
-                    [db_train [] void]
-                    [db_query [String] int]
+                   [[image_hash [String] long]
                     [block_icon [String] int]
                     [digivolution_requirements [String] jnr.ffi.Pointer]
                     [free_string [jnr.ffi.Pointer] void]])]
@@ -35,39 +29,26 @@
     (.free_string native-library ptr)
     edn-result))
 
-(defonce db
-  (do (.db_init native-library)
-      (atom {})))
-
-(defn add!
-  [{{:image/keys [path]} :card/image :as card}]
-  (when (.exists (io/file (str "resources" path)))
-    (when-not (-> @db
-                  set/map-invert
-                  (get (:card/id card)))
-      (let [image-index (.db_add native-library (str "resources" path))]
-        (swap! db assoc image-index (:card/id card))))))
-
-(defn train!
-  []
-  (.db_train native-library))
-
-(defn query
-  [image-path]
-  (get @db (.db_query native-library image-path)))
-
-(defn query-url
-  [url]
-  (logging/info (format "CV Query for URL: %s" url))
-  (let [temp-file (File/createTempFile "temp" "")
-        temp-path (.getPath temp-file)
-        url-bytes (utils/as-bytes url {})
-        _ (with-open [in (io/input-stream url-bytes)
-                      out (io/output-stream temp-path)]
-            (io/copy in out))
-        result (query temp-path)]
-    (.delete temp-file)
-    result))
+(defn image-hash
+  [{:card/keys [number] {:image/keys [path]} :card/image :as card}]
+  (cond-> card
+    (.exists (io/file (str "resources" path)))
+    (update :card/image
+            merge
+            (let [hash-segments (fn [l]
+                                  [(bit-and (bit-shift-right l 56) 0xFF)
+                                   (bit-and (bit-shift-right l 48) 0xFF)
+                                   (bit-and (bit-shift-right l 40) 0xFF)
+                                   (bit-and (bit-shift-right l 32) 0xFF)
+                                   (bit-and (bit-shift-right l 24) 0xFF)
+                                   (bit-and (bit-shift-right l 16) 0xFF)
+                                   (bit-and (bit-shift-right l 8) 0xFF)
+                                   (bit-and (bit-shift-right l 0) 0xFF)])
+                  hash (bit-and Long/MAX_VALUE
+                                (.image_hash native-library
+                                             (str "resources" path)))]
+              {:image/hash hash
+               :image/hash-segments (hash-segments hash)}))))
 
 (defn block-icon
   [{:card/keys [block-icon number]

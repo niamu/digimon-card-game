@@ -1452,6 +1452,8 @@
          (update card :card/effect
                  (fn [s]
                    (-> s
+                       (string/replace "\n<DigiXros -2> [Greymon] × [MailBirdramon] \nWhen this would be played, you may place specified cards from the hand/battle area under it. Each one reduces the play cost."
+                                       "")
                        (string/replace "<DigiXros -2> [Greymon] + [MailBirdramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost."
                                        "")
                        (str "\n<DigiXros -2> [Greymon] + [MailBirdramon] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
@@ -2547,6 +2549,12 @@
                    (string/replace s
                                    "[Your Turn] While your opponent has no Digimon with more digivolution cards than this Digimon, this Digimon gains ＜Jamming＞."
                                    "[Your Turn] While your opponent has no Digimon with more digivolution cards than this Digimon, this Digimon gains <Jamming>."))))}
+ "BT14-009"
+ {"en" (fn [card]
+         (-> card
+             (dissoc :card/use-cost)
+             (assoc :card/play-cost 3
+                    :card/category "Digimon")))}
  "BT14-018"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -2846,8 +2854,8 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
@@ -3002,6 +3010,9 @@
          (cond-> card
            (not type)
            (assoc :card/type "능력통합 타입")))}
+ "EX2-008"
+ {"ja" (fn [card]
+         (assoc card :card/attribute "ウィルス種"))}
  "EX2-025"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "R"))}

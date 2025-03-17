@@ -36,6 +36,7 @@
                  :precondition)
           "［" (when (not= language "en")
                  :precondition)
+          "{" :precondition
           "<"  (when (not= language "zh-Hans")
                  :keyword-effect)
           "≪"  :keyword-effect
@@ -49,12 +50,15 @@
   (let [re-escape-map {\[ "\\["
                        \] "\\]"
                        \( "\\("
-                       \) "\\)"}
+                       \) "\\)"
+                       \{ "\\{"
+                       \} "\\}"}
         brackets (cond-> [;; squares
                           ["\u3010" "\u3011"]
                           ["[" "]"]
                           ["\u3014" "\u3015"]
                           ["\uFF3B" "\uFF3D"]
+                          ["{" "}"]
                           ;; angles
                           ["\u226A" "\u226B"]
                           ["\u3008" "\u3009"]

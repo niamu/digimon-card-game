@@ -60,22 +60,49 @@
         (logging/info (format "Downloaded icon: %s" (str image-uri)))))
     image))
 
+#_(reduce (fn [accl {:release/keys [name] :as release}]
+            (let [ver (re-find #"(?i)Ver\.?[0-9]\.[0-9]" name)
+                  set-id (some-> (re-find
+                                  (card-utils/within-brackets-re
+                                   (get card-utils/text-punctuation
+                                        :square-brackets))
+                                  name)
+                                 rest
+                                 (as-> x (remove nil? x))
+                                 first
+                                 (string/replace "-" "")
+                                 (string/replace #"0([0-9]+)" "$1"))]
+              (if set-id
+                (assoc accl (cond->> set-id
+                              ver (str ver)) release)
+                accl)))
+          {}
+          #_(dcg.db.card.release/releases {:origin/url "https://world.digimoncard.com"
+                                           :origin/language "en"})
+          (dcg.db.card.release/releases {:origin/url "https://www.digimoncard.cn"
+                                         :origin/language "zh-Hans"}
+                                        #_{:origin/url "https://world.digimoncard.com"
+                                           :origin/language "en"}))
+
 (defn post-processing-per-origin
   [releases cards]
   (let [releases-by-set
         (reduce (fn [accl {:release/keys [name] :as release}]
-                  (if-let [set-id (some-> (re-find
-                                           (card-utils/within-brackets-re
-                                            (get card-utils/text-punctuation
-                                                 :square-brackets))
-                                           name)
-                                          rest
-                                          (as-> x (remove nil? x))
-                                          first
-                                          (string/replace "-" "")
-                                          (string/replace #"0([0-9]+)" "$1"))]
-                    (assoc accl set-id release)
-                    accl))
+                  (let [ver (re-find #"(?i)Ver\.?[0-9]\.[0-9]" name)
+                        set-id (some-> (re-find
+                                        (card-utils/within-brackets-re
+                                         (get card-utils/text-punctuation
+                                              :square-brackets))
+                                        name)
+                                       rest
+                                       (as-> x (remove nil? x))
+                                       first
+                                       (string/replace "-" "")
+                                       (string/replace #"0([0-9]+)" "$1"))]
+                    (if set-id
+                      (assoc accl (cond->> set-id
+                                    ver (str ver)) release)
+                      accl)))
                 {}
                 releases)
         release-set-ids (set (keys releases-by-set))]
@@ -105,11 +132,16 @@
                                   (mapcat rest)
                                   (remove nil?)
                                   (map (fn [s]
-                                         (-> s
-                                             (string/replace "-" "")
-                                             (string/replace #"0([0-9]+)"
-                                                             "$1"))))
-                                  (filter (fn [r] (contains? release-set-ids r)))
+                                         (let [ver (re-find #"(?i)Ver\.?[0-9]\.[0-9]"
+                                                            notes)]
+                                           (-> s
+                                               (string/replace "-" "")
+                                               (string/replace #"0([0-9]+)"
+                                                               "$1")
+                                               (cond->> #__
+                                                 ver (str ver))))))
+                                  (filter (fn [r]
+                                            (contains? release-set-ids r)))
                                   (map releases-by-set)
                                   (sort-by (comp (fnil inst-ms
                                                        (Date. Long/MAX_VALUE))
@@ -179,17 +211,11 @@
                    (and (= language "ja")
                         (zero? parallel-id)) cv/digivolution-requirements
                    (= language
-                      (:image/language image)) cv/block-icon))
+                      (:image/language image)) cv/block-icon
+                   (.exists (->> (:image/path image)
+                                 (str "resources")
+                                 io/file)) cv/image-hash))
                cards)))
-
-(defn init-image-db!
-  [cards]
-  (logging/info "Adding cards to FLANN DB...")
-  (doseq [card cards]
-    (cv/add! card))
-  (logging/info "Training FLANN DB...")
-  (cv/train!)
-  (logging/info "FLANN DB Trained."))
 
 (defn- pack-type
   [{:release/keys [genre] :as release} {:card/keys [notes number] :as card}]
@@ -259,7 +285,7 @@
         notes (->> (select/select (select/descendant
                                    (select/class "cardinfo_bottom")
                                    (select/follow-adjacent
-                                    (select/find-in-text #"Notes|入手情報")
+                                    (select/find-in-text #"Notes|入手情報|입수 정보")
                                     (select/tag "dd")))
                                   dom-tree)
                    first
@@ -494,7 +520,8 @@
                                        (string/replace #"\uFF3B|\u3010" " [")
                                        (string/replace #"\uFF3D|\u3011" "]"))))
                             (string/join "\n"))
-                       (string/replace #"\n+" "\n")))
+                       (string/replace #"\n+" "\n")
+                       string/trim))
       :pack-type (as-> #__ card
                    (if-let [pt (pack-type release card)]
                      (assoc card :card/pack-type pt)
@@ -558,7 +585,7 @@
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
                            dp rareDegree entryConsumeValue envolutionConsumeTwo
                            cardLevel effect envolutionEffect safeEffect
-                           imageCover cardGroup]}]
+                           imageCover getWayStr]}]
                  (when imageCover
                    (let [number (-> model
                                     (string/replace #"_.*" "")
@@ -581,6 +608,7 @@
                          attribute (some-> attribute card-utils/normalize-string)
                          type (some-> type card-utils/normalize-string)
                          form (some-> form card-utils/normalize-string)
+                         notes (some-> getWayStr card-utils/normalize-string)
                          play-cost (or (some-> entryConsumeValue
                                                card-utils/normalize-string
                                                parse-long)
@@ -619,6 +647,7 @@
                        level (assoc :card/level level)
                        dp (assoc :card/dp dp)
                        form (assoc :card/form form)
+                       notes (assoc :card/notes notes)
                        attribute (assoc :card/attribute
                                         (card-utils/normalize-string attribute))
                        type (assoc :card/type type)

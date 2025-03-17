@@ -180,6 +180,13 @@
      :db/cardinality :db.cardinality/one}
     {:db/ident :image/path
      :db/valueType :db.type/string
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :image/hash
+     :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :image/hash-segments
+     :db/valueType :db.type/tuple
+     :db/tupleType :db.type/long
      :db/cardinality :db.cardinality/one}]
    ;; Errata
    [{:db/ident :errata/id
