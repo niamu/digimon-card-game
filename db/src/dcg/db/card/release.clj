@@ -1,6 +1,7 @@
 (ns dcg.db.card.release
   (:require
    [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [clojure.string :as string]
    [dcg.db.card.utils :as card-utils]
    [dcg.db.utils :as utils]
@@ -12,6 +13,44 @@
    [java.time LocalDate ZoneOffset]
    [java.net URI]
    [java.util Date]))
+
+(defn- download-image!
+  [{:release/keys [id language image-uri] :as image}]
+  (let [http-opts (utils/cupid-headers (str (.getScheme image-uri)
+                                            "://"
+                                            (.getHost image-uri)))
+        filename (format "resources/images/releases/%s/image/%s.png"
+                         language
+                         (string/replace id (format "release_%s_" language) ""))]
+    (when-not (.exists (io/file filename))
+      (when-let [image-bytes (some-> (str image-uri)
+                                     (utils/as-bytes http-opts)
+                                     card-utils/trim-transparency!)]
+        (.mkdirs (io/file (.getParent (io/file filename))))
+        (with-open [in (io/input-stream image-bytes)
+                    out (io/output-stream filename)]
+          (io/copy in out))
+        (logging/info (format "Downloaded image: [%s] %s" id (str image-uri)))))
+    image))
+
+(defn- download-thumbnail!
+  [{:release/keys [id language image-uri] :as image}]
+  (let [http-opts (utils/cupid-headers (str (.getScheme image-uri)
+                                            "://"
+                                            (.getHost image-uri)))
+        filename (format "resources/images/releases/%s/thumbnail/%s.png"
+                         language
+                         (string/replace id (format "release_%s_" language) ""))]
+    (when-not (.exists (io/file filename))
+      (when-let [image-bytes (some-> (str image-uri)
+                                     (utils/as-bytes http-opts)
+                                     card-utils/trim-transparency!)]
+        (.mkdirs (io/file (.getParent (io/file filename))))
+        (with-open [in (io/input-stream image-bytes)
+                    out (io/output-stream filename)]
+          (io/copy in out))
+        (logging/info (format "Downloaded thumbnail: [%s] %s" id (str image-uri)))))
+    image))
 
 (defn- product
   [{:origin/keys [card-image-language language url]} dom-tree]
@@ -113,7 +152,7 @@
                                 (string/replace #"," "")))
                     (catch ParseException e nil)))]
     (when uri
-      {:release/id (format "release/%s_%s" language uri-path)
+      {:release/id (format "release_%s_%s" language uri-path)
        :release/genre genre
        :release/name release-name
        :release/product-uri (URI. uri)
@@ -133,6 +172,12 @@
                             first
                             card-utils/text-content
                             (string/split #"\n+"))
+        img (-> (select/select (select/descendant
+                                (select/class "thumb")
+                                (select/tag "img"))
+                               dom-tree)
+                first
+                (get-in [:attrs :src]))
         title (some-> title
                       string/join
                       (string/replace "\u2010" "-")
@@ -150,6 +195,9 @@
                      genre
                      title)
      :release/genre genre
+     :release/image-uri (URI. (cond->> img
+                                (not (string/starts-with? img "http"))
+                                (str url "/cardlist/")))
      :release/cardlist-uri (URI. (cond->> href
                                    (not (string/starts-with? href "http"))
                                    (str url "/cardlist/")))
@@ -207,7 +255,10 @@
                                            (filter (fn [p] (name-matches? r p)))
                                            last)]
                          (conj accl
-                               (merge r (dissoc p :release/id)))
+                               (-> (merge (dissoc p :release/id) r)
+                                   download-thumbnail!
+                                   (merge (dissoc p :release/id))
+                                   download-image!))
                          (conj accl r)))
                      []
                      cardlist-releases)
@@ -237,11 +288,11 @@
                                (str (case language
                                       "ja" "【P】"
                                       "en" " [P]"))))))))
-        merged-product-uris (set (map :release/product-uri merged))]
-    (concat merged
-            (remove (fn [{:release/keys [product-uri]}]
-                      (contains? merged-product-uris product-uri))
-                    products))))
+        merged-product-uris (set (map :release/product-uri merged))
+        missing (remove (fn [{:release/keys [product-uri]}]
+                          (contains? merged-product-uris product-uri))
+                        products)]
+    (concat merged missing)))
 
 (defmethod releases "ko"
   [{:origin/keys [url] :as origin}]
@@ -362,7 +413,7 @@
                        :release/genre "확장팩",
                        :release/date #inst "2023-11-17T00:00:00.000-00:00",
                        :release/image-uri
-                       (URI. "https://digimoncard.co.krhttps://digimoncard.co.kr/files/thumbnails/422/008/200x407.ratio.jpg?20231117093442"),
+                       (URI. "https://digimoncard.co.kr/files/thumbnails/422/008/200x407.ratio.jpg?20231117093442"),
                        :release/product-uri
                        (URI. "https://digimoncard.co.kr/products/8422")}
                       {:release/name "팩 넥스트 어드벤처 [BTK-07]",
@@ -385,7 +436,21 @@
                        :release/image-uri
                        (URI. "https://digimoncard.co.kr/files/extravar_upload/135/341/010/81b09fdea73051ba31fdbb3a43830af1.png"),
                        :release/product-uri
-                       (URI. "https://digimoncard.co.kr/products/10341")}]))
+                       (URI. "https://digimoncard.co.kr/products/10341")}
+                      {:release/name "팩 뉴 히어로 [BTK-08]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2024-02-16T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/887/010/4ba71c98efe8b0533cc2eb91e6cd223f.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/10887")}
+                      {:release/name "디지털 해저드 [EXK-02]",
+                       :release/genre "확장팩",
+                       :release/date #inst "2024-03-15T00:00:00.000-00:00",
+                       :release/image-uri
+                       (URI. "https://digimoncard.co.kr/files/extravar_upload/135/955/011/a09c56883ed05b98087a2f33e074ddd2.jpg"),
+                       :release/product-uri
+                       (URI. "https://digimoncard.co.kr/products/11955")}]))
         cardlist-releases (->> (utils/http-get (str url "/cardlist/")
                                                http-opts)
                                hickory/parse
@@ -415,8 +480,10 @@
                                            (filter (fn [p] (name-matches? r p)))
                                            last)]
                          (conj accl
-                               (merge r
-                                      (dissoc p :release/id)))
+                               (-> (merge (dissoc p :release/id) r)
+                                   download-thumbnail!
+                                   (merge (dissoc p :release/id))
+                                   download-image!))
                          (conj accl r)))
                      []
                      cardlist-releases)
@@ -443,11 +510,11 @@
                              (cond-> name
                                (= name "프로모션 카드")
                                (str " [P]")))))))
-        merged-product-uris (set (map :release/product-uri merged))]
-    (concat merged
-            (remove (fn [{:release/keys [product-uri]}]
-                      (contains? merged-product-uris product-uri))
-                    products))))
+        merged-product-uris (set (map :release/product-uri merged))
+        missing (remove (fn [{:release/keys [product-uri]}]
+                          (contains? merged-product-uris product-uri))
+                        products)]
+    (concat merged missing)))
 
 (defmethod releases "zh-Hans"
   [{:origin/keys [url language card-image-language] :as origin}]
@@ -514,7 +581,7 @@
             json/read-str
             (get "list")
             (as-> #__ releases
-              (map (fn [{:strs [name createTime]}]
+              (map (fn [{:strs [name createTime image]}]
                      (let [date-re #"[0-9]{4}\-[0-9]{2}\-[0-9]{2}"
                            date (-> (SimpleDateFormat. "yyyy-MM-dd")
                                     (.parse (re-find date-re createTime)))
@@ -532,6 +599,7 @@
                        (cond-> {:release/name name
                                 :release/genre name
                                 :release/language language
+                                :release/image-uri (URI. image)
                                 :release/card-image-language card-image-language
                                 :release/cardlist-uri cardlist-uri}
                          (not= name "宣传卡") (assoc :release/date date)
@@ -553,10 +621,12 @@
                                                         (:release/name p)
                                                         (:release/name r)))))
                                          first)]
-                         (conj accl (merge p
-                                           release
-                                           (select-keys p [:release/name
-                                                           :release/genre])))
+                         (conj accl
+                               (-> (merge (download-image! p)
+                                          release
+                                          (select-keys p [:release/name
+                                                          :release/genre]))
+                                   download-thumbnail!))
                          (conj accl p)))
                      [])
              (map (fn [{:release/keys [name language] :as release}]

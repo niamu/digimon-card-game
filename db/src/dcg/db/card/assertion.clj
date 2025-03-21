@@ -497,7 +497,7 @@
        card-assertions)
 
   (->> dcg.db.core/*cards
-       card-errata)
+       card-assertions)
 
   ;; Card values analysis
   (map (fn [[k v]]

@@ -2860,34 +2860,34 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -2898,9 +2898,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                         :card/form
-                         :card/dp
-                         :card/level))}
+                          :card/form
+                          :card/dp
+                          :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3352,6 +3352,16 @@
            (= source
               (URI. "https://world.digimoncard.com/images/cardlist/card/EX5-024.png"))
            (assoc :card/block-icon 3)))}
+ "EX5-053"
+ {"ko" (fn [card]
+         (-> card
+             (assoc :card/color
+                    [{:color/id    "color/EX5-053_index0"
+                      :color/index 0
+                      :color/color :black}
+                     {:color/id    "color/EX5-053_index1"
+                      :color/index 1
+                      :color/color :yellow}])))}
  "EX5-064"
  {"en" (fn [card]
          (update card :card/effect
@@ -3367,6 +3377,9 @@
               (-> card
                   (assoc :card/security-effect (:card/inherited-effect card))
                   (dissoc :card/inherited-effect)))}
+ "EX5-074"
+ {"ko" (fn [card]
+         (assoc card :card/attribute "NO DATA"))}
  "EX6-007"
  {"ja" (fn [card]
          (update card :card/effect

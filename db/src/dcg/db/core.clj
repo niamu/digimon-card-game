@@ -1,6 +1,7 @@
 (ns dcg.db.core
   (:gen-class)
   (:require
+   [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.string :as string]
    [dcg.db.card :as card]
@@ -37,7 +38,7 @@
                            (filter :release/cardlist-uri)
                            (remove :release/image-uri)
                            count
-                           (= 1)))
+                           (>= 1)))
                     r)
             (str "Not every release matched with a product. "
                  "Consider refreshing Korean product listing."))
@@ -188,6 +189,17 @@
                    (io/resource (subs path 1))))
          (sort-by :card/id))))
 
+(defn generate-phash-db!
+  []
+  (->> (db/q '{:find [?hash ?number]
+               :where [[?c :card/number ?number]
+                       [?c :card/image ?i]
+                       [?i :image/hash ?hash]]})
+       (map (fn [[hash number]]
+              [(str hash) number]))
+       json/write-str
+       (spit (io/file "resources/phash_db.json"))))
+
 (defn -main
   [& _args]
   (logging/info "DB Ingestion started...")
@@ -195,6 +207,7 @@
        assertion/card-assertions
        db/save-to-file!
        db/import!)
+  (generate-phash-db!)
   (logging/info "DB Ingestion completed."))
 
 (comment
@@ -205,16 +218,6 @@
                       (java.io.PushbackReader.
                        (io/reader
                         (io/resource "db.edn")))))
-
-  ;; Populate JSON PHash DB
-  (->> (db/q '{:find [?hash ?number]
-               :where [[?c :card/number ?number]
-                       [?c :card/image ?i]
-                       [?i :image/hash ?hash]]})
-       (map (fn [[hash number]]
-              [(str hash) number]))
-       (clojure.data.json/write-str)
-       (spit (io/file "resources/hash_db.json")))
 
   (set! *print-namespace-maps* false)
 

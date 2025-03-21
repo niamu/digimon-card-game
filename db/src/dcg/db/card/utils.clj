@@ -176,8 +176,8 @@
     (if (= (.getTransparency i) Transparency/TRANSLUCENT)
       (let [width (.getWidth i)
             height (.getHeight i)
-            mid-x (quot width 2)
-            mid-y (quot height 2)
+            mid-x (+ (quot width 2) 10)
+            mid-y (+ (quot height 2) 10)
             top (loop [y 0]
                   (if (= (bit-shift-right (.getRGB i mid-x y) 24) 0x00)
                     (recur (inc y))

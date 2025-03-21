@@ -19,10 +19,6 @@
   (let [http-opts (utils/cupid-headers (str (.getScheme source)
                                             "://"
                                             (.getHost source)))
-        number (-> id
-                   (string/replace #"image/(.*?)_" "")
-                   (string/replace #"_P([0-9]+)" ""))
-        parallel-id (last (re-find #"_P([0-9]+)" id))
         filename (str "resources" path)]
     (when-not (.exists (io/file filename))
       (when-let [image-bytes (some-> (str source)
@@ -59,30 +55,6 @@
           (io/copy in out))
         (logging/info (format "Downloaded icon: %s" (str image-uri)))))
     image))
-
-#_(reduce (fn [accl {:release/keys [name] :as release}]
-            (let [ver (re-find #"(?i)Ver\.?[0-9]\.[0-9]" name)
-                  set-id (some-> (re-find
-                                  (card-utils/within-brackets-re
-                                   (get card-utils/text-punctuation
-                                        :square-brackets))
-                                  name)
-                                 rest
-                                 (as-> x (remove nil? x))
-                                 first
-                                 (string/replace "-" "")
-                                 (string/replace #"0([0-9]+)" "$1"))]
-              (if set-id
-                (assoc accl (cond->> set-id
-                              ver (str ver)) release)
-                accl)))
-          {}
-          #_(dcg.db.card.release/releases {:origin/url "https://world.digimoncard.com"
-                                           :origin/language "en"})
-          (dcg.db.card.release/releases {:origin/url "https://www.digimoncard.cn"
-                                         :origin/language "zh-Hans"}
-                                        #_{:origin/url "https://world.digimoncard.com"
-                                           :origin/language "en"}))
 
 (defn post-processing-per-origin
   [releases cards]
@@ -246,6 +218,7 @@
                                    dom-tree)
                     (map card-utils/text-content))
         number (-> (nth header 0)
+                   (string/replace "EX5-43" "EX5-043")
                    ;; ko cards sometimes add a "P" suffix to the card number
                    (string/replace #"P$" "")
                    ;; ko cards sometimes have the name preceeded by a space

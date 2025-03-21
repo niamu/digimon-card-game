@@ -1,14 +1,11 @@
 .DS_Store
 .cpcache/
 .nrepl-port
-.clj-kondo/
-.lsp/
 target/
 resources/*dcgcv*
 resources/images/cards/
 resources/images/icons/
 resources/images/releases/
 resources/db.edn
+resources/phash_db.json
 src/main.rs
-.idea/
-db.iml
