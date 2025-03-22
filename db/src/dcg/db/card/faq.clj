@@ -43,7 +43,7 @@
                                                              "ja" "yyyy/MM/dd"
                                                              "MMM. dd, yyyy"))
                                         date-string)
-                                (catch ParseException e nil)))
+                                (catch ParseException _ nil)))
                     questions (->> qa
                                    (select/select (select/descendant
                                                    (select/class "questions")
@@ -105,7 +105,7 @@
                                                              "en" "MMM. dd, yyyy"
                                                              "yyyy/MM/dd"))
                                         date-string)
-                                (catch ParseException e nil)))
+                                (catch ParseException _ nil)))
                     questions (->> qa
                                    (select/select (select/descendant
                                                    (select/class "questions")
@@ -156,7 +156,6 @@
                                    (select/attr :name
                                                 (partial = "is_card_search"))))))
                   first)
-        form-action (get-in form [:attrs :action])
         products (->> (select/select
                        (select/descendant (select/and
                                            (select/tag :select)
@@ -170,8 +169,7 @@
                                                    (select/tag :select))
                                         form)
                          (map (fn [{{field-name :name
-                                    :keys [value]} :attrs
-                                   :as input}]
+                                    :keys [value]} :attrs}]
                                 {field-name value}))
                          (apply merge))]
     (reduce (fn [accl product]
@@ -195,7 +193,6 @@
                                    (select/attr :name
                                                 (partial = "is_card_search"))))))
                   first)
-        form-action (get-in form [:attrs :action])
         products (->> (select/select
                        (select/descendant (select/and
                                            (select/tag :select)
@@ -209,8 +206,7 @@
                                                    (select/tag :select))
                                         form)
                          (map (fn [{{field-name :name
-                                    :keys [value]} :attrs
-                                   :as input}]
+                                    :keys [value]} :attrs}]
                                 {field-name value}))
                          (apply merge))]
     (->> products

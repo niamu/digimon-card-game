@@ -72,10 +72,9 @@
                    (= language "zh-Hans")
                    (conj ["\u300C" "\u300D"]
                          ["\uFF62" "\uFF63"]))
-        ignore-parens "(?![^（]*）)(?![^\\(]*\\))"
         brackets-re (->> brackets
                          (map (fn [[open close]]
-                                (format (str "%s[^%s]+%s" #_ignore-parens)
+                                (format "%s[^%s]+%s"
                                         (string/escape open re-escape-map)
                                         (string/escape close re-escape-map)
                                         (string/escape close re-escape-map))))
@@ -161,17 +160,6 @@
                                           (assoc :card/highlights highlights))))
                                     card-group)
                          without-brackets (fn [s] (subs s 1 (dec (count s))))
-                         ja-highlights
-                         (some->> cards
-                                  (filter (fn [{:card/keys [language]}]
-                                            (= language "ja")))
-                                  first
-                                  :card/highlights
-                                  (filter (fn [{highlight-type :highlight/type}]
-                                            (contains? #{:timing
-                                                         :precondition}
-                                                       highlight-type)))
-                                  (map (comp without-brackets :highlight/text)))
                          ja-map
                          (some->> cards
                                   (filter (fn [{:card/keys [language]}]
@@ -206,8 +194,7 @@
                          translations
                          (reduce (fn [m {:highlight/keys [text
                                                          index
-                                                         field]
-                                        :as highlight}]
+                                                         field]}]
                                    (let [text (without-brackets text)
                                          ja-text (get m text)
                                          {highlight-type :highlight/type
@@ -245,8 +232,7 @@
                                                highlight-type
                                                :mention)]
                                          (cond-> highlight
-                                           (nil? (get highlight
-                                                      :highlight/type))
+                                           (nil? (:highlight/type highlight))
                                            (assoc :highlight/type
                                                   (or highlight-type
                                                       :mention))))))))

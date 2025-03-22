@@ -19,7 +19,7 @@
                  (and (> (count names) 1)
                       (apply (complement =)
                              (map string/lower-case names)))))
-       (reduce (fn [accl [[language number] names]]
+       (reduce (fn [accl [[_ _] names]]
                  (if (apply = (map string/lower-case names))
                    accl
                    (merge accl

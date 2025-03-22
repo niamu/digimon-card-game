@@ -150,7 +150,7 @@
                                                 "$1")
                                 (string/replace #",(\d)" ", $1")
                                 (string/replace #"," "")))
-                    (catch ParseException e nil)))]
+                    (catch ParseException _ nil)))]
     (when uri
       {:release/id (format "release_%s_%s" language uri-path)
        :release/genre genre
@@ -205,7 +205,7 @@
      :release/card-image-language (or card-image-language language)}))
 
 (defmulti releases
-  (fn [{:origin/keys [language] :as origin}]
+  (fn [{:origin/keys [language]}]
     language))
 
 (defmethod releases :default
@@ -487,8 +487,7 @@
                          (conj accl r)))
                      []
                      cardlist-releases)
-             (map (fn [{:release/keys [name language]
-                       :as release}]
+             (map (fn [{:release/keys [name] :as release}]
                     (assoc release :release/name
                            (if-let [code (->> name
                                               (re-find #"[\[【](.*)[\]】]")
@@ -517,7 +516,7 @@
     (concat merged missing)))
 
 (defmethod releases "zh-Hans"
-  [{:origin/keys [url language card-image-language] :as origin}]
+  [{:origin/keys [url language card-image-language]}]
   (let [origin-uri (new URI url)
         products-url (-> (new URI
                               (.getScheme origin-uri)
@@ -534,8 +533,7 @@
             (get "list")
             (as-> #__ products
               (->> products
-                   (map (fn [{:strs [id name productImage createTime productType]
-                             :as p}]
+                   (map (fn [{:strs [id name productImage createTime productType]}]
                           (let [date-re #"[0-9]{4}\-[0-9]{2}\-[0-9]{2}"
                                 date (-> (SimpleDateFormat. "yyyy-MM-dd")
                                          (.parse (re-find date-re createTime)))
@@ -629,7 +627,7 @@
                                    download-thumbnail!))
                          (conj accl p)))
                      [])
-             (map (fn [{:release/keys [name language] :as release}]
+             (map (fn [{:release/keys [name] :as release}]
                     (assoc release :release/name
                            (if-let [code (->> name
                                               (re-find #"[\[【](.*)[\]】]")

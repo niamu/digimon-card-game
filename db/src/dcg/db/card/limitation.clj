@@ -1,12 +1,10 @@
 (ns dcg.db.card.limitation
   (:require
    [clojure.string :as string]
-   [dcg.db.card.cv :as cv]
    [dcg.db.card.utils :as card-utils]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
-   [hickory.select :as select]
-   [taoensso.timbre :as logging])
+   [hickory.select :as select])
   (:import
    [java.text SimpleDateFormat]
    [java.time LocalDate ZoneOffset]
@@ -14,7 +12,7 @@
 
 (defn- card-numbers
   [elements]
-  (map (fn [{:keys [tag] :as element}]
+  (map (fn [element]
          (->> (card-utils/text-content element)
               string/split-lines
               first
@@ -200,7 +198,7 @@
 (defmethod limitations :default [_] nil)
 
 (defmethod limitations "ja"
-  [{:origin/keys [url language] :as origin}]
+  [{:origin/keys [url] :as origin}]
   (->> (utils/http-get (str url "/rule/restriction_card/"))
        hickory/parse
        hickory/as-hickory
@@ -213,7 +211,7 @@
        (elements->limitations origin)))
 
 (defmethod limitations "en"
-  [{:origin/keys [url language] :as origin}]
+  [{:origin/keys [url] :as origin}]
   (->> (utils/http-get (str url "/rule/restriction_card/"))
        hickory/parse
        hickory/as-hickory

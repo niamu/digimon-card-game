@@ -3,8 +3,7 @@
    [clojure.string :as string]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
-   [hickory.select :as select]
-   [taoensso.timbre :as logging]))
+   [hickory.select :as select]))
 
 (defn parse-deck
   [dom]
@@ -70,7 +69,7 @@
                              (apply concat)
                              (into []))
              :deck/icon icon}
-      (not (empty? additional-cards))
+      (seq additional-cards)
       (assoc :deck/sideboard
              (mapv (fn [card-number]
                      {:card/number card-number
@@ -103,7 +102,7 @@
                                                                  [name s])))))
                                     parse-deck))))]
     (cond-> release
-      (not (empty? decks))
+      (seq decks)
       (assoc :release/decks decks))))
 
 (defn decks-per-origin

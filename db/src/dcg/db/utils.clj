@@ -7,8 +7,7 @@
    [hickory.select :as select]
    [taoensso.timbre :as logging])
   (:import
-   [java.text ParseException SimpleDateFormat]
-   [java.util Date TimeZone]))
+   [java.util Date]))
 
 (def ^:private connection-manager
   (conn-mgr/make-reusable-conn-manager {:timeout 30
@@ -20,10 +19,10 @@
                              (merge options
                                     {:as :byte-array
                                      :cookie-policy :standard
-                                     :retry-handler (fn [ex try-count _]
+                                     :retry-handler (fn [_ try-count _]
                                                       (if (> try-count 2)
                                                         (logging/error
-                                                          (format "Failed downloading: %s %s after %d attempts"
+                                                          (format "Failed downloading: %s after %d attempts"
                                                                   url
                                                                   try-count))
                                                         true))
@@ -42,7 +41,7 @@
                                      :throw-exceptions false
                                      :connection-manager connection-manager
                                      :retry-handler
-                                     (fn [ex try-count _]
+                                     (fn [_ try-count _]
                                        (if (> try-count 2)
                                          (do (logging/error
                                                (format "Failed POST: %s %s after %d attempts"
@@ -69,7 +68,7 @@
                                     :throw-exceptions false
                                     :connection-manager connection-manager
                                     :retry-handler
-                                    (fn [ex try-count _]
+                                    (fn [_ try-count _]
                                       (if (> try-count 2)
                                         (do (logging/error
                                               (format "Failed GET: %s %s after %d attempts"
@@ -111,10 +110,10 @@
              (-> (client/head url
                               (merge options
                                      {:cookie-policy :standard
-                                      :retry-handler (fn [ex try-count _]
+                                      :retry-handler (fn [_ try-count _]
                                                        (if (> try-count 2)
                                                          (logging/error
-                                                           (format "Failed getting header: %s %s after %d attempts"
+                                                           (format "Failed getting header: %s after %d attempts"
                                                                    url
                                                                    try-count))
                                                          true))

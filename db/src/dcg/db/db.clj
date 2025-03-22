@@ -77,6 +77,9 @@
     {:db/ident :card/rarity
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}
+    {:db/ident :card/supplemental-rarity
+     :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/one}
     {:db/ident :card/notes
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}
@@ -110,6 +113,17 @@
     {:db/ident :card/faqs
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}]
+   ;; Supplemental Rarity
+   [{:db/ident :supplemental-rarity/id
+     :db/valueType :db.type/string
+     :db/unique :db.unique/identity
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :supplemental-rarity/stamp
+     :db/valueType :db.type/string
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :supplemental-rarity/stars
+     :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}]
    ;; Color
    [{:db/ident :color/id
      :db/valueType :db.type/string

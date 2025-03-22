@@ -12,7 +12,6 @@
    [dcg.db.card.limitation :as limitation]
    [dcg.db.card.release :as release]
    [dcg.db.card.rule :as rule]
-   [dcg.db.card.translation :as translation]
    [dcg.db.db :as db]
    [taoensso.timbre :as logging]))
 
@@ -54,7 +53,6 @@
                             (mapcat card/cards-in-release)
                             (card/post-processing-per-origin releases)))
                      releases-per-origin))
-        tr-map (translation/card-name-replacement-map cards-per-origin)
         unrefined-cards (->> cards-per-origin
                              (reduce (fn [accl cards-in-origin]
                                        (->> (reduce (fn [accl2 {:card/keys [id]

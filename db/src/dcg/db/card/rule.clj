@@ -6,8 +6,7 @@
    [dcg.db.card.utils :as card-utils]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
-   [hickory.select :as select]
-   [taoensso.timbre :as logging]))
+   [hickory.select :as select]))
 
 (def ^:private repair-text
   {"BT6-084"
@@ -37,14 +36,14 @@
                            "Treat this card/Digimon as if its name is also [WereGarurumon]."))}})
 
 (defmulti rules
-  (fn [{:origin/keys [language card-image-language] :as params}]
+  (fn [{:origin/keys [language card-image-language]}]
     (and (not card-image-language)
          language)))
 
 (defmethod rules :default [_] nil)
 
 (defmethod rules "ja"
-  [{:origin/keys [url language] :as params}]
+  [{:origin/keys [url language]}]
   (->> (utils/http-get (str url "/rule/revised/"))
        hickory/parse
        hickory/as-hickory
@@ -76,7 +75,7 @@
                {})))
 
 (defmethod rules "en"
-  [{:origin/keys [url language] :as params}]
+  [{:origin/keys [url language]}]
   (->> (utils/http-get (str url "/rule/revised/"))
        hickory/parse
        hickory/as-hickory
@@ -110,7 +109,7 @@
                {})))
 
 (defmethod rules "zh-Hans"
-  [{:origin/keys [language] :as params}]
+  [{:origin/keys [language]}]
   ;; Ideally we'd parse this image: https://digimoncard.cn/ruleinfo?id=55
   ;; But since OCR isn't 100% reliable, here's a static map
   {"BT8-061"
@@ -211,7 +210,7 @@
               :after "\u3008规则\u3009卡组中可以放入最多50张卡牌编号与此卡牌相同的卡牌。"}}})
 
 (defmethod rules "ko"
-  [{:origin/keys [language] :as params}]
+  [{:origin/keys [language]}]
   ;; No official document for this language exists yet, but this static map
   ;; resolves all of the same issues consistently.
   {"BT10-061"

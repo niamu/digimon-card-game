@@ -4,8 +4,7 @@
    [clojure.java.io :as io]
    [clojure.string :as string])
   (:import
-   [java.io PushbackReader]
-   [java.net URI]))
+   [java.io PushbackReader]))
 
 (def text-fixes-by-number-by-language
   "Bandai's official card site has a few issues that cannot be programmatically
@@ -77,6 +76,7 @@
           (string/replace "[ターンに2回]" "［ターンに2回］")
           (string/replace "[トラッシュ]" "［トラッシュ］")
           (string/replace "[手札]" "［手札］")
+          (string/replace "{手札}" "［手札］")
           (string/replace "[育成]" "［育成］")
           (string/replace "{Security}" "[Security]")
           ;; https://world.digimoncard.com/rule/card_text/

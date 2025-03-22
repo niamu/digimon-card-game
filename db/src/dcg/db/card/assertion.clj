@@ -6,8 +6,7 @@
    [clojure.set :as set]
    [clojure.string :as string])
   (:import
-   [java.io PushbackReader]
-   [java.util Date]))
+   [java.io PushbackReader]))
 
 (defn- rules
   "Card rules that differ across languages"
@@ -34,13 +33,13 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
                             (sorted-map))
                     (reduce-kv
-                     (fn [accl number m]
+                     (fn [accl _ m]
                        (->> (keys (dissoc m "ja"))
                             (map (fn [l]
                                    (let [text (get m l)]
@@ -63,10 +62,7 @@
                                (let [most-common (->> (vals v)
                                                       frequencies
                                                       (sort-by val >)
-                                                      ffirst)
-                                     en-common (-> (get tr-map "en")
-                                                   set/map-invert
-                                                   (get most-common))]
+                                                      ffirst)]
                                  {:expected (reduce-kv (fn [accl l m]
                                                          (assoc accl l
                                                                 (get (set/map-invert m)
@@ -98,7 +94,7 @@
                                                  :highlight/text)))))
                      (sorted-map))
              (reduce-kv
-              (fn [accl number m]
+              (fn [accl _ m]
                 (->> (keys (dissoc m "ja"))
                      (map (fn [l]
                             (let [new-texts (remove (fn [text] (get accl text))
@@ -164,7 +160,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                               :highlight/keys [index]}]
+                              :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -194,8 +190,8 @@
                   (sorted-map))))
 
 (defn- text-fields
-  [cards]
   "Card text fields that differ across languages"
+  [cards]
   (->> cards
        (filter (fn [{:card/keys [image language]}]
                  (= language
@@ -238,7 +234,7 @@
                                   {}
                                   card-group)]
                       (cond-> accl
-                        (not (empty? diffmap))
+                        (seq diffmap)
                         (assoc number diffmap))))
                   (sorted-map))))
 
@@ -271,7 +267,7 @@
 (defn- card-errata
   [cards]
   (->> cards
-       (filter (fn [{:card/keys [language image errata] :as card}]
+       (filter (fn [{:card/keys [language image errata]}]
                  (and errata
                       (= language (:image/language image)))))
        (remove (fn [{{:errata/keys [correction]} :card/errata :as card}]
@@ -359,8 +355,7 @@
     (->> cards
          (filter (fn [{:card/keys [language image]}]
                    (= language (:image/language image))))
-         (reduce (fn [accl {:card/keys [id number block-icon]
-                           :as card}]
+         (reduce (fn [accl {:card/keys [id number block-icon]}]
                    (update-in accl [(string/replace number #"\-[0-9]+" "")
                                     block-icon]
                               (fnil conj #{})
@@ -496,15 +491,12 @@
   (->> dcg.db.core/*cards
        card-assertions)
 
-  (->> dcg.db.core/*cards
-       card-assertions)
-
   ;; Card values analysis
   (map (fn [[k v]]
          (let [issues (->> (partition 2 1
                                       (vals v))
                            (map #(apply data/diff %))
-                           (remove (fn [[only-in-a only-in-b in-both]]
+                           (remove (fn [[only-in-a only-in-b _in-both]]
                                      (and (nil? only-in-a)
                                           (nil? only-in-b))))
                            (map #(take 2 %)))
@@ -514,7 +506,7 @@
                               frequencies
                               (sort-by val)
                               ffirst)
-               incorrect-fn (fn [[k v]]
+               incorrect-fn (fn [[_ v]]
                               (= (select-keys v issue-keys)
                                  incorrect))]
            {k {:issue/keys issue-keys
@@ -523,7 +515,7 @@
                                             {k (select-keys v issue-keys)}))
                                      first)
                :issue/correct (->> (remove incorrect-fn v)
-                                   (map (fn [[k v]]
+                                   (map (fn [[_ v]]
                                           (select-keys v issue-keys)))
                                    first)}}))
        (card-values dcg.db.core/*cards))

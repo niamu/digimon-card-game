@@ -5,8 +5,7 @@
    [dcg.db.card.repair :as repair]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
-   [hickory.select :as select]
-   [taoensso.timbre :as logging])
+   [hickory.select :as select])
   (:import
    [java.text ParseException SimpleDateFormat]))
 
@@ -33,14 +32,14 @@
               (string/replace s "…at" "…At"))})
 
 (defmulti errata
-  (fn [{:origin/keys [language card-image-language] :as params}]
+  (fn [{:origin/keys [language card-image-language]}]
     (and (not card-image-language)
          language)))
 
 (defmethod errata :default [_] nil)
 
 (defmethod errata "ja"
-  [{:origin/keys [url language] :as params}]
+  [{:origin/keys [url language]}]
   (let [number "LM-020"
         [error correction]
         (->> (utils/http-get (str url "/rule/revised/"))
@@ -96,7 +95,7 @@
                                        (re-find date-re))
                   date (try (.parse (SimpleDateFormat. "yyyy.MM.dd")
                                     date-string)
-                            (catch ParseException e nil))
+                            (catch ParseException _ nil))
                   cards (some->> (select/select
                                   (select/descendant
                                    (select/and (select/tag "article")
@@ -177,7 +176,7 @@
                  rule-revisions))))
 
 (defmethod errata "en"
-  [{:origin/keys [url language] :as params}]
+  [{:origin/keys [url language]}]
   (let [number "LM-020"
         [error correction]
         (->> (utils/http-get (str url "/rule/revised/"))
@@ -234,7 +233,7 @@
                                               first :content first)
                          date (try (.parse (SimpleDateFormat. "MM.dd.yy")
                                            date-string)
-                                   (catch ParseException e nil))
+                                   (catch ParseException _ nil))
                          text-fixes (fn [s]
                                       (-> s
                                           (string/replace "’" "'")
@@ -282,7 +281,7 @@
                  rule-revisions))))
 
 (defmethod errata "zh-Hans"
-  [{:origin/keys [language] :as params}]
+  [{:origin/keys [language]}]
   ;; Manually transcribed from: https://digimoncard.cn/ruleinfo?id=55
   (let [number "LM-020"]
     {number

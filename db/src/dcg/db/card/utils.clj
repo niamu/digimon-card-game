@@ -5,7 +5,7 @@
   (:import
    [java.awt Transparency]
    [java.awt.image BufferedImage]
-   [java.io ByteArrayInputStream ByteArrayOutputStream]
+   [java.io ByteArrayOutputStream]
    [javax.imageio ImageIO]))
 
 (def card-number-re #"[A-Z|0-9]{1,4}\-[0-9]{2,3}")

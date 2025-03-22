@@ -10,12 +10,12 @@ use opencv::{
 
 use crate::utils;
 
-struct Template {
+pub struct Template {
     pub path: &'static str,
     pub value: i32,
 }
 
-const BLOCK_ICONS: [Template; 20] = [
+pub const BLOCK_ICONS: [Template; 20] = [
     Template {
         path: "resources/images/templates/block-icons/01_a.png",
         value: 1,

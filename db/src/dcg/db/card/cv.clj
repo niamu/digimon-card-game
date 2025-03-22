@@ -19,6 +19,7 @@
                    :methods
                    [[image_hash [String] long]
                     [block_icon [String] int]
+                    [supplemental_rarity [String] int]
                     [digivolution_requirements [String] jnr.ffi.Pointer]
                     [free_string [jnr.ffi.Pointer] void]])]
     (.load (LibraryLoader/create interface) library-name)))
@@ -30,7 +31,7 @@
     edn-result))
 
 (defn image-hash
-  [{:card/keys [number] {:image/keys [path]} :card/image :as card}]
+  [{{:image/keys [path]} :card/image :as card}]
   (cond-> card
     (.exists (io/file (str "resources" path)))
     (update :card/image
@@ -51,8 +52,7 @@
                :image/hash-segments (hash-segments hash)}))))
 
 (defn block-icon
-  [{:card/keys [block-icon number]
-    {:image/keys [path]} :card/image
+  [{:card/keys [block-icon] {:image/keys [path]} :card/image
     :as card}]
   (let [v (if (.exists (io/file (str "resources" path)))
             (.block_icon native-library (str "resources" path))
@@ -61,6 +61,23 @@
       (and (pos? v)
            (nil? block-icon)) (assoc :card/block-icon v)
       (= block-icon 0) (dissoc :card/block-icon))))
+
+(defn supplemental-rarity
+  [{:card/keys [id] {:image/keys [path]} :card/image
+    :as card}]
+  (let [v (if (.exists (io/file (str "resources" path)))
+            (.supplemental_rarity native-library (str "resources" path))
+            -1)]
+    (cond-> card
+      (pos? v) (assoc :card/supplemental-rarity
+                      (cond-> {:supplemental-rarity/id
+                               (string/replace id
+                                               "card/"
+                                               "supplemental-rarity/")}
+                        (= v 99)
+                        (assoc :supplemental-rarity/stamp "SP")
+                        (not= v 99)
+                        (assoc :supplemental-rarity/stars v))))))
 
 (defn digivolution-requirements
   [{:card/keys [digivolution-requirements number]
@@ -73,7 +90,7 @@
           [])]
     (cond-> (dissoc card :card/digivolution-requirements)
       (and digivolution-requirements
-           (not (empty? requirements-with-colors)))
+           (seq requirements-with-colors))
       (assoc :card/digivolution-requirements
              (map-indexed
               (fn [idx {:keys [colors category]}]

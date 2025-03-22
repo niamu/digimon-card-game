@@ -15,7 +15,7 @@
    [java.util Date]))
 
 (defn- download-image!
-  [{:image/keys [id path language source] :as image}]
+  [{:image/keys [id path source] :as image}]
   (let [http-opts (utils/cupid-headers (str (.getScheme source)
                                             "://"
                                             (.getHost source)))
@@ -33,7 +33,7 @@
 
 (defn- ^:deprecated download-icon!
   "Deprecated since the shutdown of mypage.digimoncard.com"
-  [{:image/keys [id language] :as image}]
+  [{:image/keys [id] :as image}]
   (let [number (-> id
                    (string/replace #"image/(.*?)_" "")
                    (string/replace #"_P([0-9]+)" ""))
@@ -92,7 +92,7 @@
                                 utils/last-modified
                                 inst-ms)
                             parallel-id))))
-         (reduce (fn [accl {:card/keys [number language parallel-id image
+         (reduce (fn [accl {:card/keys [number language parallel-id
                                        notes release] :as card}]
                    (let [prev-card (peek accl)
                          release (dissoc release :release/card-image-language)
@@ -138,7 +138,7 @@
                                             (= parallel-id
                                                (:card/parallel-id prev-card)))
                                        (inc parallel-id)
-                                       (not (empty? existing-card-numbers))
+                                       (seq existing-card-numbers)
                                        (-> existing-card-numbers
                                            last
                                            (get :card/parallel-id 0)
@@ -176,7 +176,7 @@
 
 (defn image-processing
   [cards]
-  (doall (pmap (fn [{:card/keys [language image parallel-id id] :as card}]
+  (doall (pmap (fn [{:card/keys [language image parallel-id] :as card}]
                  (cond-> (update card
                                  :card/image (comp #_download-icon!
                                                    download-image!))
@@ -184,13 +184,16 @@
                         (zero? parallel-id)) cv/digivolution-requirements
                    (= language
                       (:image/language image)) cv/block-icon
+                   true (as-> #_card c
+                          (cond-> c
+                            (:card/block-icon c) cv/supplemental-rarity))
                    (.exists (->> (:image/path image)
                                  (str "resources")
                                  io/file)) cv/image-hash))
                cards)))
 
 (defn- pack-type
-  [{:release/keys [genre] :as release} {:card/keys [notes number] :as card}]
+  [{:release/keys [genre]} {:card/keys [notes number]}]
   (case genre
     "ブースターパック" :booster
     "Booster Packs"    :booster
@@ -455,7 +458,7 @@
       form (assoc :card/form form)
       attribute (assoc :card/attribute attribute)
       type (assoc :card/type type)
-      (not (empty? effect)) (assoc :card/effect effect)
+      (seq effect) (assoc :card/effect effect)
       (or (and (= language "ja")
                inherited-effect
                (not (string/starts-with? inherited-effect
@@ -506,7 +509,7 @@
     language))
 
 (defmethod cards-in-release :default
-  [{:release/keys [language cardlist-uri http-opts] :as release}]
+  [{:release/keys [cardlist-uri http-opts] :as release}]
   (let [page (->> (utils/http-get (str cardlist-uri)
                                   http-opts)
                   repair/html-encoding-errors
@@ -624,11 +627,11 @@
                        attribute (assoc :card/attribute
                                         (card-utils/normalize-string attribute))
                        type (assoc :card/type type)
-                       (not (empty? effect)) (assoc :card/effect effect)
-                       (not (empty? inherited-effect))
+                       (seq effect) (assoc :card/effect effect)
+                       (seq inherited-effect)
                        (assoc :card/inherited-effect inherited-effect)
-                       (not (empty? security-effect)) (assoc :card/security-effect
-                                                             security-effect)
+                       (seq security-effect) (assoc :card/security-effect
+                                                    security-effect)
                        :pack-type (as-> #__ card
                                     (if-let [pt (pack-type release card)]
                                       (assoc card :card/pack-type pt)
