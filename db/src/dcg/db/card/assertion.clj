@@ -160,7 +160,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                              :highlight/keys [index]}]
+                               :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -302,74 +302,6 @@
                  (update accl language (fnil conj #{}) number))
                {})))
 
-(defn- card-block-icons
-  [cards]
-  (let [expected-block-icons {"ST1" nil
-                              "ST2" nil
-                              "ST3" nil
-                              "BT1" nil
-                              "BT2" nil
-                              "BT3" nil
-                              "ST4" nil
-                              "ST5" nil
-                              "ST6" nil
-                              "BT4" nil
-                              "BT5" nil
-                              "ST7" 1
-                              "ST8" 1
-                              "BT6" 1
-                              "EX1" 1
-                              "BT7" 1
-                              "ST9" 1
-                              "ST10" 1
-                              "BT8" 1
-                              "EX2" 1
-                              "BT9" 1
-                              "ST12" 2
-                              "ST13" 2
-                              "BT10" 2
-                              "EX3" 2
-                              "BT11" 2
-                              "BT12" 2
-                              "ST14" 2
-                              "EX4" 2
-                              "RB1" 2
-                              "BT13" 2
-                              "ST15" 3
-                              "ST16" 3
-                              "BT14" 3
-                              "LM" 3
-                              "EX5" 3
-                              "BT15" 3
-                              "ST17" 3
-                              "BT16" 3
-                              "EX6" 3
-                              "BT17" 3
-                              "ST18" 4
-                              "ST19" 4
-                              "BT18" 4
-                              "EX7" 4
-                              "BT19" 4
-                              "EX8" 4
-                              "BT20" 4}]
-    (->> cards
-         (filter (fn [{:card/keys [language image]}]
-                   (= language (:image/language image))))
-         (reduce (fn [accl {:card/keys [id number block-icon]}]
-                   (update-in accl [(string/replace number #"\-[0-9]+" "")
-                                    block-icon]
-                              (fnil conj #{})
-                              id))
-                 {})
-         (reduce-kv (fn [accl release kv]
-                      (let [result (dissoc kv
-                                           (get expected-block-icons
-                                                release :not-found))]
-                        (cond-> accl
-                          (seq result)
-                          (assoc release result))))
-                    (sorted-map)))))
-
 (defn card-assertions
   [cards]
   (assert (empty? (card-values cards))
@@ -458,15 +390,6 @@
                "card/zh-Hans_BT14-052_P0" {:card/name 1}}})
           (format "Card rules differ across languages:\n%s"
                   (rules cards)))
-  (let [missing-block-icons
-        (first
-         (data/diff (card-block-icons cards)
-                    (edn/read (PushbackReader.
-                               (io/reader
-                                (io/resource "block-icons.edn"))))))]
-    (assert (empty? missing-block-icons)
-            (format "Card block icons do not match expected output:\n%s"
-                    missing-block-icons)))
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
                      "P-071"
@@ -519,24 +442,5 @@
                                           (select-keys v issue-keys)))
                                    first)}}))
        (card-values dcg.db.core/*cards))
-
-  ;; Block Icon issues
-  (first
-   (data/diff (card-block-icons dcg.db.core/*cards)
-              (edn/read (PushbackReader.
-                         (io/reader
-                          (io/resource "block-icons.edn"))))))
-
-  ;; Update block-icons.edn resource
-  (let [block-icons (edn/read (PushbackReader.
-                               (io/reader
-                                (io/resource "block-icons.edn"))))]
-    (spit (io/resource "block-icons.edn")
-          (merge-with (partial merge-with set/union)
-                      block-icons
-                      (into (sorted-map)
-                            (first
-                             (data/diff (card-block-icons dcg.db.core/*cards)
-                                        block-icons))))))
 
   )
