@@ -15,7 +15,7 @@ struct Template {
     pub value: i32,
 }
 
-const RARITY_STAMPS: [Template; 11] = [
+const RARITY_STAMPS: [Template; 21] = [
     Template {
         path: "resources/images/templates/rarity/sp_a.png",
         value: 99,
@@ -37,6 +37,22 @@ const RARITY_STAMPS: [Template; 11] = [
         value: 99,
     },
     Template {
+        path: "resources/images/templates/rarity/sp_f.png",
+        value: 99,
+    },
+    Template {
+        path: "resources/images/templates/rarity/sp_g.png",
+        value: 99,
+    },
+    Template {
+        path: "resources/images/templates/rarity/sp_h.png",
+        value: 99,
+    },
+    Template {
+        path: "resources/images/templates/rarity/sp_i.png",
+        value: 99,
+    },
+    Template {
         path: "resources/images/templates/rarity/star_a.png",
         value: 1,
     },
@@ -49,11 +65,35 @@ const RARITY_STAMPS: [Template; 11] = [
         value: 1,
     },
     Template {
+        path: "resources/images/templates/rarity/star_d.png",
+        value: 1,
+    },
+    Template {
+        path: "resources/images/templates/rarity/star_e.png",
+        value: 1,
+    },
+    Template {
+        path: "resources/images/templates/rarity/star_f.png",
+        value: 1,
+    },
+    Template {
+        path: "resources/images/templates/rarity/star_g.png",
+        value: 1,
+    },
+    Template {
         path: "resources/images/templates/rarity/star2_a.png",
         value: 2,
     },
     Template {
         path: "resources/images/templates/rarity/star2_b.png",
+        value: 2,
+    },
+    Template {
+        path: "resources/images/templates/rarity/star2_c.png",
+        value: 2,
+    },
+    Template {
+        path: "resources/images/templates/rarity/star2_d.png",
         value: 2,
     },
     Template {
@@ -85,11 +125,13 @@ pub extern "C" fn supplemental_rarity(image_path: *const c_char) -> i32 {
 
     let mut image_roi = Mat::roi(&image_mat, Rect::new(370, 460, 28, 140)).unwrap();
     let mut block_icon_coords: Option<utils::Coords> = Option::None;
+    let mut block_icon_accuracy: f64 = 0.0;
     for block_icon in block_icon::BLOCK_ICONS {
         let template =
             cv::imgcodecs::imread(block_icon.path, cv::imgcodecs::IMREAD_UNCHANGED).unwrap();
         let match_result = utils::template_match(&template, &image_roi);
-        if match_result.accuracy > 0.875 {
+        if match_result.accuracy > 0.875 && match_result.accuracy > block_icon_accuracy {
+            block_icon_accuracy = match_result.accuracy;
             block_icon_coords = Some(match_result.coords);
         }
     }
@@ -98,12 +140,12 @@ pub extern "C" fn supplemental_rarity(image_path: *const c_char) -> i32 {
     let mut result: i32 = -1;
     match block_icon_coords {
         Some(coords) => {
-            image_roi = Mat::roi(&image_mat, Rect::new(335, 460 + coords.y - 5, 38, 20)).unwrap();
+            image_roi = Mat::roi(&image_mat, Rect::new(335, 460 + coords.y - 4, 38, 18)).unwrap();
             for sp_stamp in RARITY_STAMPS {
                 let template =
                     cv::imgcodecs::imread(sp_stamp.path, cv::imgcodecs::IMREAD_UNCHANGED).unwrap();
                 let match_result = utils::template_match(&template, &image_roi);
-                if match_result.accuracy >= 0.905 && sp_stamp.value > result {
+                if match_result.accuracy >= 0.92 && sp_stamp.value > result {
                     result = sp_stamp.value;
                 }
             }
