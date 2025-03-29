@@ -29,15 +29,19 @@
                                 first
                                 card-utils/text-content
                                 (re-find card-utils/card-number-re))
-                    date-string (->> qa
-                                     (select/select
-                                      (select/descendant
-                                       (select/class "questions")
-                                       (select/tag :dd)))
-                                     first
-                                     :content
-                                     last
-                                     card-utils/text-content)
+                    date-string
+                    (some->> qa
+                             (select/select
+                              (select/descendant
+                               (select/class "questions")
+                               (select/tag :dd)
+                               (select/and
+                                (select/tag :span)
+                                (select/or
+                                 (select/find-in-text #"[0-9]{4}/[0-9]{2}/[0-9]{2}")
+                                 (select/find-in-text #"\,\s*[0-9]{4}")))))
+                             first
+                             card-utils/text-content)
                     date (when date-string
                            (try (.parse (SimpleDateFormat. (case language
                                                              "ja" "yyyy/MM/dd"

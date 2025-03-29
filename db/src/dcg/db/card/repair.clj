@@ -45,8 +45,10 @@
           (string/replace #"(DigiXros\s?[\-\+][0-9]+)\s?:" "<$1>")
           (string/replace #"(数码合体\s?[\-\+][0-9]+)\s?:" "≪$1≫")
           (string/replace #"(디지크로스\s?[\-\+][0-9]+)\s?:" "≪$1≫")
-          (string/replace #"^≪?ジョグレス(.*?ら0)≫?"
+          (string/replace #"^≪?ジョグレス:?(.*?ら0)≫?"
                           "【ジョグレス】$1")
+          (string/replace "アクティブで〔進化〕する"
+                          "アクティブで進化する")
           (string/replace "〔ジョグレス〕" "【ジョグレス】")
           (string/replace #"^＜?DNA Digivolution:\s*(.*?Lv\.[0-9].*?Lv\.[0-9])＞?"
                           "[DNA Digivolution] $1")

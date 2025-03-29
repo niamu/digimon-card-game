@@ -160,7 +160,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                               :highlight/keys [index]}]
+                              :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -397,6 +397,7 @@
                      "EX1-073"},
               "ja" #{"BT6-084"
                      "EX1-001"
+                     "BT10-058"
                      "BT7-083"
                      "BT9-073"
                      "BT7-005"

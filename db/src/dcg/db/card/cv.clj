@@ -18,6 +18,7 @@
                    :name "dcg.card.cv.INativeLibrary"
                    :methods
                    [[image_hash [String] long]
+                    [image_roi_hash [String] long]
                     [block_icon [String] int]
                     [supplemental_rarity [String] int]
                     [digivolution_requirements [String] jnr.ffi.Pointer]
@@ -32,22 +33,33 @@
 
 (defn image-hash
   [{{:image/keys [path]} :card/image :as card}]
+  (when (.exists (io/file (str "resources" path)))
+    (-> (.image_hash native-library
+                     (str "resources" path))
+        Long/toUnsignedString
+        (BigInteger.))))
+
+(defn image-roi-hash
+  [{{:image/keys [path]} :card/image :as card}]
   (cond-> card
     (.exists (io/file (str "resources" path)))
     (update :card/image
             merge
-            (let [hash-segments (fn [l]
-                                  [(bit-and (bit-shift-right l 56) 0xFF)
-                                   (bit-and (bit-shift-right l 48) 0xFF)
-                                   (bit-and (bit-shift-right l 40) 0xFF)
-                                   (bit-and (bit-shift-right l 32) 0xFF)
-                                   (bit-and (bit-shift-right l 24) 0xFF)
-                                   (bit-and (bit-shift-right l 16) 0xFF)
-                                   (bit-and (bit-shift-right l 8) 0xFF)
-                                   (bit-and (bit-shift-right l 0) 0xFF)])
-                  hash (bit-and Long/MAX_VALUE
-                                (.image_hash native-library
-                                             (str "resources" path)))]
+            (let [image-hash (-> (.image_roi_hash native-library
+                                                  (str "resources" path))
+                                 Long/toUnsignedString
+                                 (BigInteger.))
+                  hash-segments (fn [l]
+                                  (let [b (BigInteger/valueOf 0xFF)]
+                                    (mapv long [(.and (.shiftRight l 56) b)
+                                                (.and (.shiftRight l 48) b)
+                                                (.and (.shiftRight l 40) b)
+                                                (.and (.shiftRight l 32) b)
+                                                (.and (.shiftRight l 24) b)
+                                                (.and (.shiftRight l 16) b)
+                                                (.and (.shiftRight l 8) b)
+                                                (.and (.shiftRight l 0) b)])))
+                  hash image-hash]
               {:image/hash hash
                :image/hash-segments (hash-segments hash)}))))
 
@@ -93,10 +105,14 @@
            (seq requirements-with-colors))
       (assoc :card/digivolution-requirements
              (map-indexed
-              (fn [idx {:keys [colors category]}]
-                (let [category (-> category
-                                   string/lower-case
-                                   keyword)
+              (fn [idx {:keys [colors] :as r}]
+                (let [category (or (get (nth digivolution-requirements idx
+                                             {:digivolve/category
+                                              (-> (get r :category)
+                                                  string/lower-case
+                                                  keyword)})
+                                        :digivolve/category)
+                                   :digimon)
                       prev-requirement
                       (cond-> (or (nth digivolution-requirements idx nil)
                                   (first digivolution-requirements))

@@ -196,7 +196,7 @@
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}
     {:db/ident :image/hash
-     :db/valueType :db.type/long
+     :db/valueType :db.type/bigint
      :db/cardinality :db.cardinality/one}
     {:db/ident :image/hash-segments
      :db/valueType :db.type/tuple

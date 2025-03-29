@@ -50,6 +50,7 @@
 (defn normalize-string
   [s]
   (condp = s
+    "" nil
     "  " nil
     "、" nil
     "ー" nil
@@ -173,7 +174,7 @@
 (defn trim-transparency!
   [bs]
   (let [i ^BufferedImage (bytes->buffered-image bs)]
-    (if (= (.getTransparency i) Transparency/TRANSLUCENT)
+    (if (not= (.getTransparency i) Transparency/OPAQUE)
       (let [width (.getWidth i)
             height (.getHeight i)
             mid-x (+ (quot width 2) 10)
@@ -194,6 +195,53 @@
                     (if (= (bit-shift-right (.getRGB i x mid-y) 24) 0x00)
                       (recur (dec x))
                       x))
+            cropped-image (.getSubimage i
+                                        left
+                                        top
+                                        (inc (- right left))
+                                        (inc (- bottom top)))]
+        (buffered-image->bytes cropped-image))
+      (buffered-image->bytes i))))
+
+(defn trim-white-border!
+  [bs]
+  (let [i ^BufferedImage (bytes->buffered-image bs)
+        rgb-at (fn [x y]
+                 (let [rgb (.getRGB ^BufferedImage i x y)]
+                   [(bit-and (bit-shift-right rgb 16) 0xFF)
+                    (bit-and (bit-shift-right rgb 8) 0xFF)
+                    (bit-and (bit-shift-right rgb 0) 0xFF)]))
+        white? (fn [[r g b :as rgb]]
+                 (> (/ (apply + rgb) 3) 237))]
+    (if (and (= (.getTransparency i) Transparency/OPAQUE)
+             (> (.getWidth i) 430)
+             (> (.getHeight i) 600))
+      (let [width (.getWidth i)
+            height (.getHeight i)
+            top (loop [y 0]
+                  (let [colors (for [x (range width)]
+                                 (rgb-at x y))]
+                    (if (every? white? colors)
+                      (recur (inc y))
+                      (max 0 y))))
+            bottom (loop [y (dec height)]
+                     (let [colors (for [x (range width)]
+                                    (rgb-at x y))]
+                       (if (every? white? colors)
+                         (recur (dec y))
+                         (min height y))))
+            left (loop [x 0]
+                   (let [colors (for [y (range height)]
+                                  (rgb-at x y))]
+                     (if (every? white? colors)
+                       (recur (inc x))
+                       (max 0 x))))
+            right (loop [x (dec width)]
+                    (let [colors (for [y (range height)]
+                                   (rgb-at x y))]
+                      (if (every? white? colors)
+                        (recur (dec x))
+                        (min width x))))
             cropped-image (.getSubimage i
                                         left
                                         top

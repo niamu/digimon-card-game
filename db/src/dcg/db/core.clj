@@ -51,6 +51,7 @@
                        (->> releases
                             (filter :release/cardlist-uri)
                             (mapcat card/cards-in-release)
+                            (remove nil?)
                             (card/post-processing-per-origin releases)))
                      releases-per-origin))
         unrefined-cards (->> cards-per-origin
@@ -200,6 +201,7 @@
 
 (defn -main
   [& _args]
+  (logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
   (logging/info "DB Ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
@@ -209,10 +211,12 @@
   (logging/info "DB Ingestion completed."))
 
 (comment
+  (logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
+
   (db/import-from-file!)
 
   (def *cards
-    (clojure.edn/read {:readers {'uri #(java.net.URI. ^String %)}}
+    (clojure.edn/read {:readers {'uri (fn [] (java.net.URI. ^String %))}}
                       (java.io.PushbackReader.
                        (io/reader
                         (io/resource "db.edn")))))

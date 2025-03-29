@@ -252,7 +252,8 @@
                                  "Familiar" "使い魔"
                                  "Animal" "獣"
                                  "Justimon" "ジャスティモン"
-                                 "Sovereign" "獣"}
+                                 "Sovereign" "獣"
+                                 "Imperialdramon" "インペリアルドラモン"}
                   :cards []}
                  card-groups)
          :cards)))

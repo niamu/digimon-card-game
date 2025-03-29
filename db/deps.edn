@@ -1,9 +1,11 @@
-{:paths ["src" "resources"]
+{:paths ["src" "dev" "resources"]
  :deps {org.clojure/clojure                   {:mvn/version "1.11.1"}
         com.github.jnr/jnr-ffi                {:mvn/version "2.2.14"}
         com.datomic/peer                      {:mvn/version "1.0.6726"}
         com.datomic/memcache-asg-java-client  {:mvn/version "1.1.0.35"}
-        com.taoensso/timbre                   {:mvn/version "5.2.1"}
+        com.taoensso/timbre                   {:mvn/version "6.6.1"}
+        com.taoensso/timbre-slf4j             {:mvn/version "6.6.1"}
         clj-http/clj-http                     {:mvn/version "3.12.3"}
-        hickory/hickory                       {:mvn/version "0.7.1"}}
+        hickory/hickory                       {:mvn/version "0.7.1"}
+        org.slf4j/slf4j-api                   {:mvn/version "2.0.17"}}
  :aliases {:ingest {:exec-fn dcg.db.core/-main}}}
