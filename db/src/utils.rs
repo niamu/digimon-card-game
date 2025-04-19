@@ -35,11 +35,16 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
     let mut mask = Mat::default();
     let mut template_prep = template.clone();
     let mut result_ccoeff = Mat::default();
-    let mut result_ccorr = Mat::default();
-    let mut result_sqdiff = Mat::default();
-    let mut result: f64;
+    let result: f64;
     let mut image_prep = Mat::default();
-    cv::imgproc::cvt_color(&image, &mut image_prep, cv::imgproc::COLOR_BGRA2GRAY, 0, AlgorithmHint::ALGO_HINT_DEFAULT).unwrap();
+    cv::imgproc::cvt_color(
+        &image,
+        &mut image_prep,
+        cv::imgproc::COLOR_BGRA2GRAY,
+        0,
+        AlgorithmHint::ALGO_HINT_DEFAULT,
+    )
+    .unwrap();
     let mut coords = Coords { x: 0, y: 0 };
     if template.channels() > 3 {
         cv::core::extract_channel(&template, &mut alpha, 3).unwrap();
@@ -72,24 +77,8 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
     cv::imgproc::match_template(
         &image_prep,
         &template_prep,
-        &mut result_ccorr,
-        cv::imgproc::TM_CCORR_NORMED,
-        &mask,
-    )
-    .unwrap();
-    cv::imgproc::match_template(
-        &image_prep,
-        &template_prep,
         &mut result_ccoeff,
         cv::imgproc::TM_CCOEFF_NORMED,
-        &mask,
-    )
-    .unwrap();
-    cv::imgproc::match_template(
-        &image_prep,
-        &template_prep,
-        &mut result_sqdiff,
-        cv::imgproc::TM_SQDIFF_NORMED,
         &mask,
     )
     .unwrap();
@@ -99,18 +88,6 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
     let mut max_val = Some(0f64);
     let mut min_loc = Some(Point::default());
     let mut max_loc = Some(Point::default());
-    cv::core::min_max_loc(
-        &result_ccorr,
-        min_val.as_mut(),
-        max_val.as_mut(),
-        min_loc.as_mut(),
-        max_loc.as_mut(),
-        &mut mask,
-    )
-    .unwrap();
-    coords.x = max_loc.unwrap().x;
-    coords.y = max_loc.unwrap().y;
-    result = max_val.unwrap();
     cv::core::min_max_loc(
         &result_ccoeff,
         min_val.as_mut(),
@@ -122,19 +99,30 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
     .unwrap();
     coords.x = max_loc.unwrap().x;
     coords.y = max_loc.unwrap().y;
-    result = result + max_val.unwrap();
-    cv::core::min_max_loc(
-        &result_sqdiff,
-        min_val.as_mut(),
-        max_val.as_mut(),
-        min_loc.as_mut(),
-        max_loc.as_mut(),
-        &mut mask,
-    )
-    .unwrap();
-    result = (result + (1.0 - min_val.unwrap())) / 3.0;
+    result = max_val.unwrap();
     MatchResult {
         accuracy: result,
         coords,
     }
+}
+
+pub fn resize_card(image: &Mat) -> Mat {
+    let mut image = image.clone();
+    if image.cols() != 430 || image.rows() != 600 {
+        let image_size = cv::core::Size::new(430, 600);
+        let mut reduced_image = Mat::default();
+        cv::imgproc::resize(
+            &image,
+            &mut reduced_image,
+            image_size,
+            0.0,
+            0.0,
+            cv::imgproc::INTER_LINEAR,
+        )
+        .unwrap();
+        drop(image);
+        image = reduced_image.clone();
+        drop(reduced_image);
+    }
+    return image;
 }

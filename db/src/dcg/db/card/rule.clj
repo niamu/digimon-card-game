@@ -33,7 +33,12 @@
    {"en" (fn [s]
            (string/replace s
                            "The name of this card/Digimon is also treated as [WereGarurumon]."
-                           "Treat this card/Digimon as if its name is also [WereGarurumon]."))}})
+                           "Treat this card/Digimon as if its name is also [WereGarurumon]."))}
+   "RB1-032"
+   {"ja" (fn [s]
+           (string/replace s
+                           "メモリー+1し、≪1ドロー≫"
+                           "メモリー+1、≪1ドロー≫し"))}})
 
 (defmulti rules
   (fn [{:origin/keys [language card-image-language]}]
@@ -44,69 +49,174 @@
 
 (defmethod rules "ja"
   [{:origin/keys [url language]}]
-  (->> (utils/http-get (str url "/rule/revised/"))
-       hickory/parse
-       hickory/as-hickory
-       (select/select (select/descendant (select/id "inner")
-                                         (select/class "changeList")))
-       first :content (filter map?)
-       (map (fn [el]
-              (select/select
-               (select/or (select/tag :th)
-                          (select/follow-adjacent
-                           (select/and (select/tag :td)
-                                       (select/class "changeBefore"))
-                           (select/tag :td))
-                          (select/follow-adjacent
-                           (select/and (select/tag :td)
-                                       (select/class "changeAfter"))
-                           (select/tag :td)))
-               el)))
-       (reduce (fn [accl [heading before after]]
-                 (let [number (re-find card-utils/card-number-re
-                                       (card-utils/text-content heading))
-                       repair-fn (get-in repair-text [number language])
-                       before (cond-> (card-utils/text-content before)
-                                repair-fn repair-fn)
-                       after (card-utils/text-content after)]
-                   (assoc-in accl [number language]
-                             {:before before
-                              :after after})))
-               {})))
+  (let [rule-title-re #"^〈ルール〉に変更されたカード$"
+        draw-memory-title-re #"「≪1ドロー≫し、メモリー\+1」に変更されるカード"]
+    (->> (utils/http-get (str url "/rule/revised/"))
+         hickory/parse
+         hickory/as-hickory
+         (select/select
+          (select/descendant
+           (select/or
+            (select/and
+             (select/class "accordionTitle")
+             (select/has-child
+              (select/find-in-text rule-title-re)))
+            (select/descendant (select/follow-adjacent
+                                (select/and
+                                 (select/class "accordionTitle")
+                                 (select/has-child
+                                  (select/find-in-text rule-title-re)))
+                                select/element)
+                               (select/class "changelist"))
+            (select/and
+             (select/class "accordionTitle")
+             (select/has-child
+              (select/find-in-text draw-memory-title-re)))
+            (select/descendant (select/follow-adjacent
+                                (select/and
+                                 (select/class "accordionTitle")
+                                 (select/has-child
+                                  (select/find-in-text draw-memory-title-re)))
+                                select/element)
+                               (select/class "changelist")))))
+         (partition-all 2)
+         (map (fn [[section-heading changelist]]
+                (->> changelist
+                     :content
+                     (filter map?)
+                     (map (fn [el]
+                            (select/select
+                             (select/or (select/tag :th)
+                                        (select/follow-adjacent
+                                         (select/and (select/tag :td)
+                                                     (select/class "changeBefore"))
+                                         (select/tag :td))
+                                        (select/follow-adjacent
+                                         (select/and (select/tag :td)
+                                                     (select/class "changeAfter"))
+                                         (select/tag :td)))
+                             el)))
+                     (reduce (fn [accl [heading before after]]
+                               (let [number (re-find card-utils/card-number-re
+                                                     (card-utils/text-content heading))
+                                     repair-fn (get-in repair-text [number language])
+                                     before (if (= (card-utils/text-content section-heading)
+                                                   "「≪1ドロー≫し、メモリー+1」に変更されるカード")
+                                              (-> (select/select
+                                                   (select/descendant
+                                                    (select/and (select/tag :span)
+                                                                (select/class "textR")
+                                                                (select/class "txtBold")))
+                                                   before)
+                                                  first
+                                                  card-utils/text-content
+                                                  (string/replace "。" "")
+                                                  (cond-> #__
+                                                    repair-fn repair-fn))
+                                              (cond-> (card-utils/text-content before)
+                                                repair-fn repair-fn))
+                                     after (if (= (card-utils/text-content section-heading)
+                                                  "「≪1ドロー≫し、メモリー+1」に変更されるカード")
+                                             (->> (string/split before #"、")
+                                                  reverse
+                                                  (string/join "、"))
+                                             (card-utils/text-content after))]
+                                 (assoc-in accl [number language]
+                                           {:before before
+                                            :after after})))
+                             {}))))
+         (apply merge))))
 
 (defmethod rules "en"
   [{:origin/keys [url language]}]
-  (->> (utils/http-get (str url "/rule/revised/"))
-       hickory/parse
-       hickory/as-hickory
-       (select/select (select/descendant (select/id "inner")
-                                         (select/class "changeList")))
-       first :content (filter map?)
-       (map (fn [el]
-              (select/select
-               (select/or (select/tag :th)
-                          (select/follow-adjacent
-                           (select/and (select/tag :td)
-                                       (select/class "changeBefore"))
-                           (select/tag :td))
-                          (select/follow-adjacent
-                           (select/and (select/tag :td)
-                                       (select/class "changeAfter"))
-                           (select/tag :td)))
-               el)))
-       (reduce (fn [accl [heading before after]]
-                 (let [number (re-find card-utils/card-number-re
-                                       (card-utils/text-content heading))
-                       repair-fn (get-in repair-text [number language])
-                       before (cond-> (card-utils/text-content before)
-                                repair-fn repair-fn)
-                       after (-> (card-utils/text-content after)
-                                 (string/replace "⟨Rule⟩ Name: Also treated as [Sistermon Ciel (Awakened)], and Trait: Has [Data] attribute."
-                                                 "⟨Rule⟩ Name: Also treated as [Sistermon Noir (Awakened)], and Trait: Has [Virus] attribute."))]
-                   (assoc-in accl [number language]
-                             {:before before
-                              :after after})))
-               {})))
+  (let [rule-title-re #"Cards with changes to ⟨Rule⟩"]
+    (->> (utils/http-get (str url "/rule/revised/"))
+         hickory/parse
+         hickory/as-hickory
+         (select/select
+          (select/descendant
+           (select/or
+            (select/and
+             (select/class "accordionTitle")
+             (select/has-child
+              (select/find-in-text rule-title-re)))
+            (select/descendant (select/follow-adjacent
+                                (select/and
+                                 (select/class "accordionTitle")
+                                 (select/has-child
+                                  (select/find-in-text rule-title-re)))
+                                select/element)
+                               (select/class "changelist")))))
+         (partition-all 2)
+         (map (fn [[section-heading changelist]]
+                (->> changelist
+                     :content
+                     (filter map?)
+                     (map (fn [el]
+                            (select/select
+                             (select/or (select/tag :th)
+                                        (select/follow-adjacent
+                                         (select/and (select/tag :td)
+                                                     (select/class "changeBefore"))
+                                         (select/tag :td))
+                                        (select/follow-adjacent
+                                         (select/and (select/tag :td)
+                                                     (select/class "changeAfter"))
+                                         (select/tag :td)))
+                             el)))
+                     (reduce (fn [accl [heading before after]]
+                               (let [number (re-find card-utils/card-number-re
+                                                     (card-utils/text-content heading))
+                                     repair-fn (get-in repair-text [number language])
+                                     before (cond-> (card-utils/text-content before)
+                                              repair-fn repair-fn)
+                                     after (-> (card-utils/text-content after)
+                                               (string/replace "⟨Rule⟩ Name: Also treated as [Sistermon Ciel (Awakened)], and Trait: Has [Data] attribute."
+                                                               "⟨Rule⟩ Name: Also treated as [Sistermon Noir (Awakened)], and Trait: Has [Virus] attribute."))]
+                                 (assoc-in accl [number language]
+                                           {:before before
+                                            :after after})))
+                             {}))))
+         (apply merge
+                {"BT6-087"
+                 {"en" {:before "gain 1 memory and trigger ＜Draw 1＞. (Draw 1 card from your deck.)"
+                        :after "trigger ＜Draw 1＞ (Draw 1 card from your deck) and gain 1 memory"}}
+                 "BT6-088"
+                 {"en" {:before "gain 1 memory and trigger ＜Draw 1＞. (Draw 1 card from your deck.)"
+                        :after "trigger ＜Draw 1＞ (Draw 1 card from your deck) and gain 1 memory"}}
+                 "BT8-028"
+                 {"en" {:before "gain 1 memory and trigger ＜Draw 1＞. (Draw 1 card from your deck.)"
+                        :after "trigger ＜Draw 1＞ (Draw 1 card from your deck) and gain 1 memory"}}
+                 "BT8-092"
+                 {"en" {:before "gain 1 memory and ＜Draw 1＞"
+                        :after "＜Draw 1＞ and gain 1 memory"}}
+                 "BT9-092"
+                 {"en" {:before "gain 1 memory and ＜Draw 1＞"
+                        :after "＜Draw 1＞ and gain 1 memory"}}
+                 "BT11-092"
+                 {"en" {:before "gain 1 memory and ＜Draw 1＞"
+                        :after "＜Draw 1＞ and gain 1 memory"}}
+                 "BT11-095"
+                 {"en" {:before "gain 1 memory and ＜Draw 1＞"
+                        :after "＜Draw 1＞ and gain 1 memory"}}
+                 "BT13-102"
+                 {"en" {:before "gain 1 memory and ＜Draw 1＞"
+                        :after "＜Draw 1＞ and gain 1 memory"}}
+                 "BT17-052"
+                 {"en" {:before "gain 1 memory and ＜Draw 1＞"
+                        :after "＜Draw 1＞ and gain 1 memory"}}
+                 "EX1-069"
+                 {"en" {:before "gain 2 memory and ＜Draw 1＞ (Draw 1 card from your deck)"
+                        :after "＜Draw 1＞ (Draw 1 card from your deck) and gain 2 memory"}}
+                 "EX2-017"
+                 {"en" {:before "Gain 2 memory and ＜Draw 1＞ (Draw 1 card from your deck)"
+                        :after "＜Draw 1＞ (Draw 1 card from your deck) and gain 2 memory"}}
+                 "EX2-045"
+                 {"en" {:before "gain 1 memory, ＜Draw 1＞ (Draw 1 card from your deck)"
+                        :after "＜Draw 1＞ (Draw 1 card from your deck), gain 1 memory"}}
+                 "RB1-032"
+                 {"en" {:before "gain 1 memory and <Draw 1>"
+                        :after "<Draw 1> and gain 1 memory"}}}))))
 
 (defmethod rules "zh-Hans"
   [{:origin/keys [language]}]
@@ -305,7 +415,47 @@
               :after "〈룰〉카드 넘버: 「P-058」로도 취급하며, 덱에 「P-058」과 합계 4장까지 넣을 수 있다."}}
    "RB1-007"
    {language {:before "〈룰〉카드 넘버: 「P-010」으로도 취급하며, 덱에 「P-010」과 합계 4장까지 넣을 수 있다."
-              :after "〈룰〉카드 넘버: 「P-010」으로도 취급하며, 덱에 「P-010」과 합계 4장까지 넣을 수 있다."}}})
+              :after "〈룰〉카드 넘버: 「P-010」으로도 취급하며, 덱에 「P-010」과 합계 4장까지 넣을 수 있다."}}
+
+   ;; Draw/Memory order
+   "BT11-092"
+   {"zh-Hans" {:before "并使内存值+1,且《抽1张卡》", :after "且《抽1张卡》,并使内存值+1"}},
+   "BT11-095"
+   {"zh-Hans" {:before "并使内存值+1,且《抽1张卡》", :after "且《抽1张卡》,并使内存值+1"}},
+   "BT13-102"
+   {"zh-Hans" {:before "则我方内存值+1,并《抽1张卡》", :after "并《抽1张卡》,则我方内存值+1"}},
+   "BT17-052"
+   {"zh-Hans" {:before "内存值+1,并《抽1张卡》", :after "并《抽1张卡》,内存值+1"}},
+   "BT6-087"
+   {"zh-Hans"
+    {:before "内存值+1,《抽1张卡》（从我方的卡组上方抽取1张卡牌）",
+     :after "《抽1张卡》（从我方的卡组上方抽取1张卡牌）,内存值+1"}},
+   "BT6-088"
+   {"zh-Hans"
+    {:before "内存值+1,《抽1张卡》（从我方的卡组上方抽取1张卡牌）",
+     :after "《抽1张卡》（从我方的卡组上方抽取1张卡牌）,内存值+1"}},
+   "BT8-028"
+   {"zh-Hans"
+    {:before "内存值+1,并《抽1张卡》（从我方的卡组上方抽取1张卡牌）",
+     :after "并《抽1张卡》（从我方的卡组上方抽取1张卡牌）,内存值+1"}},
+   "BT8-092"
+   {"zh-Hans" {:before "内存值+1,《抽1张卡》", :after "《抽1张卡》,内存值+1"}},
+   "BT9-092"
+   {"zh-Hans" {:before "并使内存值+1,且《抽1张卡》", :after "且《抽1张卡》,并使内存值+1"}},
+   "EX1-069"
+   {"zh-Hans"
+    {:before "并使内存值+2,且《抽1张卡》（从我方的卡组上方抽取1张卡牌）",
+     :after "且《抽1张卡》（从我方的卡组上方抽取1张卡牌）,并使内存值+2"}},
+   "EX2-017"
+   {"zh-Hans"
+    {:before "内存值+2,并《抽1张卡》（从我方的卡组上方抽取1张卡牌）",
+     :after "并《抽1张卡》（从我方的卡组上方抽取1张卡牌）,内存值+2"}},
+   "EX2-045"
+   {"zh-Hans"
+    {:before "并使内存值+1,《抽1张卡》（从我方的卡组上方抽取1张卡牌）",
+     :after "《抽1张卡》（从我方的卡组上方抽取1张卡牌）,并使内存值+1"}},
+   "RB1-032"
+   {"zh-Hans" {:before "并使内存值+1,且《抽1张卡》", :after "且《抽1张卡》,并使内存值+1"}}})
 
 (defn process-rules
   [cards]

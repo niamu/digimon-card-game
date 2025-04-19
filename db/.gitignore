@@ -5,7 +5,10 @@
 .lsp/
 target/
 resources/*dcgcv*
-resources/images/cards/
+resources/images/cards/en/
+resources/images/cards/ja/
+resources/images/cards/ko/
+resources/images/cards/zh-Hans/
 resources/images/icons/
 resources/images/releases/
 resources/db.edn

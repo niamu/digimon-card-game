@@ -5,7 +5,6 @@ use std::os::raw::c_char;
 use opencv::{
     self as cv,
     core::{Mat, Rect},
-    prelude::MatTraitConst,
 };
 
 use crate::utils;
@@ -15,13 +14,17 @@ pub struct Template {
     pub value: i32,
 }
 
-pub const BLOCK_ICONS: [Template; 21] = [
+pub const BLOCK_ICONS: [Template; 35] = [
     Template {
         path: "resources/images/templates/block-icons/01_a.png",
         value: 1,
     },
     Template {
         path: "resources/images/templates/block-icons/01_b.png",
+        value: 1,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/01_c.png",
         value: 1,
     },
     Template {
@@ -100,28 +103,65 @@ pub const BLOCK_ICONS: [Template; 21] = [
         path: "resources/images/templates/block-icons/04_e.png",
         value: 4,
     },
+    Template {
+        path: "resources/images/templates/block-icons/04_f.png",
+        value: 4,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/04_g.png",
+        value: 4,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/04_h.png",
+        value: 4,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/04_i.png",
+        value: 4,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/04_j.png",
+        value: 4,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/04_k.png",
+        value: 4,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/05_a.png",
+        value: 5,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/05_b.png",
+        value: 5,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/05_c.png",
+        value: 5,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/05_d.png",
+        value: 5,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/05_f.png",
+        value: 5,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/05_g.png",
+        value: 5,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/05_h.png",
+        value: 5,
+    },
 ];
 
 #[no_mangle]
 pub extern "C" fn block_icon(image_path: *const c_char) -> i32 {
     let image_path: &str = unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
     let mut image_mat = cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
-    if image_mat.cols() != 430 || image_mat.rows() != 600 {
-        let image_size = cv::core::Size::new(430, 600);
-        let mut reduced_image_mat = Mat::default();
-        cv::imgproc::resize(
-            &image_mat,
-            &mut reduced_image_mat,
-            image_size,
-            0.0,
-            0.0,
-            cv::imgproc::INTER_LINEAR,
-        )
-        .unwrap();
-        drop(image_mat);
-        image_mat = reduced_image_mat.clone();
-        drop(reduced_image_mat);
-    }
+    image_mat = utils::resize_card(&image_mat);
     let image_roi = Mat::roi(&image_mat, Rect::new(370, 460, 28, 140)).unwrap();
     let mut result: Vec<(f64, i32)> = Vec::default();
     for block_icon in BLOCK_ICONS {

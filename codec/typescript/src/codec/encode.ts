@@ -1,17 +1,20 @@
 import {
   VERSION,
   PREFIX,
+  Card,
   Deck,
   Language,
   char_to_base36,
   computeChecksum,
 } from "./common";
 
-async function bufferToBase64(buffer) {
+async function bufferToBase64(buffer: Uint8Array): Promise<string> {
   return await new Promise((resolve, reject) => {
     const reader = Object.assign(new FileReader(), {
-      onload: () =>
-        resolve(reader.result.substr(reader.result.indexOf(",") + 1)),
+      onload: () => {
+        const s = reader.result as string;
+        resolve(s.substring(s.indexOf(",") + 1));
+      },
       onerror: () => reject(reader.error),
     });
     reader.readAsDataURL(
@@ -20,7 +23,7 @@ async function bufferToBase64(buffer) {
   });
 }
 
-function bits_with_carry(value: u32, bits: number): number {
+function bits_with_carry(value: number, bits: number): number {
   const limit_bit = 1 << (bits - 1);
   let result = value & (limit_bit - 1);
   if (value >= limit_bit) {
@@ -41,13 +44,13 @@ function append_rest_to_deck_bytes(
   }
 }
 
-function group_cards(d: Array<Card>): Array<string, number, Array<Card>> {
+function group_cards(d: Array<Card>): Array<[string, number, Array<Card>]> {
   d.sort(
     (a, b) => a.number.localeCompare(b.number) || a.parallel_id - b.parallel_id,
   );
   let result = Object.groupBy(d, ({ number }) => {
     const [card_set, card_number] = number.split("-");
-    return [card_set, card_number.length];
+    return [card_set, card_number.length].toString();
   });
   return Object.entries(result).map(([k, v]) => {
     const [card_set, padding] = k.split(",");
@@ -55,10 +58,13 @@ function group_cards(d: Array<Card>): Array<string, number, Array<Card>> {
   });
 }
 
-export async function encode(deck: Deck, version: number = VERSION): string {
-  let deckBytes = new Array();
+export async function encode(
+  deck: Deck,
+  version: number = VERSION,
+): Promise<string> {
+  let deckBytes: number[] = new Array();
   const textEncoder = new TextEncoder();
-  const language_number = Language[deck.language] ?? 1;
+  const language_number = Language[Language[deck.language]] ?? 1;
 
   const version_and_digi_egg_count =
     3 <= version && version <= 4
@@ -99,14 +105,16 @@ export async function encode(deck: Deck, version: number = VERSION): string {
     // Encode card_set
     if (version == 0) {
       // Use 4 characters/bytes to store card sets.
-      deckBytes = deckBytes.concat(textEncoder.encode(card_set.padEnd(4, " ")));
+      deckBytes = deckBytes.concat(
+        Array.from(textEncoder.encode(card_set.padEnd(4, " "))),
+      );
     } else {
       // Encode each character of card-set in Base36.
       // Use 8th bit as continue bit. If 0, reached end.
       for (let i = 0; i < card_set.length; i++) {
         const c = card_set[i];
         let base36_char = char_to_base36.get(c);
-        if (!!card_set[parseInt(i) + 1]) {
+        if (!!card_set[parseInt(i.toString()) + 1]) {
           base36_char |= 0x80;
         }
         deckBytes.push(base36_char);

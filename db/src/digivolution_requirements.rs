@@ -41,7 +41,7 @@ struct Template {
     requirements_count: i32,
 }
 
-const DIGIVOLVE_TEMPLATES: [Template; 6] = [
+const DIGIVOLVE_TEMPLATES: [Template; 7] = [
     Template {
         path: "resources/images/templates/digivolution-requirements/v1_1.png",
         version: 1,
@@ -69,6 +69,11 @@ const DIGIVOLVE_TEMPLATES: [Template; 6] = [
     },
     Template {
         path: "resources/images/templates/digivolution-requirements/v2_2.png",
+        version: 2,
+        requirements_count: 2,
+    },
+    Template {
+        path: "resources/images/templates/digivolution-requirements/v2_3.png",
         version: 2,
         requirements_count: 2,
     },
@@ -231,7 +236,11 @@ fn requirements_v1(
     result
 }
 
-fn requirements_v2(image: &BoxedRef<'_, Mat>, base_coords: Coords, digivolve_template: Template) -> Vec<DigivolveRequirement> {
+fn requirements_v2(
+    image: &BoxedRef<'_, Mat>,
+    base_coords: Coords,
+    digivolve_template: Template,
+) -> Vec<DigivolveRequirement> {
     let mut result: Vec<DigivolveRequirement> = Vec::new();
     let mut colors: Vec<Color> = vec![
         Color {
@@ -404,22 +413,7 @@ fn requirements_v2(image: &BoxedRef<'_, Mat>, base_coords: Coords, digivolve_tem
 pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c_char {
     let image_path: &str = unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
     let mut image_mat = cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
-    if image_mat.cols() != 430 || image_mat.rows() != 600 {
-        let image_size = Size::new(430, 600);
-        let mut reduced_image_mat = Mat::default();
-        cv::imgproc::resize(
-            &image_mat,
-            &mut reduced_image_mat,
-            image_size,
-            0.0,
-            0.0,
-            cv::imgproc::INTER_LINEAR,
-        )
-        .unwrap();
-        drop(image_mat);
-        image_mat = reduced_image_mat.clone();
-        drop(reduced_image_mat);
-    }
+    image_mat = utils::resize_card(&image_mat);
     let image_mat_roi = image_mat.roi(Rect::new(0, 90, 90, 210)).unwrap();
     let mut result_vec: Vec<(MatchResult, Template)> = Vec::default();
     for digivolve_template in DIGIVOLVE_TEMPLATES {
@@ -427,7 +421,7 @@ pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c
             cv::imgcodecs::imread(digivolve_template.path, cv::imgcodecs::IMREAD_UNCHANGED)
                 .unwrap();
         let match_result = utils::template_match(&template, &image_mat_roi);
-        if match_result.accuracy > 0.85 && match_result.coords.y < 25 {
+        if match_result.accuracy > 0.8 && match_result.coords.y < 25 {
             result_vec.push((match_result, digivolve_template));
         }
     }

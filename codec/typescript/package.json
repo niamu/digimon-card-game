@@ -7,6 +7,6 @@
     "bookmarklet": "esbuild src/bookmarklet.ts --bundle --minify --outfile=dist/bookmarklet.js && sed -i '.bak' '1s/^/javascript:/' dist/bookmarklet.js && rm dist/bookmarklet.js.bak"
   },
   "devDependencies": {
-    "esbuild": "0.21.5"
+    "esbuild": "^0.25.2"
   }
 }

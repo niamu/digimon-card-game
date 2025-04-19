@@ -27,7 +27,9 @@
   (-> html-string
       (string/replace #"<(Draw.*?)[>＞]" "&lt;$1&gt;")
       (string/replace #"<(Blocker.*?)[>＞]" "&lt;$1&gt;")
+      (string/replace #"<(Blast Digivolve.*?)[>＞]" "&lt;$1&gt;")
       (string/replace #"<(Security Attack.*?)[>＞]" "&lt;$1&gt;")
+      (string/replace #"<(Overflow.*?)[>＞]" "&lt;$1&gt;")
       (string/replace #"<(Digi-Burst.*?)[>＞]" "&lt;$1&gt;")
       (string/replace #"<(Rush.*?)[>＞]" "&lt;$1&gt;")
       (string/replace #"<(Vortex.*?)[>＞]" "&lt;$1&gt;")
@@ -43,7 +45,7 @@
           (string/replace "Opponent's Turns" "Opponent's Turn")
           (string/replace #"(デジクロス\s?[\-\+][0-9]+):" "【$1】")
           (string/replace #"(DigiXros\s?[\-\+][0-9]+)\s?:" "<$1>")
-          (string/replace #"(数码合体\s?[\-\+][0-9]+)\s?:" "≪$1≫")
+          (string/replace #"(数码合体\s?[\-\+][0-9]+)\s?[:：]" "≪$1≫")
           (string/replace #"(디지크로스\s?[\-\+][0-9]+)\s?:" "≪$1≫")
           (string/replace #"^≪?ジョグレス:?(.*?ら0)≫?"
                           "【ジョグレス】$1")
@@ -73,6 +75,7 @@
           (string/replace "[턴에 1회]" "［턴에 1회］")
           (string/replace "[턴에 2회]" "［턴에 2회］")
           (string/replace "[트래시]" "［트래시］")
+          (string/replace "{セキュリティ}" "［セキュリティ］")
           (string/replace "[セキュリティ]" "［セキュリティ］")
           (string/replace "[ターンに1回]" "［ターンに1回］")
           (string/replace "[ターンに2回]" "［ターンに2回］")
@@ -81,5 +84,6 @@
           (string/replace "{手札}" "［手札］")
           (string/replace "[育成]" "［育成］")
           (string/replace "{Security}" "[Security]")
+          (string/replace #"【(DP\+[0-9]+)】" "$1")
           ;; https://world.digimoncard.com/rule/card_text/
           (string/replace "X-Antibody" "X Antibody")))

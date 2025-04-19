@@ -193,9 +193,6 @@
   "Card text fields that differ across languages"
   [cards]
   (->> cards
-       (filter (fn [{:card/keys [image language]}]
-                 (= language
-                    (:image/language image))))
        (group-by :card/number)
        (reduce-kv (fn [accl number card-group]
                     (let [expected-keys
@@ -267,9 +264,7 @@
 (defn- card-errata
   [cards]
   (->> cards
-       (filter (fn [{:card/keys [language image errata]}]
-                 (and errata
-                      (= language (:image/language image)))))
+       (filter :card/errata)
        (remove (fn [{{:errata/keys [correction]} :card/errata :as card}]
                  (let [corrections (-> correction
                                        string/lower-case
@@ -301,6 +296,104 @@
        (reduce (fn [accl {:card/keys [language number]}]
                  (update accl language (fnil conj #{}) number))
                {})))
+
+(defn- card-digivolution-requirements
+  [cards]
+  (->> cards
+       (filter :card/digivolution-requirements)
+       (remove (fn [{:card/keys [digivolution-requirements form level]}]
+                 (cond-> (every? :digivolve/cost digivolution-requirements)
+                   (and (string/includes? form "アプモン")
+                        (> level 3))
+                   (and (some :digivolve/form digivolution-requirements)))))
+       (reduce (fn [accl {:card/keys [number]}]
+                 (conj accl number))
+               #{})
+       sort))
+
+(defn- card-block-icons
+  [cards]
+  (let [expected-block-icons {"ST1" nil
+                              "ST2" nil
+                              "ST3" nil
+                              "BT1" nil
+                              "BT2" nil
+                              "BT3" nil
+                              "ST4" nil
+                              "ST5" nil
+                              "ST6" nil
+                              "BT4" nil
+                              "BT5" nil
+                              "ST7" 1
+                              "ST8" 1
+                              "BT6" 1
+                              "EX1" 1
+                              "BT7" 1
+                              "ST9" 1
+                              "ST10" 1
+                              "BT8" 1
+                              "EX2" 1
+                              "BT9" 1
+                              "ST12" 2
+                              "ST13" 2
+                              "BT10" 2
+                              "EX3" 2
+                              "BT11" 2
+                              "BT12" 2
+                              "ST14" 2
+                              "EX4" 2
+                              "RB1" 2
+                              "BT13" 2
+                              "ST15" 3
+                              "ST16" 3
+                              "BT14" 3
+                              "LM" 3
+                              "EX5" 3
+                              "BT15" 3
+                              "ST17" 3
+                              "BT16" 3
+                              "EX6" 3
+                              "BT17" 3
+                              "ST18" 4
+                              "ST19" 4
+                              "BT18" 4
+                              "EX7" 4
+                              "BT19" 4
+                              "EX8" 4
+                              "BT20" 4
+                              "BT21" 5
+                              "ST20" 5
+                              "ST21" 5}]
+    (->> cards
+         (reduce (fn [accl {:card/keys [id number block-icon]}]
+                   (update-in accl
+                              [(string/replace number #"\-[0-9]+" "")
+                               block-icon]
+                              (fnil conj #{})
+                              id))
+                 {})
+         (reduce-kv (fn [accl release kv]
+                      (let [result (reduce (fn [m b]
+                                             (dissoc m (if (= b 0)
+                                                         nil
+                                                         b)))
+                                           kv
+                                           (range (or (get expected-block-icons
+                                                           release 0)
+                                                      0)
+                                                  (->> expected-block-icons
+                                                       vals
+                                                       (map (fn [b]
+                                                              (if (nil? b)
+                                                                0
+                                                                b)))
+                                                       (apply max)
+                                                       inc)))]
+                        (cond-> accl
+                          (and (seq result)
+                               (not (contains? #{"P" "LM"} release)))
+                          (assoc release result))))
+                    (sorted-map)))))
 
 (defn card-assertions
   [cards]
@@ -345,6 +438,9 @@
   (assert (empty? (highlight-translations cards))
           (format "Card highlights do not match across languages:\n%s"
                   (highlight-translations cards)))
+  (assert (empty? (card-digivolution-requirements cards))
+          (format "Card digivolution requirements have issues:\n%s"
+                  (card-digivolution-requirements cards)))
   (assert (= (highlights cards)
              {"BT10-099"
               {"card/en_BT10-099_P0" {:timing 3, :keyword-effect 1},
@@ -393,6 +489,7 @@
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
                      "P-071"
+                     "BT21-023"
                      "BT4-041"
                      "EX1-073"},
               "ja" #{"BT6-084"
@@ -409,6 +506,12 @@
               "zh-Hans" #{"LM-020"}})
           (format "Card errata not accounted for:\n%s"
                   (card-errata cards)))
+  (assert (= (card-block-icons dcg.db.core/*cards)
+             {"BT12" {1 #{"card/en_BT12-001_P1"}},
+              "BT6" {nil #{"card/zh-Hans_BT6-018_P2"}},
+              "EX1" {nil #{"card/en_EX1-073_P2"}}})
+          (format "Card block icons may not be accurate:\n%s"
+                  (card-block-icons cards)))
   cards)
 
 (comment

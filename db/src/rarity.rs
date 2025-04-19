@@ -4,7 +4,6 @@ use std::os::raw::c_char;
 use opencv::{
     self as cv,
     core::{Mat, Rect},
-    prelude::MatTraitConst,
 };
 
 use crate::block_icon;
@@ -106,23 +105,7 @@ const RARITY_STAMPS: [Template; 21] = [
 pub extern "C" fn supplemental_rarity(image_path: *const c_char) -> i32 {
     let image_path: &str = unsafe { CStr::from_ptr(image_path).to_str().unwrap() };
     let mut image_mat = cv::imgcodecs::imread(image_path, cv::imgcodecs::IMREAD_COLOR).unwrap();
-    if image_mat.cols() != 430 || image_mat.rows() != 600 {
-        let image_size = cv::core::Size::new(430, 600);
-        let mut reduced_image_mat = Mat::default();
-        cv::imgproc::resize(
-            &image_mat,
-            &mut reduced_image_mat,
-            image_size,
-            0.0,
-            0.0,
-            cv::imgproc::INTER_LINEAR,
-        )
-        .unwrap();
-        drop(image_mat);
-        image_mat = reduced_image_mat.clone();
-        drop(reduced_image_mat);
-    }
-
+    image_mat = utils::resize_card(&image_mat);
     let mut image_roi = Mat::roi(&image_mat, Rect::new(370, 460, 28, 140)).unwrap();
     let mut block_icon_coords: Option<utils::Coords> = Option::None;
     let mut block_icon_accuracy: f64 = 0.0;
@@ -145,7 +128,7 @@ pub extern "C" fn supplemental_rarity(image_path: *const c_char) -> i32 {
                 let template =
                     cv::imgcodecs::imread(sp_stamp.path, cv::imgcodecs::IMREAD_UNCHANGED).unwrap();
                 let match_result = utils::template_match(&template, &image_roi);
-                if match_result.accuracy >= 0.92 && sp_stamp.value > result {
+                if match_result.accuracy >= 0.85 && sp_stamp.value > result {
                     result = sp_stamp.value;
                 }
             }

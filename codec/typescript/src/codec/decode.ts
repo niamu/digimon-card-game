@@ -123,7 +123,9 @@ function parseDeck(deckBytes: Uint8Array) {
       ? deck_name_length_byte >> 6
       : (version_and_digi_egg_count >> 3) & 0x01;
 
-  const computed_checksum: number = computeChecksum(total_card_bytes);
+  const computed_checksum: number = computeChecksum(
+    Array.from(total_card_bytes),
+  );
   if (checksum != computed_checksum) {
     throw Error("Deck checksum failed");
   }
@@ -204,7 +206,7 @@ function parseDeck(deckBytes: Uint8Array) {
     cards.slice(digi_egg_count, cards.length - sideboard_count),
     cards.slice(cards.length - sideboard_count),
     icon,
-    version >= 3 ? Language[language_number] : null,
+    version >= 3 ? Language[Language[language_number]] : null,
     deck_name,
   );
   if (version < 2 || deck?.sideboard?.length == 0) delete deck.sideboard;

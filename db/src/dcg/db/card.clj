@@ -678,6 +678,16 @@
                                    category (some->> (string/lower-case s)
                                                      (re-find #"(?i)(.*?)から\d+")
                                                      second)
+                                   form (when (and category
+                                                   (some (fn [f]
+                                                           (string/ends-with? category f))
+                                                         #{"並" "超" "極" "神"}))
+                                          (case (subs category
+                                                      (dec (count category)))
+                                            "並" :standard
+                                            "超" :super
+                                            "極" :ultimate
+                                            "神" :god))
                                    level (some->> (string/lower-case s)
                                                   (re-find #"(?i).*lv\.?(\d+).*")
                                                   second
@@ -688,18 +698,20 @@
                                                  parse-long)
                                    category
                                    (cond
-                                     (string/ends-with? category
-                                                        "テイマー") :tamer
-                                     level                          :digimon
-                                     ;; TODO: Need to support Appmon
-                                     :else                          nil)]
+                                     (and category
+                                          (string/ends-with?
+                                           category "テイマー")) :tamer
+                                     (or level
+                                         form)                   :digimon
+                                     :else                       nil)]
                                (cond-> {:digivolve/id (format "digivolve/%s_index%d"
                                                               number i)
                                         :digivolve/category category
                                         :digivolve/index i
                                         :digivolve/cost cost
                                         :digivolve/color colors}
-                                 level (assoc :digivolve/level level))))))
+                                 level (assoc :digivolve/level level)
+                                 form (assoc :digivolve/form form))))))
                      notes (->> dom-tree
                                 (select/select
                                  (select/descendant

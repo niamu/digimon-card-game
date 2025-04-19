@@ -112,7 +112,10 @@
      :db/cardinality :db.cardinality/many}
     {:db/ident :card/faqs
      :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/many}]
+     :db/cardinality :db.cardinality/many}
+    {:db/ident :card/bandai-tcg+
+     :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}]
    ;; Supplemental Rarity
    [{:db/ident :supplemental-rarity/id
      :db/valueType :db.type/string
@@ -150,6 +153,9 @@
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
     {:db/ident :digivolve/category
+     :db/valueType :db.type/keyword
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :digivolve/form
      :db/valueType :db.type/keyword
      :db/cardinality :db.cardinality/one}
     {:db/ident :digivolve/color

@@ -8,7 +8,7 @@ export enum Language {
   ko,
 }
 
-export function computeChecksum(b: Uint8Array): number {
+export function computeChecksum(b: number[]): number {
   return (
     b.reduce(function (accl, x) {
       return accl + x;
@@ -55,8 +55,8 @@ export class Card implements ICard {
     return card;
   }
 
-  static fromJSON(json) {
-    if (json instanceof String) json = JSON.parse(json);
+  static fromJSON(json: string | Object) {
+    if (json instanceof String) json = JSON.parse(json as string);
     return new Card(json["number"], json["parallel-id"] ?? 0, json["count"]);
   }
 }
@@ -66,7 +66,7 @@ interface IDeck {
   deck: Array<Card>;
   sideboard?: Array<Card>;
   icon?: string | null;
-  language?: string | null;
+  language?: Language | null;
   name: string;
 }
 
@@ -125,9 +125,9 @@ export class Deck implements IDeck {
     return deck;
   }
 
-  static fromJSON(json) {
+  static fromJSON(json: string | Object) {
     if (json instanceof String) {
-      json = JSON.parse(json);
+      json = JSON.parse(json as string);
     }
     let digi_eggs = json["digi-eggs"] ?? [];
     let deck = json["deck"] ?? [];

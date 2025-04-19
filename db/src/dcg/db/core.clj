@@ -6,6 +6,7 @@
    [clojure.string :as string]
    [dcg.db.card :as card]
    [dcg.db.card.assertion :as assertion]
+   [dcg.db.card.btcg-plus :as btcg-plus]
    [dcg.db.card.errata :as errata]
    [dcg.db.card.faq :as faq]
    [dcg.db.card.highlight :as highlight]
@@ -14,6 +15,8 @@
    [dcg.db.card.rule :as rule]
    [dcg.db.db :as db]
    [taoensso.timbre :as logging]))
+
+(logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
 
 (def origins
   [{:origin/url "https://digimoncard.com"
@@ -65,6 +68,7 @@
                                      {})
                              vals
                              card/image-processing)
+        bandai-tcg-plus-mapping (btcg-plus/mapping unrefined-cards)
         limitations (->> (pmap limitation/limitations origins)
                          doall
                          (apply merge-with merge))
@@ -92,7 +96,7 @@
                 {}
                 unrefined-cards)
         cards-with-errata-and-limitations
-        (pmap (fn [{:card/keys [number language] :as card}]
+        (pmap (fn [{:card/keys [id number language] :as card}]
                 (let [card-limitations (or (get-in limitations [number language])
                                            (get-in limitations [number :default]))
                       {:errata/keys [error correction]
@@ -149,7 +153,10 @@
                                      c)
                           (assoc :card/errata errata-for-card)))
                     (seq card-limitations)
-                    (assoc :card/limitations card-limitations))))
+                    (assoc :card/limitations card-limitations)
+                    (get bandai-tcg-plus-mapping id)
+                    (assoc :card/bandai-tcg+
+                           (get bandai-tcg-plus-mapping id)))))
               unrefined-cards)
         rule-revisions (->> (pmap rule/rules origins)
                             doall
@@ -165,13 +172,18 @@
                         rule-rev
                         (update :card/effect
                                 (fn [s]
-                                  (-> s
-                                      (string/replace #"\s*\(Rule\)" "⟨Rule⟩")
-                                      (string/replace "<规则>" "\u3008规则\u3009")
-                                      (string/replace after "")
-                                      (string/replace before "")
-                                      string/trim
-                                      (str "\n" after))))
+                                  (if (or (string/includes? after "〈ルール〉")
+                                          (string/includes? after "⟨Rule⟩")
+                                          (string/includes? after "\u3008规则\u3009")
+                                          (string/includes? after "〈룰〉"))
+                                    (-> s
+                                        (string/replace #"\s*\(Rule\)" "⟨Rule⟩")
+                                        (string/replace "<规则>" "\u3008规则\u3009")
+                                        (string/replace after "")
+                                        (string/replace before "")
+                                        string/trim
+                                        (str "\n" after))
+                                    (string/replace s before after))))
                         (seq card-faqs)
                         (assoc :card/faqs
                                (map-indexed (fn [idx faq]
@@ -202,21 +214,19 @@
 (defn -main
   [& _args]
   (logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
-  (logging/info "DB Ingestion started...")
+  (logging/info "DB ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
        db/save-to-file!
        db/import!)
   (generate-phash-db!)
-  (logging/info "DB Ingestion completed."))
+  (logging/info "DB ingestion completed."))
 
 (comment
-  (logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
-
   (db/import-from-file!)
 
   (def *cards
-    (clojure.edn/read {:readers {'uri (fn [] (java.net.URI. ^String %))}}
+    (clojure.edn/read {:readers {'uri (fn [s] (java.net.URI. ^String s))}}
                       (java.io.PushbackReader.
                        (io/reader
                         (io/resource "db.edn")))))

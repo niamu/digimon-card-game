@@ -556,6 +556,9 @@
          (update card :card/effect
                  (fn [s]
                    (string/replace s "activate“" "activate”"))))}
+ "BT3-111"
+ {"ja" (fn [card]
+         (assoc card :card/dp 12000))}
  "BT3-112"
  {"ja" (fn [card]
          (assoc card :card/dp 15000))
@@ -2226,7 +2229,9 @@
  {"ja" (fn [card]
          (assoc card :card/type "ジェネラル/クロスハート"))}
  "BT10-092"
- {"zh-Hans" (fn [card]
+ {"en" (fn [card]
+         (assoc card :card/type "General/Twilight"))
+  "zh-Hans" (fn [card]
               (assoc card :card/type "指挥官/黑军"))}
  "BT10-093"
  {"ko" (fn [card]
@@ -3141,7 +3146,13 @@
                         (-> s
                             (string/replace "≪数码合体-1≫“高吼兽”×“弩炮兽”；\n\n"
                                             "")
-                            (str "\n≪数码合体-1≫“高吼兽”×“弩炮兽”")))))}
+                            (str "\n≪数码合体-1≫“高吼兽”×“弩炮兽”")))))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   " ≪디지크로스 -1≫"
+                                   "\n≪디지크로스 -1≫"))))}
  "BT15-024"
  {"en" (fn [card]
          (update card
@@ -3161,7 +3172,13 @@
                                             "\n\n《溢出《-3》》（若从区域或卡牌的下方,被送到除此以外的场所的场合,则内存值-3）"
                                             "")))
                   (assoc :card/inherited-effect
-                         "《溢出《-3》》（若从战斗区或卡牌的下方,被送到除此以外的场所的场合,则内存值-3）")))}
+                         "《溢出《-3》》（若从战斗区或卡牌的下方,被送到除此以外的场所的场合,则内存值-3）")))
+  "ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   "[턴에 1회}"
+                                   "［턴에 1회］"))))}
  "BT15-060"
  {"en" (fn [card]
          (update card
@@ -3221,7 +3238,7 @@
                 (update :card/effect
                         (fn [s]
                           (-> s
-                              (string/replace "≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                              (string/replace (re-pattern "\\s*【?≪数码合体-3≫“火神兽”×“炎龙兽”\\s*当将要登场时.可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用[；】]?\\s*")
                                               "")
                               (str "\n≪数码合体-3≫“火神兽”×“炎龙兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "BT17-028"
@@ -3231,7 +3248,7 @@
                 (update :card/effect
                         (fn [s]
                           (-> s
-                              (string/replace "≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用；\n\n"
+                              (string/replace (re-pattern "\\s*【?≪数码合体-3≫“野狼兽”×“加鲁姆兽”\\s*当将要登场时.可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用[；】]?\\s*")
                                               "")
                               (str "\n≪数码合体-3≫“野狼兽”×“加鲁姆兽”\n当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))))))}
  "BT17-041"
@@ -3413,40 +3430,40 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -3457,9 +3474,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                         :card/form
-                         :card/dp
-                         :card/level))}
+                          :card/form
+                          :card/dp
+                          :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3476,6 +3493,13 @@
            (not inherited-effect)
            (assoc :card/inherited-effect
                   "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）")))}
+ "BT21-066"
+ {"zh-Hans" (fn [card]
+              (update card :card/effect
+                      (fn [s]
+                        (-> s
+                            (string/replace "【≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌】"
+                                            "≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
  "EX1-005"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -4177,6 +4201,15 @@
            (not security-effect)
            (-> (assoc :card/security-effect
                       "【セキュリティ】自分のトラッシュから、紫のDP2000以下のデジモンカード1枚をコストを支払わずに登場できる。 その後、このカードを手札に加える。"))))}
+ "LM-043"
+ {"en" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/LM-043_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id "color/LM-043_index1"
+                  :color/index 1
+                  :color/color :purple}]))}
  "LM-044"
  {"zh-Hans" (fn [card]
               (-> card
@@ -4510,6 +4543,186 @@
                         (str s
                              "\n"
                              "≪数码合体-2≫ 名称中包含 “巨龙兽”/“烂泥兽” 的Lv.4 x 拥有 “玩偶型” 特征的Lv.4"))))}
+ "ST20-02"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 0)))
+                        dr))))}
+ "ST20-03"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 2)))
+                        dr))))}
+ "ST20-04"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 3)))
+                        dr))))}
+ "ST20-05"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 2)))
+                        dr))))}
+ "ST20-06"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 3)))
+                        dr))))}
+ "ST20-07"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 0)))
+                        dr))))}
+ "ST20-08"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 2)))
+                        dr))))}
+ "ST20-09"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 3)))
+                        dr))))}
+ "ST20-10"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 0)))
+                        dr))))}
+ "ST20-11"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 4)))
+                        dr))))}
+ "ST21-02"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 0)))
+                        dr))))}
+ "ST21-03"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 2)))
+                        dr))))}
+ "ST21-04"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 3)))
+                        dr))))}
+ "ST21-05"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 2)))
+                        dr))))}
+ "ST21-06"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 3)))
+                        dr))))}
+ "ST21-07"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 0)))
+                        dr))))}
+ "ST21-08"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 2)))
+                        dr))))}
+ "ST21-09"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 3)))
+                        dr))))}
+ "ST21-10"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 0)))
+                        dr))))}
+ "ST21-11"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 4)))
+                        dr))))}
  "PR-004"
  {"ko" (fn [card]
          (assoc card :card/number "P-004"))}
@@ -4984,4 +5197,40 @@
               (assoc card :card/form "混合体"))}
  "P-155"
  {"zh-Hans" (fn [card]
-              (assoc card :card/type "装置"))}}
+              (assoc card :card/type "装置"))}
+ "P-176"
+ {"ja" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-176_index0"
+                  :color/index 0
+                  :color/color :black}]))}
+ "P-177"
+ {"ja" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-177_index0"
+                  :color/index 0
+                  :color/color :purple}]))}
+ "P-179"
+ {"ja" (fn [card]
+         (update card :card/digivolution-requirements
+                 (fn [dr]
+                   (map (fn [{:digivolve/keys [cost] :as d}]
+                          (cond-> d
+                            (nil? cost)
+                            (assoc :digivolve/cost 4)))
+                        dr))))}
+ "P-180"
+ {"ja" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-180_index0"
+                  :color/index 0
+                  :color/color :red}]))}
+ "P-181"
+ {"ja" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-181_index0"
+                  :color/index 0
+                  :color/color :green}
+                 {:color/id "color/P-181_index1"
+                  :color/index 1
+                  :color/color :black}]))}}
