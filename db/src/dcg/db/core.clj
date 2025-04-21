@@ -55,7 +55,8 @@
                             (filter :release/cardlist-uri)
                             (mapcat card/cards-in-release)
                             (remove nil?)
-                            (card/post-processing-per-origin releases)))
+                            (card/post-processing-per-origin releases)
+                            card/consolidate-duplicate-images))
                      releases-per-origin))
         unrefined-cards (->> cards-per-origin
                              (reduce (fn [accl cards-in-origin]

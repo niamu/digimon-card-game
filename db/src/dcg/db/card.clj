@@ -2,6 +2,7 @@
   (:require
    [clojure.data.json :as json]
    [clojure.java.io :as io]
+   [clojure.set :as set]
    [clojure.string :as string]
    [dcg.db.card.cv :as cv]
    [dcg.db.card.repair :as repair]
@@ -153,6 +154,67 @@
                                            releases-in-notes)))]
                      (conj accl card)))
                  []))))
+
+(defn- reindex-parallel-ids
+  [cards]
+  (map-indexed (fn [idx {:card/keys [language number] :as card}]
+                 (-> card
+                     (assoc :card/id (format "card/%s_%s_P%s"
+                                             language
+                                             number
+                                             (str idx)))
+                     (assoc :card/parallel-id idx)
+                     (assoc-in [:card/image :image/id]
+                               (format
+                                "/images/cards/%s/%s.png"
+                                language
+                                (cond-> number
+                                  (not= idx 0)
+                                  (str "_P" idx))))
+                     (assoc-in [:card/image :image/path]
+                               (format
+                                "/images/cards/%s/%s.png"
+                                language
+                                (cond-> number
+                                  (not= idx 0)
+                                  (str "_P" idx))))))
+               cards))
+
+(defn consolidate-duplicate-images
+  [cards]
+  (->> cards
+       (sort-by :card/id)
+       (partition-by :card/number)
+       (mapcat (fn [cards-for-number]
+                 (let [sources (map (comp :image/source
+                                          :card/image)
+                                    cards-for-number)]
+                   (if (= (count sources)
+                          (count (set sources)))
+                     cards-for-number
+                     (->> cards-for-number
+                          (group-by (comp :image/source
+                                          :card/image))
+                          vals
+                          (mapcat
+                           (fn [cards-per-source]
+                             (if (> (count cards-per-source) 1)
+                               [(reduce
+                                 (fn [accl {:card/keys [notes releases]}]
+                                   (-> accl
+                                       (update :card/notes
+                                               (fnil #(str % "\n"
+                                                           notes) ""))
+                                       (update :card/releases
+                                               (fn [existing-releases]
+                                                 (->> (set existing-releases)
+                                                      (set/union (set releases))
+                                                      (sort-by :release/id)
+                                                      (into []))))))
+                                 (first cards-per-source)
+                                 (rest cards-per-source))]
+                               cards-per-source)))
+                          reindex-parallel-ids)))))))
 
 (defn image-processing
   [cards]

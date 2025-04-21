@@ -160,7 +160,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                              :highlight/keys [index]}]
+                               :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -506,7 +506,7 @@
               "zh-Hans" #{"LM-020"}})
           (format "Card errata not accounted for:\n%s"
                   (card-errata cards)))
-  (assert (= (card-block-icons dcg.db.core/*cards)
+  (assert (= (card-block-icons cards)
              {"BT12" {1 #{"card/en_BT12-001_P1"}},
               "BT6" {nil #{"card/zh-Hans_BT6-018_P2"}},
               "EX1" {nil #{"card/en_EX1-073_P2"}}})
