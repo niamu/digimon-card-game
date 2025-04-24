@@ -9,10 +9,11 @@ resources/images/cards/en/
 resources/images/cards/ja/
 resources/images/cards/ko/
 resources/images/cards/zh-Hans/
-resources/images/cards/btcg/
-resources/images/cards/wiki/
 resources/images/icons/
 resources/images/releases/
+resources/images/btcg-cards/
+resources/images/wiki-cards/
+resources/public/images/cards/
 resources/db.edn
 resources/phash_db.json
 src/main.rs

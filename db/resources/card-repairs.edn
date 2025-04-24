@@ -223,8 +223,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (= source (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -3426,44 +3426,44 @@
          (update-in card [:card/image :image/source]
                     (fn [source]
                       (if (string/ends-with? source "BT19-077_P1.png")
-                        (.toURI (clojure.java.io/resource "images/cards/malformed/ja/BT19-077_P1.png"))
+                        (.toURI (clojure.java.io/resource "images/malformed-cards/ja/BT19-077_P1.png"))
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -3474,9 +3474,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                          :card/form
-                          :card/dp
-                          :card/level))}
+                         :card/form
+                         :card/dp
+                         :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3946,7 +3946,7 @@
               (update-in card [:card/image :image/source]
                          (fn [source]
                            (if (string/ends-with? source "EX5-034.png")
-                             (.toURI (clojure.java.io/resource "images/cards/malformed/zh-Hans/EX5-034.png"))
+                             (.toURI (clojure.java.io/resource "images/malformed-cards/zh-Hans/EX5-034.png"))
                              source))))}
  "EX5-053"
  {"ko" (fn [card]
@@ -4477,7 +4477,7 @@
            (= source
               (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/ST15-02_P1.png"))
            (assoc-in [:card/image :image/source]
-                     (.toURI (clojure.java.io/resource "images/cards/malformed/en/ST15-02_P1.png")))))}
+                     (.toURI (clojure.java.io/resource "images/malformed-cards/en/ST15-02_P1.png")))))}
  "ST15-08"
  {"en" (fn [card]
          (dissoc card :card/security-effect))}

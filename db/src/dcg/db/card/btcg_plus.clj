@@ -57,7 +57,7 @@
   [{:card/keys [number language] {:image/keys [source]} :card/image :as card}]
   (let [ext (string/lower-case (re-find #"\.\S{3,4}$" source))
         filename (str (sha1 source) ext)
-        path (format "resources/images/cards/btcg/%s/%s/%s"
+        path (format "resources/images/btcg-cards/%s/%s/%s"
                      language number filename)]
     (when-not (.exists (io/file path))
       (when-let [image-bytes (some-> source
@@ -182,9 +182,9 @@
                                        bandai-tcg-id
                                        (->> tcg-cards
                                             (map (fn [{{image-hash :image/hash
-                                                       :image/keys [path]}
-                                                      :card/image
-                                                      :as c}]
+                                                        :image/keys [path]}
+                                                       :card/image
+                                                       :as c}]
                                                    [(.bitCount
                                                      (.xor hash image-hash))
                                                     (get c :card/bandai-tcg+)]))
@@ -244,7 +244,7 @@
                                           (let [hash (cv/image-hash card)]
                                             (if (nil? (->> tcg-cards
                                                            (map (fn [{{image-hash :image/hash
-                                                                      :image/keys [path]} :card/image}]
+                                                                       :image/keys [path]} :card/image}]
                                                                   (.bitCount (.xor hash image-hash))))
                                                            (remove (fn [distance]
                                                                      (> distance 11)))
