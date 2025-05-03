@@ -10,10 +10,7 @@
    [dcg.api.resources.index :refer [index-resource]]
    [dcg.api.resources.language :refer [language-resource]]
    [dcg.api.resources.release :refer [release-resource]]
-   [dcg.db.db :as db]
-   [taoensso.timbre :as logging]))
-
-(logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
+   [dcg.db.db :as db]))
 
 (def routes
   [["/images/cards/*"

@@ -16,8 +16,6 @@
    [dcg.db.db :as db]
    [taoensso.timbre :as logging]))
 
-(logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
-
 (def origins
   [{:origin/url "https://digimoncard.com"
     :origin/language "ja"}
