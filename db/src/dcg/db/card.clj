@@ -7,6 +7,7 @@
    [dcg.db.card.cv :as cv]
    [dcg.db.card.repair :as repair]
    [dcg.db.card.utils :as card-utils]
+   [dcg.db.db :as db]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
@@ -58,7 +59,14 @@
                       accl)))
                 {}
                 releases)
-        release-set-ids (set (keys releases-by-set))]
+        release-set-ids (set (keys releases-by-set))
+        source->parallel-id (->> (db/q '{:find [?source ?p]
+                                         :where [[?c :card/image ?i]
+                                                 [?i :image/source ?source]
+                                                 [?c :card/parallel-id ?p]]})
+                                 (reduce (fn [accl [uri p]]
+                                           (assoc accl uri p))
+                                         {}))]
     (->> cards
          (sort-by (juxt (fn [{:card/keys [number]}]
                           (string/replace number #"\-.*" ""))
@@ -68,10 +76,11 @@
                                parse-long))
                         (fn [{:card/keys [parallel-id image]}]
                           (if (nil? parallel-id)
-                            (-> image
-                                :image/source
-                                utils/last-modified
-                                inst-ms)
+                            (or (get source->parallel-id
+                                     (:image/source image))
+                                (-> (:image/source image)
+                                    utils/last-modified
+                                    inst-ms))
                             parallel-id))))
          (reduce (fn [accl {:card/keys [number language parallel-id
                                        notes release] :as card}]

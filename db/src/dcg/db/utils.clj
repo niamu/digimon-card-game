@@ -13,11 +13,15 @@
   (conn-mgr/make-reusable-conn-manager {:timeout 30
                                         :default-per-route 10}))
 
+(def ^:private user-agent
+  "Mozilla/5.0 (Windows NT 6.1;) Gecko/20100101 Firefox/13.0.1")
+
 (defn as-bytes
   [url options]
   (let [response (client/get url
                              (merge options
                                     {:as :byte-array
+                                     :headers {"User-Agent" user-agent}
                                      :cookie-policy :standard
                                      :retry-handler (fn [_ try-count _]
                                                       (if (> try-count 2)
@@ -37,6 +41,7 @@
                                     url form-params (pr-str options)))
              (-> (client/post url
                               (assoc options
+                                     :headers {"User-Agent" user-agent}
                                      :cookie-policy :standard
                                      :throw-exceptions false
                                      :connection-manager connection-manager
@@ -64,6 +69,7 @@
              (logging/debug (format "Downloading: %s %s" url (pr-str options)))
              (-> (client/get url
                              (assoc options
+                                    :headers {"User-Agent" user-agent}
                                     :cookie-policy :standard
                                     :throw-exceptions false
                                     :connection-manager connection-manager
@@ -109,7 +115,8 @@
              (logging/debug (format "Requesting HEAD: %s %s" url (pr-str options)))
              (-> (client/head url
                               (merge options
-                                     {:cookie-policy :standard
+                                     {:headers {"User-Agent" user-agent}
+                                      :cookie-policy :standard
                                       :retry-handler (fn [_ try-count _]
                                                        (if (> try-count 2)
                                                          (logging/error

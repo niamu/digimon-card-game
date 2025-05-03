@@ -312,13 +312,14 @@
                       r)))
              ;; NOTE: At some point the Korean site removed these products
              ;; Query to older database to recreate the missing products
-             #_(->> (dcg.db.db/q '{:find [[(pull ?r [:release/name
-                                                     :release/genre
-                                                     :release/date
-                                                     :release/image-uri
-                                                     :release/product-uri]) ...]]
+             #_(->> (dcg.db.db/q '{:find [(pull ?r [:release/name
+                                                    :release/genre
+                                                    :release/date
+                                                    :release/image-uri
+                                                    :release/product-uri])]
                                    :where [[?r :release/language "ko"]
                                            [?r :release/image-uri _]]})
+                    (apply concat)
                     (sort-by :release/date)
                     (drop-last 15))
              (concat [{:release/name "스타트 덱 가이아 레드 [STK-01]",

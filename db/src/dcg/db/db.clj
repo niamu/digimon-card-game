@@ -2,10 +2,17 @@
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
-   [datomic.api :as d])
+   [datomic.client.api :as d])
   (:import
    [java.io PushbackReader Writer]
    [java.net URI]))
+
+(def config
+  {:server-type :datomic-local
+   :storage-dir (.getPath (io/resource "db"))
+   :system "dcg"})
+
+(def client (d/client config))
 
 (defmethod print-method URI [^URI x ^Writer w]
   (doto w
@@ -292,30 +299,16 @@
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}]))
 
-(def db-uri "datomic:mem://digimoncard")
-
 (defonce conn
-  (do (d/create-database db-uri)
-      (let [conn (d/connect db-uri)]
-        @(d/transact conn schema)
+  (do (d/create-database client {:db-name "cards"})
+      (let [conn (d/connect client {:db-name "cards"})]
+        (d/transact conn {:tx-data schema})
         conn)))
 
 (defn import!
-  [tx]
-  (d/transact conn tx))
-
-(defn import-from-file!
-  []
-  (->> (edn/read {:readers {'uri #(URI. ^String %)}}
-                 (PushbackReader.
-                  (io/reader
-                   (io/resource "db.edn"))))
-       import!))
-
-(defn save-to-file!
-  [tx]
-  (spit (io/file "resources/db.edn") tx)
-  tx)
+  [datoms]
+  (doseq [batch (partition-all 100 datoms)]
+    (d/transact conn {:tx-data batch})))
 
 (defn q
   [query & inputs]
@@ -323,4 +316,4 @@
     (apply d/q query inputs)))
 
 (comment
-  (d/delete-database db-uri))
+  (d/delete-database client {:db-name "cards"}))

@@ -214,31 +214,20 @@
 
 (defn -main
   [& _args]
-  (logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
   (logging/info "DB ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
-       db/save-to-file!
        db/import!)
   (generate-phash-db!)
   (logging/info "DB ingestion completed."))
 
 (comment
-  (db/import-from-file!)
-
-  (def *cards
-    (clojure.edn/read {:readers {'uri (fn [s] (java.net.URI. ^String s))}}
-                      (java.io.PushbackReader.
-                       (io/reader
-                        (io/resource "db.edn")))))
-
   (set! *print-namespace-maps* false)
 
   (def *cards (time (process-cards)))
 
   (->> *cards
        assertion/card-assertions
-       db/save-to-file!
        db/import!)
 
   )
