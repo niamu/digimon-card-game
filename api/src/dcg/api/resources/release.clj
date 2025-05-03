@@ -13,37 +13,39 @@
      :available-media-types ["application/vnd.api+json"]
      :exists? (fn [{{{:keys [language release]} :path-params} :request}]
                 (boolean
-                 (db/q '{:find [?r .]
-                         :in [$ ?language ?release]
-                         :where [[?c :card/releases ?r]
-                                 [?c :card/language ?l]
-                                 [?c :card/image ?i]
-                                 [?c :card/number ?number]
-                                 [?i :image/language ?l]
-                                 [?r :release/language ?language]
-                                 [?r :release/name ?release-name]
-                                 [(.contains ?release-name ?release)]]}
-                       language
-                       release)))
+                 (->> (db/q '{:find [?r]
+                              :in [$ ?language ?release]
+                              :where [[?c :card/releases ?r]
+                                      [?c :card/language ?l]
+                                      [?c :card/image ?i]
+                                      [?c :card/number ?number]
+                                      [?i :image/language ?l]
+                                      [?r :release/language ?language]
+                                      [?r :release/name ?release-name]
+                                      [(.contains ?release-name ?release)]]}
+                            language
+                            release)
+                      ffirst)))
      :handle-ok
      (fn [{{{:keys [language release]} :path-params} :request
           :as context}]
        {:data {:id (str language "_" release)
                :type "release"
                :attributes
-               (db/q '{:find [(pull ?r [:release/name
-                                        :release/date]) .]
-                       :in [$ ?language ?release]
-                       :where [[?c :card/releases ?r]
-                               [?c :card/language ?l]
-                               [?c :card/image ?i]
-                               [?c :card/number ?number]
-                               [?i :image/language ?l]
-                               [?r :release/language ?language]
-                               [?r :release/name ?release-name]
-                               [(.contains ?release-name ?release)]]}
-                     language
-                     release)
+               (->> (db/q '{:find [(pull ?r [:release/name
+                                             :release/date])]
+                            :in [$ ?language ?release]
+                            :where [[?c :card/releases ?r]
+                                    [?c :card/language ?l]
+                                    [?c :card/image ?i]
+                                    [?c :card/number ?number]
+                                    [?i :image/language ?l]
+                                    [?r :release/language ?language]
+                                    [?r :release/name ?release-name]
+                                    [(.contains ?release-name ?release)]]}
+                          language
+                          release)
+                    ffirst)
                :relationships
                {:cards
                 {:data

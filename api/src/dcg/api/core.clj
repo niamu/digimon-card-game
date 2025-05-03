@@ -10,7 +10,10 @@
    [dcg.api.resources.index :refer [index-resource]]
    [dcg.api.resources.language :refer [language-resource]]
    [dcg.api.resources.release :refer [release-resource]]
-   [dcg.db.db :as db]))
+   [dcg.db.db :as db]
+   [taoensso.timbre :as logging]))
+
+(logging/merge-config! {:min-level [["dcg.*" :debug] ["*" :error]]})
 
 (def routes
   [["/images/cards/*"
@@ -73,10 +76,12 @@
 
 (defn -main
   [& args]
-  (db/import-from-file!)
   (let [port 3000]
     (jetty/run-jetty #'handler
                      {:join? false
                       :ssl? false
                       :port port})
     (println (format "API started on port %d" port))))
+
+(comment
+  (-main))

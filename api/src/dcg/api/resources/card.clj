@@ -14,59 +14,61 @@
                                 (subs 1)
                                 parse-long)
                         0)
-        card (some-> (db/q '{:find [(pull ?c [:card/name
-                                              :card/number
-                                              :card/parallel-id
-                                              :card/level
-                                              :card/effect
-                                              :card/inherited-effect
-                                              :card/security-effect
-                                              :card/dp
-                                              :card/rarity
-                                              {:card/releases
-                                               [:release/id
-                                                :release/name
-                                                :release/date
-                                                :release/genre]}
-                                              :card/block-icon
-                                              :card/category
-                                              :card/attribute
-                                              :card/form
-                                              :card/type
-                                              {:card/color [:color/color]}
-                                              {:card/digivolution-requirements
-                                               [:digivolve/color
-                                                :digivolve/level
-                                                :digivolve/cost]}
-                                              {:card/image [:image/path]}
-                                              :card/notes]) .]
-                             :in [$ ?language ?number ?parallel-id]
-                             :where [[?c :card/language ?language]
-                                     [?c :card/image ?i]
-                                     [?c :card/number ?number]
-                                     [?c :card/parallel-id ?parallel-id]
-                                     [?i :image/language ?language]]}
-                           language
-                           number
-                           parallel-id)
+        card (some-> (->> (db/q '{:find [(pull ?c [:card/name
+                                                   :card/number
+                                                   :card/parallel-id
+                                                   :card/level
+                                                   :card/effect
+                                                   :card/inherited-effect
+                                                   :card/security-effect
+                                                   :card/dp
+                                                   :card/rarity
+                                                   {:card/releases
+                                                    [:release/id
+                                                     :release/name
+                                                     :release/date
+                                                     :release/genre]}
+                                                   :card/block-icon
+                                                   :card/category
+                                                   :card/attribute
+                                                   :card/form
+                                                   :card/type
+                                                   {:card/color [:color/color]}
+                                                   {:card/digivolution-requirements
+                                                    [:digivolve/color
+                                                     :digivolve/level
+                                                     :digivolve/cost]}
+                                                   {:card/image [:image/path]}
+                                                   :card/notes])]
+                                  :in [$ ?language ?number ?parallel-id]
+                                  :where [[?c :card/language ?language]
+                                          [?c :card/image ?i]
+                                          [?c :card/number ?number]
+                                          [?c :card/parallel-id ?parallel-id]
+                                          [?i :image/language ?language]]}
+                                language
+                                number
+                                parallel-id)
+                          ffirst)
                      (update :card/color
                              #(map :color/color %))
                      (update :card/image
                              (fn [{path :image/path}]
                                (str (utils/base-url {:request request})
                                     path))))
-        alt-arts (db/q '{:find [[(pull ?c [:card/notes
-                                           :card/number
-                                           :card/parallel-id]) ...]]
-                         :in [$ ?language ?number ?parallel-id]
-                         :where [[?c :card/language ?language]
-                                 [?c :card/image ?i]
-                                 [?c :card/number ?number]
-                                 (not [?c :card/parallel-id ?parallel-id])
-                                 [?i :image/language ?language]]}
-                       language
-                       number
-                       parallel-id)]
+        alt-arts (->> (db/q '{:find [(pull ?c [:card/notes
+                                               :card/number
+                                               :card/parallel-id])]
+                              :in [$ ?language ?number ?parallel-id]
+                              :where [[?c :card/language ?language]
+                                      [?c :card/image ?i]
+                                      [?c :card/number ?number]
+                                      (not [?c :card/parallel-id ?parallel-id])
+                                      [?i :image/language ?language]]}
+                            language
+                            number
+                            parallel-id)
+                      (apply concat))]
     ((liberator/resource
       {:allowed-methods [:get]
        :available-media-types ["application/vnd.api+json"]
@@ -94,15 +96,17 @@
                                                (str "_P" parallel-id)))
                                     :links
                                     {:related
-                                     (cond-> {:href (format "%s/%s"
-                                                            (utils/base-url context)
-                                                            (str language
-                                                                 "/"
-                                                                 "cards"
-                                                                 "/"
-                                                                 number
-                                                                 (when-not (zero? parallel-id)
-                                                                   (str "_P" parallel-id))))}
+                                     (cond-> {:href
+                                              (format
+                                               "%s/%s"
+                                               (utils/base-url context)
+                                               (str language
+                                                    "/"
+                                                    "cards"
+                                                    "/"
+                                                    number
+                                                    (when-not (zero? parallel-id)
+                                                      (str "_P" parallel-id))))}
                                        notes
                                        (assoc :meta
                                               {:notes notes}))}})))})

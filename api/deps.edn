@@ -1,6 +1,7 @@
 {:paths ["src"]
  :deps {org.clojure/clojure                   {:mvn/version "1.11.1"}
-        com.taoensso/timbre                   {:mvn/version "5.2.1"}
+        com.taoensso/timbre                   {:mvn/version "6.6.1"}
+        com.taoensso/timbre-slf4j             {:mvn/version "6.6.1"}
         liberator/liberator                   {:mvn/version "0.15.3"}
         metosin/reitit                        {:mvn/version "0.7.0-alpha7"}
         ring/ring-core                        {:mvn/version "1.11.0"}

@@ -26,15 +26,16 @@
        :etag (fn [context] (utils/sha db-query))
        :exists? (fn [{{{:keys [language]} :path-params} :request}]
                   (boolean
-                   (db/q '{:find [?r .]
-                           :in [$ ?language]
-                           :where [[?c :card/releases ?r]
-                                   [?c :card/language ?l]
-                                   [?c :card/image ?i]
-                                   [?c :card/number ?number]
-                                   [?i :image/language ?l]
-                                   [?r :release/language ?language]]}
-                         language)))
+                   (->> (db/q '{:find [?r]
+                                :in [$ ?language]
+                                :where [[?c :card/releases ?r]
+                                        [?c :card/language ?l]
+                                        [?c :card/image ?i]
+                                        [?c :card/number ?number]
+                                        [?i :image/language ?l]
+                                        [?r :release/language ?language]]}
+                              language)
+                        ffirst)))
        :handle-ok
        (fn [{{{:keys [language]} :path-params} :request :as context}]
          {:data {:id language
