@@ -12,6 +12,7 @@
    [dcg.db.card.highlight :as highlight]
    [dcg.db.card.limitation :as limitation]
    [dcg.db.card.release :as release]
+   [dcg.db.card.repair :as repair]
    [dcg.db.card.rule :as rule]
    [dcg.db.db :as db]
    [taoensso.timbre :as logging]))
@@ -36,9 +37,7 @@
     (assert (every? (fn [releases]
                       (->> releases
                            (filter :release/cardlist-uri)
-                           (remove :release/image-uri)
-                           count
-                           (>= 1)))
+                           seq))
                     r)
             (str "Not every release matched with a product. "
                  "Consider refreshing Korean product listing."))
@@ -47,15 +46,15 @@
 (defn process-cards
   []
   (let [releases-per-origin (releases-per-origin)
-        cards-per-origin
-        (doall (pmap (fn [releases]
-                       (->> releases
-                            (filter :release/cardlist-uri)
-                            (mapcat card/cards-in-release)
-                            (remove nil?)
-                            (card/post-processing-per-origin releases)
-                            card/consolidate-duplicate-images))
-                     releases-per-origin))
+        cards-per-origin (->> releases-per-origin
+                              (pmap (fn [r]
+                                      (->> r
+                                           (filter :release/cardlist-uri)
+                                           (mapcat card/cards-in-release)
+                                           (remove nil?)
+                                           (card/post-processing-per-origin r)
+                                           card/consolidate-duplicate-images)))
+                              doall)
         unrefined-cards (->> cards-per-origin
                              (reduce (fn [accl cards-in-origin]
                                        (->> (reduce (fn [accl2 {:card/keys [id]
@@ -66,6 +65,7 @@
                                             (merge-with merge accl)))
                                      {})
                              vals
+                             repair/ace-names
                              card/image-processing)
         bandai-tcg-plus-mapping (btcg-plus/mapping unrefined-cards)
         limitations (->> (pmap limitation/limitations origins)

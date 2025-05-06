@@ -19,9 +19,10 @@
 (defn as-bytes
   [url options]
   (let [response (client/get url
-                             (merge options
+                             (merge (assoc-in options
+                                              [:headers "User-Agent"]
+                                              user-agent)
                                     {:as :byte-array
-                                     :headers {"User-Agent" user-agent}
                                      :cookie-policy :standard
                                      :retry-handler (fn [_ try-count _]
                                                       (if (> try-count 2)
@@ -40,22 +41,22 @@
              (logging/debug (format "POST: %s %s %s"
                                     url form-params (pr-str options)))
              (-> (client/post url
-                              (assoc options
-                                     :headers {"User-Agent" user-agent}
-                                     :cookie-policy :standard
-                                     :throw-exceptions false
-                                     :connection-manager connection-manager
-                                     :retry-handler
-                                     (fn [_ try-count _]
-                                       (if (> try-count 2)
-                                         (do (logging/error
-                                               (format "Failed POST: %s %s after %d attempts"
-                                                       url
-                                                       (pr-str options)
-                                                       try-count))
-                                             false)
-                                         true))
-                                     :form-params form-params))
+                              (-> options
+                                  (assoc :cookie-policy :standard
+                                         :throw-exceptions false
+                                         :connection-manager connection-manager
+                                         :retry-handler
+                                         (fn [_ try-count _]
+                                           (if (> try-count 2)
+                                             (do (logging/error
+                                                   (format "Failed POST: %s %s after %d attempts"
+                                                           url
+                                                           (pr-str options)
+                                                           try-count))
+                                                 false)
+                                             true))
+                                         :form-params form-params)
+                                  (assoc-in [:headers "User-Agent"] user-agent)))
                  :body))))
 
 (defn http-post
@@ -68,21 +69,21 @@
   (memoize (fn [url options]
              (logging/debug (format "Downloading: %s %s" url (pr-str options)))
              (-> (client/get url
-                             (assoc options
-                                    :headers {"User-Agent" user-agent}
-                                    :cookie-policy :standard
-                                    :throw-exceptions false
-                                    :connection-manager connection-manager
-                                    :retry-handler
-                                    (fn [_ try-count _]
-                                      (if (> try-count 2)
-                                        (do (logging/error
-                                              (format "Failed GET: %s %s after %d attempts"
-                                                      url
-                                                      (pr-str options)
-                                                      try-count))
-                                            false)
-                                        true))))
+                             (-> options
+                                 (assoc :cookie-policy :standard
+                                        :throw-exceptions false
+                                        :connection-manager connection-manager
+                                        :retry-handler
+                                        (fn [_ try-count _]
+                                          (if (> try-count 2)
+                                            (do (logging/error
+                                                  (format "Failed GET: %s %s after %d attempts"
+                                                          url
+                                                          (pr-str options)
+                                                          try-count))
+                                                false)
+                                            true)))
+                                 (assoc-in [:headers "User-Agent"] user-agent)))
                  :body))))
 
 (defn http-get
@@ -114,9 +115,10 @@
   (memoize (fn [url options]
              (logging/debug (format "Requesting HEAD: %s %s" url (pr-str options)))
              (-> (client/head url
-                              (merge options
-                                     {:headers {"User-Agent" user-agent}
-                                      :cookie-policy :standard
+                              (merge (assoc-in options
+                                               [:headers "User-Agent"]
+                                               user-agent)
+                                     {:cookie-policy :standard
                                       :retry-handler (fn [_ try-count _]
                                                        (if (> try-count 2)
                                                          (logging/error

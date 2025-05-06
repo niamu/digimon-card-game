@@ -87,3 +87,23 @@
           (string/replace #"【(DP\+[0-9]+)】" "$1")
           ;; https://world.digimoncard.com/rule/card_text/
           (string/replace "X-Antibody" "X Antibody")))
+
+(defn ace-names
+  [cards]
+  (->> cards
+       (sort-by :card/number)
+       (partition-by :card/number)
+       (mapcat (fn [cards]
+                 (cond->> cards
+                   (some (fn [{:card/keys [name] :as card}]
+                           (string/ends-with? name "ACE"))
+                         cards)
+                   (map (fn [{:card/keys [language] :as card}]
+                          (update card
+                                  :card/name
+                                  (fn [s]
+                                    (cond-> s
+                                      (not (string/ends-with? s "ACE"))
+                                      (str (cond->> "ACE"
+                                             (= language "en")
+                                             (str " ")))))))))))))
