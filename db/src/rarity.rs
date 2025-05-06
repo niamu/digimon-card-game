@@ -14,7 +14,7 @@ struct Template {
     pub value: i32,
 }
 
-const RARITY_STAMPS: [Template; 21] = [
+const RARITY_STAMPS: [Template; 23] = [
     Template {
         path: "resources/images/templates/rarity/sp_a.png",
         value: 99,
@@ -49,6 +49,14 @@ const RARITY_STAMPS: [Template; 21] = [
     },
     Template {
         path: "resources/images/templates/rarity/sp_i.png",
+        value: 99,
+    },
+    Template {
+        path: "resources/images/templates/rarity/sp_j.png",
+        value: 99,
+    },
+    Template {
+        path: "resources/images/templates/rarity/sp_k.png",
         value: 99,
     },
     Template {
@@ -128,7 +136,7 @@ pub extern "C" fn supplemental_rarity(image_path: *const c_char) -> i32 {
                 let template =
                     cv::imgcodecs::imread(sp_stamp.path, cv::imgcodecs::IMREAD_UNCHANGED).unwrap();
                 let match_result = utils::template_match(&template, &image_roi);
-                if match_result.accuracy >= 0.85 && sp_stamp.value > result {
+                if match_result.accuracy >= 0.82 && sp_stamp.value > result {
                     result = sp_stamp.value;
                 }
             }

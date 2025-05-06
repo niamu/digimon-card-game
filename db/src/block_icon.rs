@@ -14,7 +14,7 @@ pub struct Template {
     pub value: i32,
 }
 
-pub const BLOCK_ICONS: [Template; 35] = [
+pub const BLOCK_ICONS: [Template; 36] = [
     Template {
         path: "resources/images/templates/block-icons/01_a.png",
         value: 1,
@@ -81,6 +81,10 @@ pub const BLOCK_ICONS: [Template; 35] = [
     },
     Template {
         path: "resources/images/templates/block-icons/03_j.png",
+        value: 3,
+    },
+    Template {
+        path: "resources/images/templates/block-icons/03_k.png",
         value: 3,
     },
     Template {
