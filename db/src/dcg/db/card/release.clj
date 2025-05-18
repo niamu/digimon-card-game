@@ -4,6 +4,7 @@
    [clojure.java.io :as io]
    [clojure.string :as string]
    [dcg.db.card.utils :as card-utils]
+   [dcg.db.db :as db]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
    [hickory.select :as select]
@@ -313,14 +314,14 @@
              (concat
               ;; NOTE: The Korean site removes older products.
               ;; Query to older database to recreate the missing products
-              (->> (dcg.db.db/q '{:find [(pull ?r [:release/name
-                                                   :release/genre
-                                                   :release/date
-                                                   :release/cardlist-uri
-                                                   :release/image-uri
-                                                   :release/product-uri])]
-                                  :where [[?r :release/language "ko"]
-                                          [?r :release/image-uri _]]})
+              (->> (db/q '{:find [(pull ?r [:release/name
+                                            :release/genre
+                                            :release/date
+                                            :release/cardlist-uri
+                                            :release/image-uri
+                                            :release/product-uri])]
+                           :where [[?r :release/language "ko"]
+                                   [?r :release/image-uri _]]})
                    (apply concat)
                    (sort-by :release/date)))
              (map #(assoc %

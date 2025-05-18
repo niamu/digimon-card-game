@@ -3430,40 +3430,40 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -3474,9 +3474,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                         :card/form
-                         :card/dp
-                         :card/level))}
+                          :card/form
+                          :card/dp
+                          :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3861,6 +3861,13 @@
                         (cond->> s
                           (not (re-find (re-pattern "^.?Digivolve") s))
                           (str "[Digivolve] 3 from [Kyubimon]"))))))}
+ "EX4-033"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   "〈룰〉명칭 : 「테리어몬」으로도 취급한다"
+                                   "〈룰〉 명칭: 「테리어몬」으로도 취급한다"))))}
  "EX4-037"
  {"en" (fn [card]
          (update card :card/effect
@@ -3884,6 +3891,15 @@
                             (string/replace "≪数码合体-2≫“骷髅骑士兽”×“致命巨斧兽”\n\n"
                                             "")
                             (str "\n≪数码合体-2≫“骷髅骑士兽”×“致命巨斧兽”")))))}
+ "EX4-057"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id    "color/EX4-057_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/EX4-057_index1"
+                  :color/index 1
+                  :color/color :green}]))}
  "EX4-063"
  {"en" (fn [card]
          (-> card
@@ -4490,6 +4506,19 @@
  "ST16-08"
  {"en" (fn [card]
          (dissoc card :card/security-effect))}
+ "ST17-06"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id    "color/ST17-06_index0"
+                  :color/index 0
+                  :color/color :green}
+                 {:color/id    "color/ST17-06_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
+ "ST17-08"
+ {"ko" (fn [card]
+         (assoc card :card/inherited-effect
+                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4)"))}
  "ST18-02"
  {"en" (fn [card]
          (assoc card :card/attribute "Vaccine"))}

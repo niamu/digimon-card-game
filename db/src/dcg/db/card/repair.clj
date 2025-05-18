@@ -85,6 +85,7 @@
           (string/replace "[育成]" "［育成］")
           (string/replace "{Security}" "[Security]")
           (string/replace #"【(DP\+[0-9]+)】" "$1")
+          (string/replace #"\)ー$" ")")
           ;; https://world.digimoncard.com/rule/card_text/
           (string/replace "X-Antibody" "X Antibody")))
 

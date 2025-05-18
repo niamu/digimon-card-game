@@ -166,31 +166,35 @@
                  (let [index (-> (get-in accl [card-number language]
                                          [])
                                  count)]
-                   (-> accl
-                       (update-in [card-number language]
-                                  (fnil conj [])
-                                  (dissoc (update limitation
-                                                  :limitation/id
-                                                  str "_" index)
-                                          :limitation/card-number
-                                          :limitation/language))
-                       ;; English provides default limitations
-                       (cond-> #__
-                         (= language "en")
-                         (update-in [card-number :default]
+                   (cond-> accl
+                     (->> (get-in accl [card-number language] [])
+                          (filter (fn [{:limitation/keys [date]}]
+                                    (= date (:limitation/date limitation))))
+                          seq
+                          not)
+                     (-> (update-in [card-number language]
                                     (fnil conj [])
                                     (dissoc (update limitation
                                                     :limitation/id
-                                                    (fn [s]
-                                                      (-> s
-                                                          (string/replace
-                                                           (str language "_")
-                                                           "")
-                                                          (str "_" index))))
-                                            :limitation/date
-                                            :limitation/note
+                                                    str "_" index)
                                             :limitation/card-number
-                                            :limitation/language))))))
+                                            :limitation/language))
+                         ;; English provides default limitations
+                         (cond-> #__
+                           (= language "en")
+                           (update-in [card-number :default]
+                                      (fnil conj [])
+                                      (dissoc (update limitation
+                                                      :limitation/id
+                                                      (fn [s]
+                                                        (-> s
+                                                            (string/replace
+                                                             (str language "_")
+                                                             "")
+                                                            (str "_" index))))
+                                              :limitation/note
+                                              :limitation/card-number
+                                              :limitation/language)))))))
                {})))
 
 (defmulti limitations :origin/language)

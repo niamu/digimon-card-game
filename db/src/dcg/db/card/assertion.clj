@@ -469,6 +469,8 @@
                {:timing 3, :keyword-effect 1, :precondition 1},
                "card/ko_EX4-057_P0"
                {:timing 3, :keyword-effect 2, :precondition 1},
+               "card/ko_EX4-057_P1"
+               {:timing 3, :keyword-effect 1, :precondition 1},
                "card/zh-Hans_EX4-057_P0"
                {:timing 3, :keyword-effect 2, :precondition 1},
                "card/zh-Hans_EX4-057_P1"
