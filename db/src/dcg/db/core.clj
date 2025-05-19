@@ -36,8 +36,8 @@
     (assert (every? seq r) "Not every origin has releases")
     (assert (every? (fn [releases]
                       (->> releases
-                           (filter :release/cardlist-uri)
-                           seq))
+                           (every? (fn [{:release/keys [image-uri]}]
+                                     (not image-uri)))))
                     r)
             (str "Not every release matched with a product. "
                  "Consider refreshing Korean product listing."))

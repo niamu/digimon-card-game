@@ -212,8 +212,7 @@
                                  (fn [accl {:card/keys [notes releases]}]
                                    (-> accl
                                        (update :card/notes
-                                               (fnil #(str % "\n"
-                                                           notes) ""))
+                                               (fnil #(str % "\n" notes) ""))
                                        (update :card/releases
                                                (fn [existing-releases]
                                                  (->> (set existing-releases)
@@ -616,7 +615,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri card-image-language]
-                  :as release} dom-tree]
+                   :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -882,9 +881,9 @@
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                           dp rareDegree entryConsumeValue envolutionConsumeTwo
-                           cardLevel effect envolutionEffect safeEffect
-                           imageCover getWayStr]}]
+                            dp rareDegree entryConsumeValue envolutionConsumeTwo
+                            cardLevel effect envolutionEffect safeEffect
+                            imageCover getWayStr]}]
                  (when imageCover
                    (let [number (-> model
                                     (string/replace #"_.*" "")

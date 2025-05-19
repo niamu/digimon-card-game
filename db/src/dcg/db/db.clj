@@ -188,8 +188,11 @@
     {:db/ident :release/cardlist-uri
      :db/valueType :db.type/uri
      :db/cardinality :db.cardinality/one}
-    {:db/ident :release/image-uri
-     :db/valueType :db.type/uri
+    {:db/ident :release/image
+     :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :release/thumbnail
+     :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/one}
     {:db/ident :release/date
      :db/valueType :db.type/instant

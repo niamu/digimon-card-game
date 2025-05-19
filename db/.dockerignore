@@ -3,8 +3,10 @@
 .nrepl-port
 target/
 resources/*dcgcv*
+resources/images/btcg-cards/
 resources/images/cards/
 resources/images/icons/
 resources/images/releases/
-resources/db.edn
+resources/images/tokens/
+resources/db/
 src/main.rs
