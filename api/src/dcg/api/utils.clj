@@ -1,9 +1,23 @@
 (ns dcg.api.utils
   (:require
    [clojure.data.json :as json]
+   [clojure.string :as string]
    [liberator.representation :as representation])
   (:import
-   [java.security MessageDigest]))
+   [java.security MessageDigest]
+   [java.time Instant ZoneId]
+   [java.time.format DateTimeFormatter]))
+
+(defn update-image-path
+  [{:keys [scheme server-name]} path]
+  (when path
+    (str (or (System/getenv "IMAGES_ORIGIN")
+             (format "%s://%s"
+                     (name scheme)
+                     server-name))
+         (cond-> (string/replace path #"\.png$" ".webp")
+           (System/getenv "IMAGES_ORIGIN")
+           (string/replace #"^/images" "")))))
 
 (extend-type java.util.Date
   json/JSONWriter
@@ -15,8 +29,27 @@
   (-write [uri out]
     (json/-write (str uri) out)))
 
+(defn inst->iso8601
+  [i]
+  (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd")
+        zoned-date-time (-> i
+                            inst-ms
+                            Instant/ofEpochMilli
+                            (.atZone (ZoneId/of "UTC")))]
+    (.format ^DateTimeFormatter formatter zoned-date-time)))
+
+(defn short-uuid
+  [id]
+  (let [digest (MessageDigest/getInstance "SHA-256")]
+    (->> (.getBytes id)
+         (.digest digest)
+         (take 3)
+         (map (fn [c]
+                (format "%02x" (bit-and c 0xFF))))
+         (apply str))))
+
 (defn base-url
-  [{{:keys [scheme headers uri]} :request :as context}]
+  [{{:keys [scheme headers]} :request :as context}]
   (when scheme
     (str (name scheme)
          "://"

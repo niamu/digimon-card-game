@@ -1,2 +1,4 @@
 .cpcache/
 .nrepl-port
+target/
+resources/cards.transit.json

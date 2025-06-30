@@ -1,0 +1,2 @@
+{:min-level [["dcg.*" :debug]
+             ["*" :error]]}
