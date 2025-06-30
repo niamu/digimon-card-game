@@ -12,6 +12,16 @@
           (string/includes? text "DigiXros")
           (string/includes? text "数码合体")
           (string/includes? text "디지크로스")) :digixros
+      (or (re-matches #".リンク." text)
+          (re-matches #".Link." text)
+          (re-matches #".链接." text)
+          ;; TODO: KO Link
+          ) :link
+      (or (re-matches #".アセンブリ\-[0-9]." text)
+          (re-matches #".Assembly\s\-[0-9]." text)
+          (re-matches #".组装\-[0-9]." text)
+          ;; TODO: KO Assembly
+          ) :assembly
       (or (re-matches #".ルール." text)
           (re-matches #".Rule." text)
           (re-matches #".规则." text)
@@ -167,7 +177,7 @@
                                   first
                                   :card/highlights
                                   (reduce (fn [m {:highlight/keys [index text field]
-                                                 :as highlight}]
+                                                  :as highlight}]
                                             (let [ja-text (without-brackets text)]
                                               (-> m
                                                   (assoc [field ja-text index]
@@ -184,7 +194,7 @@
                                   first
                                   :card/highlights
                                   (remove (fn [{highlight-type :highlight/type
-                                               :highlight/keys [text]}]
+                                                :highlight/keys [text]}]
                                             (let [text (without-brackets text)]
                                               (or highlight-type
                                                   (get translations text)
@@ -193,8 +203,8 @@
                                                         en-mentions))))))
                          translations
                          (reduce (fn [m {:highlight/keys [text
-                                                         index
-                                                         field]}]
+                                                          index
+                                                          field]}]
                                    (let [text (without-brackets text)
                                          ja-text (get m text)
                                          {highlight-type :highlight/type
@@ -216,7 +226,7 @@
                          (fn [highlights]
                            (->> highlights
                                 (map (fn [{:highlight/keys [text index field]
-                                          :as highlight}]
+                                           :as highlight}]
                                        (let [text (without-brackets text)
                                              ja-text (get translations text)
                                              {highlight-type :highlight/type}

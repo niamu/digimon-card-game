@@ -239,8 +239,8 @@
                                           (string/replace "’" "'")
                                           (string/replace #"^Start of Your Main Phase\]"
                                                           "[Start of Your Main Phase]")
-                                          (string/replace #"^Before\n\s*" "")
-                                          (string/replace #"^After\n\s*" "")
+                                          (string/replace #"^Before\n*\s*" "")
+                                          (string/replace #"^After\n*\s*" "")
                                           (string/replace "⟨" "＜")
                                           (string/replace "⟩" "＞")))
                          error (->> div
@@ -254,25 +254,28 @@
                          notes (->> (select/select (select/tag :dd) div)
                                     (map card-utils/text-content)
                                     (string/join "\n"))]
-                     (map-indexed
-                      (fn [idx number]
-                        (let [repair-fn (get repair number)]
-                          (cond-> {:errata/id (format "errata/%s_%s"
-                                                      language number)
-                                   :errata/language language
-                                   :errata/date date
-                                   :errata/card-number number
-                                   :errata/error (cond-> (nth error idx
-                                                              (first error))
-                                                   repair-fn
-                                                   repair-fn)
-                                   :errata/correction (cond-> (nth fixed idx
-                                                                   (first fixed))
+                     (->> card-numbers
+                          (map-indexed
+                           (fn [idx number]
+                             (let [repair-fn (get repair number)]
+                               (cond-> {:errata/id (format "errata/%s_%s"
+                                                           language number)
+                                        :errata/language language
+                                        :errata/date date
+                                        :errata/card-number number
+                                        :errata/error (cond-> (nth error idx
+                                                                   (first error))
                                                         repair-fn
-                                                        repair-fn)}
-                            (not (string/blank? notes))
-                            (assoc :errata/notes notes))))
-                      card-numbers))))
+                                                        repair-fn)
+                                        :errata/correction (cond-> (nth fixed idx
+                                                                        (first fixed))
+                                                             repair-fn
+                                                             repair-fn)}
+                                 (not (string/blank? notes))
+                                 (assoc :errata/notes notes)))))
+                          (remove (fn [{:errata/keys [error correction]}]
+                                    (or (string/blank? error)
+                                        (string/blank? correction))))))))
          (reduce (fn [accl {:errata/keys [language card-number] :as errata}]
                    (assoc-in accl [card-number language]
                              (dissoc errata

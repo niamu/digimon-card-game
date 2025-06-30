@@ -334,4 +334,14 @@
            :id "release_ko_11955",
            :card-image-language "ko",
            :genre "확장팩",
-           :date #inst "2024-03-15T00:00:00.000-00:00"})
+           :date #inst "2024-03-15T00:00:00.000-00:00"}
+ #:release{:name "팩 BEGINNING OBSERVER [BTK-16]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/42465",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/465/042/14f7b5eedc0695384cd5915d8a15f5c0.jpg",
+           :language "ko",
+           :id "release_ko_42465",
+           :card-image-language "ko",
+           :genre "확장팩",
+           :date #inst "2025-06-20T00:00:00.000-00:00"})

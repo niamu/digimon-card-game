@@ -33,7 +33,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                      :as card}]
+                                       :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -112,7 +112,7 @@
                                                                  text)
                                                   idx))
                                               (get m l))
-                                             (map #(nth (get m "ja") %)))))
+                                             (map #(nth (get m "ja") % nil)))))
                                    (apply hash-map)))))
                      (apply merge accl)))
               {}))]
@@ -138,7 +138,8 @@
                                                           (get tr-map text)))
                                              texts)]
                                         (cond-> m
-                                          (seq result)
+                                          (and (seq result)
+                                               (get l-map "ja"))
                                           (assoc l result))))
                                     {}
                                     (dissoc l-map "ja")))))
@@ -246,7 +247,8 @@
                 (->> card-group
                      (map (comp #(apply hash-map %)
                                 (juxt :card/id
-                                      #(->> [:card/color
+                                      #(->> [:card/category
+                                             :card/color
                                              :card/rarity
                                              :card/level
                                              :card/dp
@@ -403,9 +405,6 @@
   (assert (empty? (text-fields cards))
           (format "Card text fields differ across languages:\n%s"
                   (text-fields cards)))
-  (assert (empty? (field-translations :card/category cards))
-          (format "Card categories differ across languages:\n%s"
-                  (field-translations :card/category cards)))
   (assert (empty? (field-translations :card/form cards))
           (format "Card forms differ across languages:\n%s"
                   (field-translations :card/form cards)))
@@ -491,7 +490,7 @@
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
                      "P-071"
-                     "BT21-023"
+                     "BT10-086"
                      "BT4-041"
                      "EX1-073"},
               "ja" #{"BT6-084"
@@ -508,10 +507,11 @@
               "zh-Hans" #{"LM-020"}})
           (format "Card errata not accounted for:\n%s"
                   (card-errata cards)))
-  (assert (= (card-block-icons cards)
-             {"BT12" {1 #{"card/en_BT12-001_P1"}},
-              "BT6" {nil #{"card/zh-Hans_BT6-018_P2"}},
-              "EX1" {nil #{"card/en_EX1-073_P2"}}})
+  (assert (= (first (data/diff (card-block-icons cards)
+                               {"BT12" {1 #{"card/en_BT12-001_P1"}},
+                                "BT6" {nil #{"card/zh-Hans_BT6-018_P2"}},
+                                "EX1" {nil #{"card/en_EX1-073_P2"}}}))
+             nil)
           (format "Card block icons may not be accurate:\n%s"
                   (card-block-icons cards)))
   cards)

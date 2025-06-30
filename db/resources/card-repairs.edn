@@ -551,6 +551,21 @@
                  :card/effect
                  (fn [s]
                    (string/replace s ".On Play]" ".[On Play]"))))}
+ "BT3-105"
+ {"en" (fn [{:card/keys [language number notes] :as card}]
+         (cond-> card
+           (string/includes? notes "2nd Anniversary Set [PB-12E]")
+           (-> (assoc :card/id (format "card/%s_%s_P%d"
+                                       language
+                                       number
+                                       0)
+                      :card/parallel-id 0)
+               (assoc-in [:card/image :image/id]
+                         "/images/cards/en/BT3-105_P1.png")
+               (assoc-in [:card/image :image/path]
+                         "/images/cards/en/BT3-105_P1.png")
+               (assoc-in [:card/image :image/source]
+                         (.toURI (clojure.java.io/resource "images/malformed-cards/en/BT3-105_P1.png"))))))}
  "BT3-109"
  {"en" (fn [card]
          (update card :card/effect
@@ -3046,10 +3061,11 @@
  {"en" (fn [card]
          (update card :card/effect
                  (fn [s]
-                   (some-> s
-                           (string/replace "<DigiXros -1> ∞ Digimon cards w/[Xros Heart] or [Blue Flare] trait & different card numbers When you would play this card from your hand, by placing 1 of your [Shoutmon] as a digivolution card under this Digimon, reduce its play cost by 1 and place the cards in your trash as digivolution cards for a DigiXros."
-                                           "")
-                           (str "\n<DigiXros -1> ∞ Digimon cards w/[Xros Heart] or [Blue Flare] trait and different card numbers When you would play this card from your hand, by placing 1 of your [Shoutmon] as a digivolution card under this Digimon, reduce its play cost by 1 and place the cards in your trash as digivolution cards for a DigiXros.")))))
+                   (cond-> s
+                     (re-find (re-pattern "^.?DigiXros") s)
+                     (-> (string/replace "<DigiXros -1> ∞ Digimon cards w/[Xros Heart] or [Blue Flare] trait & different card numbers When you would play this card from your hand, by placing 1 of your [Shoutmon] as a digivolution card under this Digimon, reduce its play cost by 1 and place the cards in your trash as digivolution cards for a DigiXros."
+                                         "")
+                         (str "\n<DigiXros -1> ∞ Digimon cards w/[Xros Heart] or [Blue Flare] trait and different card numbers When you would play this card from your hand, by placing 1 of your [Shoutmon] as a digivolution card under this Digimon, reduce its play cost by 1 and place the cards in your trash as digivolution cards for a DigiXros."))))))
   "zh-Hans" (fn [card]
               (assoc card
                      :card/effect
@@ -3108,7 +3124,7 @@
          (-> card
              (dissoc :card/use-cost)
              (assoc :card/play-cost 3
-                    :card/category "Digimon")))}
+                    :card/category :digimon)))}
  "BT14-018"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -3209,6 +3225,12 @@
                  (fn [s]
                    (-> s
                        (string/replace "Lv.5 w/Garurumon]" "Lv.5 w/[Garurumon]")))))}
+ "BT16-027"
+ {"ko" (fn [{{:image/keys [source]} :card/image :as card}]
+         (cond-> card
+           (= source
+              (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/213/042/2066df3dbec29824cb3dfe03b794d5ee.png"))
+           (assoc :card/block-icon 3)))}
  "BT16-031"
  {"en" (fn [card]
          (assoc card :card/inherited-effect
@@ -3221,6 +3243,17 @@
                         (string/replace s (re-pattern "^进化〕") "【进化】"))))}
  "BT16-102"
  {"en" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/BT16-102_index0"
+                  :color/index 0
+                  :color/color :yellow}
+                 {:color/id "color/BT16-102_index1"
+                  :color/index 1
+                  :color/color :blue}
+                 {:color/id "color/BT16-102_index2"
+                  :color/index 2
+                  :color/color :black}]))
+  "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id "color/BT16-102_index0"
                   :color/index 0
@@ -4157,6 +4190,56 @@
  {"en" (fn [card]
          (assoc card :card/inherited-effect
                 "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)"))}
+ "EX9-013"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)\n＜Security A. +1＞ (This Digimon checks 1 additional security card.)"))
+  "zh-Hans" (fn [card]
+              (assoc card :card/inherited-effect
+                     "《溢出<-4>》（若从区域或卡牌的下方,被送到除此以外的场所的场合,则内存值-4）\n《安防攻击+1》（此数码宝贝判定的张数+1）"))}
+ "EX9-020"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)\n[Your Turn] This Digimon's attack target can't change."))
+  "zh-Hans" (fn [card]
+              (assoc card :card/inherited-effect
+                     "《溢出<-4>》（若从区域或卡牌的下方,被送到除此以外的场所的场合,则内存值-4）\n【我方的回合】此数码宝贝的攻击对象不会被变更。"))}
+ "EX9-047"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (cond-> s
+                     (not (string/includes? s "[Assembly]"))
+                     (str "\n[Assembly -3] 4 [Eyesmon: Scatter Mode]\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
+ "EX9-055"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (cond-> s
+                     (not (string/includes? s "[Assembly]"))
+                     (str "\n[Assembly -6] 4 [Negamon]\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
+ "EX9-056"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)"))}
+ "EX9-065"
+ {"en" (fn [card]
+         (assoc card :card/inherited-effect
+                "＜Overflow (-4)＞ (When this card would move from the battle area or under a card to another area, lose 4 memory.)"))}
+ "EX9-073"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (cond-> s
+                     (not (string/includes? s "[Assembly]"))
+                     (str "\n[Assembly -6] 4 level 5 [Cyborg] trait Digimon cards w/different names\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
+ "EX9-074"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (cond-> s
+                     (not (string/includes? s "[Assembly]"))
+                     (str "\n[Assembly -7] 7 level 4 [DM] trait Digimon cards w/different names\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
  "LM-005"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
@@ -4269,7 +4352,17 @@
  {"en" (fn [card]
          (dissoc card :card/attribute))}
  "ST1-16"
- {"ko" (fn [card]
+ {"ja" (fn [{:card/keys [language number notes] :as card}]
+         (cond-> card
+           (string/includes? notes "スタートデッキ スペシャルエントリーセット [ST-11]")
+           (-> (assoc :card/id (format "card/%s_%s_P%d"
+                                       language
+                                       number
+                                       3)
+                      :card/parallel-id 3)
+               (assoc-in [:card/image :image/source]
+                         (.toURI (clojure.java.io/resource "images/malformed-cards/ja/ST1-16_P3.png"))))))
+  "ko" (fn [card]
          (assoc card :card/effect
                 "【메인】 상대의 디지몬 1마리를 소멸시킨다."))}
  "ST2-02"
@@ -4560,7 +4653,7 @@
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 5)
-             (assoc :card/category "Option")))}
+             (assoc :card/category :option)))}
  "ST19-01"
  {"en" (fn [card]
          (assoc card :card/inherited-effect
@@ -4804,7 +4897,7 @@
                                (not (string/starts-with? s "【시큐리티】"))
                                (str "【시큐리티】 "))))))
   "zh-Hans" (fn [card]
-              (assoc card :card/category "驯兽师"))}
+              (assoc card :card/category :tamer))}
  "P-018"
  {"zh-Hans" (fn [card]
               (assoc card :card/dp 3000))}
@@ -4844,7 +4937,7 @@
               (-> card
                   (dissoc :card/play-cost)
                   (assoc :card/use-cost 3)
-                  (assoc :card/category "Option")))
+                  (assoc :card/category :option)))
   "zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
   "ko"      (fn [card]
@@ -4996,6 +5089,17 @@
                    (string/replace s
                                    "gets until"
                                    "gets ＜Security A. -1＞ until"))))}
+ "P-087"
+ {"en" (fn [{:card/keys [language number]
+             {:image/keys [source]} :card/image
+             :as card}]
+         (cond-> card
+           (= source (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-087_P1.png"))
+           (assoc :card/id (format "card/%s_%s_P%d"
+                                   language
+                                   number
+                                   0)
+                  :card/parallel-id 0)))}
  "P-088"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "P"))}
@@ -5073,7 +5177,7 @@
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+             (assoc :card/category :option)))
   "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id    "color/P-103_index0"
@@ -5084,7 +5188,7 @@
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+             (assoc :card/category :option)))
   "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id    "color/P-104_index0"
@@ -5095,7 +5199,7 @@
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+             (assoc :card/category :option)))
   "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id    "color/P-105_index0"
@@ -5106,7 +5210,7 @@
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+             (assoc :card/category :option)))
   "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id    "color/P-106_index0"
@@ -5117,7 +5221,7 @@
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+             (assoc :card/category :option)))
   "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id    "color/P-107_index0"
@@ -5128,7 +5232,7 @@
          (-> card
              (dissoc :card/play-cost)
              (assoc :card/use-cost 2)
-             (assoc :card/category "Option")))
+             (assoc :card/category :option)))
   "ko" (fn [card]
          (assoc card :card/color
                 [{:color/id    "color/P-108_index0"
@@ -5143,7 +5247,18 @@
                              (str "【進化】「パイルドラモン」/「ディノビーモン」:コスト3\n"))))
            (not inherited-effect)
            (assoc :card/inherited-effect
-                  "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）")))}
+                  "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）")))
+  "ko" (fn [{:card/keys [inherited-effect] :as card}]
+         (-> card
+             (update :card/effect
+                     (fn [s]
+                       (cond->> s
+                         (not (re-find (re-pattern "^.진화") s))
+                         (str "【진화】「파일드라몬」/「다이노몬」:코스트 3\n"))))
+             (cond-> #__
+               (not inherited-effect)
+               (assoc :card/inherited-effect
+                      "《오버플로우 《-3》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4)"))))}
  "P-114"
  {"ja" (fn [card]
          (-> card
@@ -5170,6 +5285,9 @@
                  {:color/id "color/P-115_index1",
                   :color/index 1,
                   :color/color :black}]))}
+ "P-123"
+ {"ko" (fn [card]
+         (assoc card :card/type "고대요정형"))}
  "P-132"
  {"ja" (fn [{:card/keys [inherited-effect] :as card}]
          (cond-> card

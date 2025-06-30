@@ -40,7 +40,7 @@
                {:image/id (string/replace id "release_" "image/release_")
                 :image/language language
                 :image/source image-uri
-                :image/path filename}))))
+                :image/path (string/replace filename #"^resources/" "/")}))))
 
 (defn- download-thumbnail!
   [{:release/keys [id language image-uri] :as image}]
@@ -65,7 +65,7 @@
                {:image/id (string/replace id "release_" "thumbnail/release_")
                 :image/language language
                 :image/source image-uri
-                :image/path filename}))))
+                :image/path (string/replace filename #"^resources/" "/")}))))
 
 (defn- product
   [{:origin/keys [card-image-language language url]} dom-tree]

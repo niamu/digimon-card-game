@@ -2,6 +2,8 @@
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
+   [clojure.string :as string]
+   [cognitect.transit :as transit]
    [datomic.client.api :as d])
   (:import
    [java.io PushbackReader Writer]
@@ -14,12 +16,9 @@
 
 (def client (d/client config))
 
-(defmethod print-method URI [^URI x ^Writer w]
-  (doto w
-    (.write "#uri ")
-    (.write "\"")
-    (.write (.toString x))
-    (.write "\"")))
+(defmethod print-method URI
+  [^URI v ^Writer w]
+  (.write w (str "#uri " (pr-str (.toString v)))))
 
 (def schema
   (concat
@@ -35,12 +34,7 @@
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/category
-     :db/valueType :db.type/string
-     ;; TODO: This probably should be a keyword
-     ;; - :digi-egg
-     ;; - :digimon
-     ;; - :tamer
-     ;; - :option
+     :db/valueType :db.type/keyword
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/language
      :db/valueType :db.type/string
@@ -308,7 +302,7 @@
         (d/transact conn {:tx-data schema})
         conn)))
 
-(defn import!
+(defn transact!
   [datoms]
   (doseq [batch (partition-all 100 datoms)]
     (d/transact conn {:tx-data batch})))
@@ -318,5 +312,126 @@
   (let [inputs (cons (d/db conn) inputs)]
     (apply d/q query inputs)))
 
+(defn import!
+  []
+  (let [cards (with-open [in (io/input-stream "resources/cards.transit.json")]
+                (transit/read (transit/reader in :json)))]
+    (doseq [entities (partition-all 100 cards)]
+      (transact! entities))))
+
+(defn export!
+  []
+  (let [pull-query [:card/id
+                    :card/number
+                    :card/name
+                    :card/category
+                    :card/language
+                    :card/parallel-id
+                    :card/block-icon
+                    :card/play-cost
+                    :card/use-cost
+                    :card/level
+                    :card/dp
+                    :card/effect
+                    :card/inherited-effect
+                    :card/security-effect
+                    :card/form
+                    :card/attribute
+                    :card/type
+                    :card/rarity
+                    {:card/supplemental-rarity
+                     [:supplemental-rarity/id
+                      :supplemental-rarity/stamp
+                      :supplemental-rarity/stars]}
+                    :card/notes
+                    :card/pack-type
+                    {:card/color
+                     [:color/id
+                      :color/index
+                      :color/color]}
+                    {:card/digivolution-requirements
+                     [:digivolve/id
+                      :digivolve/index
+                      :digivolve/cost
+                      :digivolve/level
+                      :digivolve/category
+                      :digivolve/form
+                      :digivolve/color]}
+                    {:card/releases
+                     [:release/id
+                      :release/name
+                      :release/genre
+                      :release/language
+                      :release/product-uri
+                      :release/cardlist-uri
+                      {:release/image
+                       [:image/id
+                        :image/language
+                        :image/source
+                        :image/path
+                        :image/hash
+                        :image/hash-segments]}
+                      {:release/thumbnail
+                       [:image/id
+                        :image/language
+                        :image/source
+                        :image/path
+                        :image/hash
+                        :image/hash-segments]}
+                      :release/date]}
+                    {:card/image
+                     [:image/id
+                      :image/language
+                      :image/source
+                      :image/path
+                      :image/hash
+                      :image/hash-segments]}
+                    {:card/errata
+                     [:errata/id
+                      :errata/date
+                      :errata/error
+                      :errata/correction
+                      :errata/notes]}
+                    {:card/limitations
+                     [:limitation/id
+                      :limitation/date
+                      :limitation/type
+                      :limitation/note
+                      :limitation/allowance
+                      :limitation/paired-card-numbers]}
+                    {:card/highlights
+                     [:highlight/id
+                      :highlight/type
+                      :highlight/field
+                      :highlight/index
+                      :highlight/text]}
+                    {:card/rules
+                     [:rule/id
+                      :rule/type
+                      :rule/value
+                      {:rule/limitation
+                       [:limitation/id
+                        :limitation/date
+                        :limitation/type
+                        :limitation/note
+                        :limitation/allowance
+                        :limitation/paired-card-numbers]}]}
+                    {:card/faqs
+                     [:faq/id
+                      :faq/date
+                      :faq/question
+                      :faq/answer]}
+                    :card/bandai-tcg+]
+        card-datoms (d/datoms (d/db conn) {:index :avet
+                                           :components [:card/id]
+                                           :limit -1})]
+    (with-open [out (io/output-stream "resources/cards.transit.json")]
+      (->> card-datoms
+           (map (fn [{eid :e}]
+                  (d/pull (d/db conn) pull-query eid)))
+           (transit/write (transit/writer out :json))))))
+
 (comment
-  (d/delete-database client {:db-name "cards"}))
+  (d/delete-database client {:db-name "cards"})
+
+  )

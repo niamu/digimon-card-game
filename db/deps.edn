@@ -1,5 +1,6 @@
 {:paths ["src" "dev" "resources"]
  :deps {org.clojure/clojure                   {:mvn/version "1.11.1"}
+        com.cognitect/transit-clj             {:mvn/version "1.0.333"}
         com.github.jnr/jnr-ffi                {:mvn/version "2.2.14"}
         com.datomic/local                     {:mvn/version "1.0.291"}
         com.taoensso/timbre                   {:mvn/version "6.6.1"}

@@ -215,7 +215,7 @@
   (logging/info "DB ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
-       db/import!)
+       db/transact!)
   (generate-phash-db!)
   (logging/info "DB ingestion completed."))
 
@@ -226,6 +226,6 @@
 
   (->> *cards
        assertion/card-assertions
-       db/import!)
+       db/transact!)
 
   )

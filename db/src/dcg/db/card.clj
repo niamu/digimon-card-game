@@ -258,7 +258,7 @@
         :promo))))
 
 (defn- card
-  [{:release/keys [language cardlist-uri card-image-language] :as release}
+  [{:release/keys [language cardlist-uri] :as release}
    dom-tree]
   (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                     (.getHost ^URI cardlist-uri))
@@ -465,7 +465,18 @@
              :card/number number
              :card/parallel-id parallel-id
              :card/rarity rarity
-             :card/category category
+             :card/category (case category
+                              ;; en
+                              "Digi-Egg" :digi-egg
+                              "Digimon"  :digimon
+                              "Tamer"    :tamer
+                              "Option"   :option
+                              ;; ko
+                              "디지타마" :digi-egg
+                              "디지몬"   :digimon
+                              "테이머"   :tamer
+                              "옵션"     :option
+                              nil)
              :card/color (->> colors
                               (map-indexed (fn [i color]
                                              {:color/id (format "color/%s_index%d"
@@ -492,7 +503,7 @@
                                            "")))
                                     first
                                     :content)))
-             :card/image {:image/language card-image-language
+             :card/image {:image/language language
                           :image/source (URI. (str origin image-source))}}
       play-cost (assoc (if (or (= category "オプション")
                                (= category "Option")
@@ -614,8 +625,8 @@
                                          (some->> href
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
-        card (fn [{:release/keys [language cardlist-uri card-image-language]
-                   :as release} dom-tree]
+        card (fn [{:release/keys [language cardlist-uri]
+                  :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -805,7 +816,12 @@
                           :card/number number
                           :card/parallel-id parallel-id
                           :card/rarity rarity
-                          :card/category category
+                          :card/category (case category
+                                           "デジタマ"   :digi-egg
+                                           "デジモン"   :digimon
+                                           "テイマー"   :tamer
+                                           "オプション" :option
+                                           nil)
                           :card/color colors
                           :card/name (->> (select/select
                                            (select/descendant
@@ -827,7 +843,7 @@
                                                  first
                                                  :content)))
                           :card/notes notes
-                          :card/image {:image/language card-image-language
+                          :card/image {:image/language language
                                        :image/source (URI. (str origin image-source))}}
                    play-cost (assoc (if (= category "オプション")
                                       :card/use-cost
@@ -866,7 +882,7 @@
                     additional-pages))))
 
 (defmethod cards-in-release "zh-Hans"
-  [{:release/keys [language cardlist-uri card-image-language] :as release}]
+  [{:release/keys [language cardlist-uri] :as release}]
   (let [cards (loop [page 1
                      cards []]
                 (let [result (-> (utils/http-get (str cardlist-uri)
@@ -874,16 +890,16 @@
                                                                  :limit 40}})
                                  json/read-str)
                       cardlist (get-in result ["page" "list"])
-                      total-count (get-in result ["page" "totalCount"])]
+                      total-count (get-in result ["page" "totalCount"] 0)]
                   (if (< (+ (count cards) (count cardlist)) total-count)
                     (recur (inc page)
                            (concat cards cardlist))
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                            dp rareDegree entryConsumeValue envolutionConsumeTwo
-                            cardLevel effect envolutionEffect safeEffect
-                            imageCover getWayStr]}]
+                           dp rareDegree entryConsumeValue envolutionConsumeTwo
+                           cardLevel effect envolutionEffect safeEffect
+                           imageCover getWayStr cardGroup]}]
                  (when imageCover
                    (let [number (-> model
                                     (string/replace #"_.*" "")
@@ -929,15 +945,23 @@
                          repair-fn (-> repair/text-fixes-by-number-by-language
                                        (get-in [number language]))]
                      (cond-> {:card/id card-id
-                              :card/release (dissoc release
-                                                    :release/card-image-language)
+                              :card/release (if (string/includes? cardlist-uri
+                                                                  "&name=")
+                                              cardGroup
+                                              (dissoc release
+                                                      :release/card-image-language))
                               :card/language language
                               :card/number number
                               :card/parallel-id parallel-id
                               :card/rarity (last (re-find #"（(.*)）" rareDegree))
-                              :card/category belongsType
+                              :card/category (case belongsType
+                                               "数码蛋"   :digi-egg
+                                               "数码宝贝" :digimon
+                                               "驯兽师"   :tamer
+                                               "选项"     :option
+                                               nil)
                               :card/name (card-utils/normalize-string name)
-                              :card/image {:image/language card-image-language
+                              :card/image {:image/language language
                                            :image/source (URI. imageCover)}}
                        play-cost (assoc (if (= belongsType "选项")
                                           :card/use-cost
