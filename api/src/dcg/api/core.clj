@@ -12,6 +12,8 @@
    [dcg.api.resources.card :refer [card-resource]]
    [dcg.api.resources.index :refer [index-resource]]
    [dcg.api.resources.release :refer [releases-resource release-resource]])
+  (:import
+   [org.eclipse.jetty.server.handler.gzip GzipHandler])
   (:gen-class))
 
 (def routes
@@ -71,6 +73,20 @@
                                   (assoc-in [:security :ssl-redirect] false)))
       wrap-cors))
 
+(defn- add-gzip-handler
+  [server]
+  (.setHandler server
+               (doto (GzipHandler.)
+                 (.setHandler (.getHandler server))
+                 (.setIncludedMimeTypes
+                  (into-array ["text/css"
+                               "text/html"
+                               "application/javascript"
+                               "application/json"
+                               "application/vnd.api+json"
+                               "image/svg+xml"]))
+                 (.setMinGzipSize 860))))
+
 (defn -main
   [& args]
   (let [port 3000]
@@ -78,5 +94,8 @@
     (jetty/run-jetty #'handler
                      {:join? false
                       :ssl? false
-                      :port port})
+                      :port port
+                      :send-date-header? false
+                      :send-server-version? false
+                      :configurator add-gzip-handler})
     (println (format "API started on port %d" port))))

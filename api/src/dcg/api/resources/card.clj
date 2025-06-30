@@ -415,8 +415,8 @@
          (->> releases
               (sort-by :release/id)
               (map (fn [{:release/keys [id name date genre product-uri
-                                       thumbnail image]
-                        :as release}]
+                                        thumbnail image]
+                         :as release}]
                      (dom/dd
                       [(dom/img {:src (or (:image/path thumbnail)
                                           (:image/path image))
@@ -612,7 +612,10 @@
     {:allowed-methods [:head :get]
      :available-media-types ["application/vnd.api+json"
                              "text/html"]
-     :etag (fn [context] (utils/sha card))
+     :etag (fn [{{media-type :media-type} :representation}]
+             (str (utils/sha card)
+                  "--"
+                  media-type))
      :exists? (fn [_] (boolean card))
      :handle-ok
      (fn [{{{:keys [_ _]} :path-params} :request
