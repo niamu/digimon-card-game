@@ -16,4 +16,5 @@ resources/images/wiki-cards/
 resources/public/images/cards/
 resources/db/
 resources/phash_db.json
+resources/cards.transit.json
 src/main.rs

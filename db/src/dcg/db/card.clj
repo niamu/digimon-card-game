@@ -366,7 +366,7 @@
              (remove (fn [s] (or (empty? s) (= s "-"))))
              (remove nil?)
              (reduce (fn [accl c]
-                       (if-let [c c]
+                       (if c
                          (let [i (count accl)
                                from (or (some->> (string/lower-case c)
                                                  (re-find #"(?i).*lv\.?(\d+).*")
@@ -626,7 +626,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri]
-                  :as release} dom-tree]
+                   :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -897,9 +897,9 @@
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                           dp rareDegree entryConsumeValue envolutionConsumeTwo
-                           cardLevel effect envolutionEffect safeEffect
-                           imageCover getWayStr cardGroup]}]
+                            dp rareDegree entryConsumeValue envolutionConsumeTwo
+                            cardLevel effect envolutionEffect safeEffect
+                            imageCover getWayStr cardGroup]}]
                  (when imageCover
                    (let [number (-> model
                                     (string/replace #"_.*" "")

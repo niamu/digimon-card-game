@@ -201,23 +201,29 @@
 
 (defn generate-phash-db!
   []
-  (->> (db/q '{:find [?hash ?number]
+  (->> (db/q '{:find [?hash ?language ?number ?parallel-id]
                :where [[?c :card/number ?number]
+                       [?c :card/language ?language]
+                       [?c :card/parallel-id ?parallel-id]
                        [?c :card/image ?i]
                        [?i :image/hash ?hash]]})
-       (map (fn [[hash number]]
-              [(str hash) number]))
+       (map (fn [[hash language number parallel-id]]
+              [(str hash) language number parallel-id]))
        json/write-str
        (spit (io/file "resources/phash_db.json"))))
 
-(defn -main
-  [& _args]
+(defn ingest
+  []
   (logging/info "DB ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
        db/transact!)
-  (generate-phash-db!)
   (logging/info "DB ingestion completed."))
+
+(defn -main
+  [& _args]
+  (db/export!)
+  (generate-phash-db!))
 
 (comment
   (set! *print-namespace-maps* false)

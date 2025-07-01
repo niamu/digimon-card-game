@@ -41,7 +41,7 @@ struct Template {
     requirements_count: i32,
 }
 
-const DIGIVOLVE_TEMPLATES: [Template; 7] = [
+const DIGIVOLVE_TEMPLATES: [Template; 8] = [
     Template {
         path: "resources/images/templates/digivolution-requirements/v1_1.png",
         version: 1,
@@ -76,6 +76,11 @@ const DIGIVOLVE_TEMPLATES: [Template; 7] = [
         path: "resources/images/templates/digivolution-requirements/v2_3.png",
         version: 2,
         requirements_count: 2,
+    },
+    Template {
+        path: "resources/images/templates/digivolution-requirements/v3_1.png",
+        version: 3,
+        requirements_count: 1,
     },
 ];
 
@@ -310,8 +315,8 @@ fn requirements_v2(
     let mut confirmed_colors: Vec<String> = Vec::new();
     for color in colors {
         let coords = Coords {
-            x: color.coords.x + base_coords.x,
-            y: color.coords.y + base_coords.y,
+            x: color.coords.x + base_coords.x + {if digivolve_template.version == 3 { 4 } else { 0 }},
+            y: color.coords.y + base_coords.y + {if digivolve_template.version == 3 { 4 } else { 0 }},
         };
         let color_in_image = color_at_coordinate(&image, coords);
         let diff = color_difference(color_in_image, color.rgb.clone());
@@ -439,6 +444,7 @@ pub extern "C" fn digivolution_requirements(image_path: *const c_char) -> *mut c
     }
     let edn = match result {
         Some((m, t)) => match t.version {
+            3 => Some(requirements_v2(&image_mat_roi, m.coords, t)),
             2 => Some(requirements_v2(&image_mat_roi, m.coords, t)),
             _ => Some(requirements_v1(&image_mat_roi, m.coords, t)),
         },
