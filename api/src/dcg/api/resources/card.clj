@@ -13,6 +13,7 @@
    [dcg.api.resources.errors :as errors]
    [dcg.simulator.card :as-alias card]
    [dcg.api.db :as db]
+   [dcg.api.routes :as-alias routes]
    [taoensso.tempura :as tempura])
   (:import
    [java.io PushbackReader]
@@ -289,33 +290,42 @@
                                        (mapcat :digivolve/color requirements))))
                         [])
                 (map (fn [{:digivolve/keys [cost color level form category]}]
-                       (dom/dl
-                        (dom/dt (tr [language] [:digivolve-cost]))
-                        (dom/dd cost)
-                        (dom/dt (tr [language] [:color]))
-                        (dom/dd (->> color
-                                     (sort-by {:red 0
-                                               :blue 1
-                                               :yellow 2
-                                               :green 3
-                                               :black 4
-                                               :purple 5
-                                               :white 6})
-                                     (map (fn [color]
-                                            (dom/span
-                                             {:class (format "color %s"
-                                                             (name color))}
-                                             (tr [language] [color]))))
-                                     (interpose " ")))
-                        (when level
-                          [(dom/dt (tr [language] [:level]))
-                           (dom/dd level)])
-                        (when category
-                          [(dom/dt (tr [language] [:category]))
-                           (dom/dd (tr [language] [category]))])
-                        (when form
-                          [(dom/dt (tr [language] [:form]))
-                           (dom/dd (tr [language] [form ""]))]))))))))
+                       (let [matches-card-colors?
+                             (= (set (mapcat :digivolve/color
+                                             digivolution-requirements))
+                                (set (map :color/color
+                                          (:card/color card))))]
+                         (dom/dl
+                          (dom/dt (tr [language] [:digivolve-cost]))
+                          (dom/dd cost)
+                          (dom/dt (tr [language] [:color]))
+                          (dom/dd (->> (if matches-card-colors?
+                                         (->> (:card/color card)
+                                              (sort-by :color/index)
+                                              (map :color/color))
+                                         (->> color
+                                              (sort-by {:red 0
+                                                        :blue 1
+                                                        :yellow 2
+                                                        :green 3
+                                                        :black 4
+                                                        :purple 5
+                                                        :white 6})))
+                                       (map (fn [color]
+                                              (dom/span
+                                               {:class (format "color %s"
+                                                               (name color))}
+                                               (tr [language] [color]))))
+                                       (interpose " ")))
+                          (when level
+                            [(dom/dt (tr [language] [:level]))
+                             (dom/dd level)])
+                          (when category
+                            [(dom/dt (tr [language] [:category]))
+                             (dom/dd (tr [language] [category]))])
+                          (when form
+                            [(dom/dt (tr [language] [:form]))
+                             (dom/dd (tr [language] [form ""]))])))))))))
        (when effect
          (dom/dl
           (dom/dt (tr [language] [:effect]))
@@ -505,6 +515,145 @@
 
 (def ^:private ui-card (comp/factory Card {:keyfn ::card/uuid}))
 
+(defn all-cards
+  [request]
+  (->> (db/q {:find [[(list 'pull '?c (comp/get-query CardDetails)) '...]]
+              :where '[[?c :card/id _]]})
+       (map (fn [{:card/keys [language number parallel-id] :as card}]
+              (let [alt-arts (db/q '{:find [[(pull ?c [:card/notes
+                                                       :card/number
+                                                       :card/parallel-id]) ...]]
+                                     :in [$ ?language ?number ?p]
+                                     :where [[?c :card/language ?language]
+                                             [?c :card/image ?i]
+                                             [?c :card/number ?number]
+                                             (not [?c :card/parallel-id ?p])
+                                             [?i :image/language ?language]]}
+                                   language
+                                   number
+                                   parallel-id)
+                    card (some-> card
+                                 (dissoc :card/language)
+                                 (update :card/color
+                                         (fn [colors]
+                                           (->> colors
+                                                (sort-by :color/index)
+                                                (map :color/color))))
+                                 (update :card/digivolution-requirements
+                                         (fn [coll]
+                                           (->> coll
+                                                (sort-by :digivolve/index)
+                                                (map #(dissoc % :digivolve/index)))))
+                                 (update :card/faqs
+                                         (fn [coll]
+                                           (->> coll
+                                                (sort-by :faq/id)
+                                                (map #(dissoc % :faq/id)))))
+                                 (update :card/image
+                                         (fn [{path :image/path}] path)))]
+                {:data
+                 (cond-> {:type "cards"
+                          :id (utils/route-by-name
+                               request
+                               ::routes/card
+                               {:language language
+                                :card-id
+                                (str number
+                                     (when-not (zero? parallel-id)
+                                       (str "_P" parallel-id)))})
+                          :attributes (cond-> (dissoc card :card/releases)
+                                        (:card/errata card)
+                                        (update :card/errata
+                                                (fn [errata]
+                                                  (cond-> errata
+                                                    (:errata/date errata)
+                                                    (update :errata/date
+                                                            utils/inst->iso8601))))
+                                        (:card/faqs card)
+                                        (update :card/faqs
+                                                (fn [faqs]
+                                                  (map (fn [faq]
+                                                         (cond-> faq
+                                                           (:faq/date faq)
+                                                           (update :faq/date
+                                                                   utils/inst->iso8601)))
+                                                       faqs)))
+                                        (:card/limitations card)
+                                        (update :card/limitations
+                                                (fn [limitations]
+                                                  (map (fn [l]
+                                                         (cond-> l
+                                                           (:limitation/date l)
+                                                           (update :limitation/date
+                                                                   utils/inst->iso8601)))
+                                                       limitations))))}
+                   (seq alt-arts)
+                   (assoc-in [:relationships :alternate-arts]
+                             {:data
+                              (->> alt-arts
+                                   (map (fn [{:card/keys [notes number parallel-id]}]
+                                          {:type "cards"
+                                           :id (utils/route-by-name
+                                                request
+                                                ::routes/card
+                                                {:language language
+                                                 :card-id
+                                                 (str number
+                                                      (when-not (zero? parallel-id)
+                                                        (str "_P" parallel-id)))})
+                                           :links
+                                           {:related
+                                            (cond-> {:href
+                                                     (->> (utils/route-by-name
+                                                           request
+                                                           ::routes/card
+                                                           {:language language
+                                                            :card-id
+                                                            (str number
+                                                                 (when-not (zero? parallel-id)
+                                                                   (str "_P" parallel-id)))})
+                                                          (utils/update-api-path {}))}
+                                              notes
+                                              (assoc :meta
+                                                     {:notes notes}))}})))})
+                   (seq (:card/releases card))
+                   (assoc-in [:relationships :releases]
+                             {:data
+                              (->> (:card/releases card)
+                                   (map (fn [{:release/keys [name]
+                                             :as release}]
+                                          (update release
+                                                  :release/id utils/short-uuid)))
+                                   (sort-by (juxt :release/date
+                                                  :release/id))
+                                   (mapv (fn [r]
+                                           (let [m (reduce-kv (fn [m k v]
+                                                                (if (nil? v)
+                                                                  m
+                                                                  (assoc m k v)))
+                                                              {}
+                                                              r)]
+                                             (cond-> m
+                                               (:release/date m)
+                                               (update :release/date
+                                                       utils/inst->iso8601)))))
+                                   (map (fn [r]
+                                          {:type "releases"
+                                           :id (utils/route-by-name
+                                                request
+                                                ::routes/release
+                                                {:language language
+                                                 :release (:release/id r)})
+                                           :meta {:name (:release/name r)
+                                                  :date (:release/date r)}
+                                           :links
+                                           {:related (->> (utils/route-by-name
+                                                           request
+                                                           ::routes/release
+                                                           {:language language
+                                                            :release (:release/id r)})
+                                                          (utils/update-api-path {}))}})))}))})))))
+
 (liberator/defresource card-resource
   [{{:keys [language card-id]} :path-params
     :as request}]
@@ -513,57 +662,9 @@
                                 (subs 1)
                                 parse-long)
                         0)
-        db-card (db/q '{:find [(pull ?c [:card/name
-                                         :card/number
-                                         :card/language
-                                         :card/parallel-id
-                                         :card/level
-                                         :card/effect
-                                         :card/inherited-effect
-                                         :card/security-effect
-                                         :card/dp
-                                         :card/rarity
-                                         {:card/supplemental-rarity
-                                          [:supplemental-rarity/stamp
-                                           :supplemental-rarity/stars]}
-                                         {:card/releases
-                                          [:release/id
-                                           :release/name
-                                           :release/date
-                                           :release/genre
-                                           {:release/image [:image/path]}
-                                           {:release/thumbnail [:image/path]}]}
-                                         :card/block-icon
-                                         :card/category
-                                         :card/attribute
-                                         :card/form
-                                         :card/type
-                                         {:card/color [:color/color]}
-                                         {:card/digivolution-requirements
-                                          [:digivolve/category
-                                           :digivolve/form
-                                           :digivolve/color
-                                           :digivolve/level
-                                           :digivolve/cost]}
-                                         {:card/image [:image/path]}
-                                         {:card/errata
-                                          [:errata/date
-                                           :errata/error
-                                           :errata/correction
-                                           :errata/notes]}
-                                         {:card/limitations
-                                          [:limitation/date
-                                           :limitation/type
-                                           :limitation/allowance
-                                           :limitation/paired-card-numbers
-                                           :limitation/note]}
-                                         {:card/faqs
-                                          [:faq/date
-                                           :faq/question
-                                           :faq/answer]}
-                                         :card/notes]) .]
-                        :in [$ ?language ?number ?parallel-id]
-                        :where [[?c :card/language ?language]
+        db-card (db/q {:find [(list 'pull '?c (comp/get-query CardDetails)) '.]
+                       :in '[$ ?language ?number ?parallel-id]
+                       :where '[[?c :card/language ?language]
                                 [?c :card/image ?i]
                                 [?c :card/number ?number]
                                 [?c :card/parallel-id ?parallel-id]
@@ -591,12 +692,24 @@
                                                           (partial utils/update-image-path
                                                                    request)))))))))
         card (some-> db-card
-                     (dissoc :card/language)
+                     (dissoc :card/id)
                      (update :card/color
-                             #(map :color/color %))
+                             (fn [colors]
+                               (->> colors
+                                    (sort-by :color/index)
+                                    (map :color/color))))
+                     (update :card/digivolution-requirements
+                             (fn [coll]
+                               (->> coll
+                                    (sort-by :digivolve/index)
+                                    (map #(dissoc % :digivolve/index)))))
+                     (update :card/faqs
+                             (fn [coll]
+                               (->> coll
+                                    (sort-by :faq/id)
+                                    (map #(dissoc % :faq/id)))))
                      (update :card/image
-                             (fn [{path :image/path}]
-                               path)))
+                             (fn [{path :image/path}] path)))
         alt-arts (db/q '{:find [[(pull ?c [:card/notes
                                            :card/number
                                            :card/parallel-id]) ...]]
@@ -618,23 +731,25 @@
                   media-type))
      :exists? (fn [_] (boolean card))
      :handle-ok
-     (fn [{{{:keys [_ _]} :path-params} :request
-          {media-type :media-type} :representation
-          :as context}]
+     (fn [{request :request
+          {media-type :media-type} :representation}]
        (case media-type
-         "text/html" (->> (ui-card {::card/uuid (-> (get-in context
-                                                            [:request
-                                                             :reitit.core/match
+         "text/html" (->> (ui-card {::card/uuid (-> (get-in request
+                                                            [:reitit.core/match
                                                              :path])
                                                     (string/replace "/" "_"))
                                     ::card/card db-card})
                           render-to-str-without-react)
-         {:data
-          (cond-> {:id (str "/" language "/cards/"
-                            number
-                            (when-not (zero? parallel-id)
-                              (str "_P" parallel-id)))
-                   :type "cards"
+         (cond-> {:data
+                  {:type "cards"
+                   :id (utils/route-by-name
+                        request
+                        ::routes/card
+                        {:language language
+                         :card-id
+                         (str number
+                              (when-not (zero? parallel-id)
+                                (str "_P" parallel-id)))})
                    :attributes (cond-> (dissoc card :card/releases)
                                  (:card/errata card)
                                  (update :card/errata
@@ -660,66 +775,94 @@
                                                     (:limitation/date l)
                                                     (update :limitation/date
                                                             utils/inst->iso8601)))
-                                                limitations))))}
-            (seq alt-arts)
-            (assoc-in [:relationships :alternate-arts]
-                      {:data
+                                                limitations))))}}
+           (seq alt-arts)
+           (-> (assoc-in [:data :relationships :alternate-arts]
+                         {:data
+                          (->> alt-arts
+                               (map (fn [{:card/keys [notes number parallel-id]}]
+                                      {:type "cards"
+                                       :id (utils/route-by-name
+                                            request
+                                            ::routes/card
+                                            {:language language
+                                             :card-id
+                                             (str number
+                                                  (when-not (zero? parallel-id)
+                                                    (str "_P" parallel-id)))})})))})
+               (update :included
+                       (fnil concat [])
                        (->> alt-arts
                             (map (fn [{:card/keys [notes number parallel-id]}]
-                                   {:type "cards"
-                                    :id (str "/" language "/cards/"
-                                             number
-                                             (when-not (zero? parallel-id)
-                                               (str "_P" parallel-id)))
-                                    :links
-                                    {:related
-                                     (cond-> {:href
-                                              (format
-                                               "%s/%s"
-                                               (utils/base-url context)
-                                               (str language
-                                                    "/"
-                                                    "cards"
-                                                    "/"
-                                                    number
-                                                    (when-not (zero? parallel-id)
-                                                      (str "_P" parallel-id))))}
-                                       notes
-                                       (assoc :meta
-                                              {:notes notes}))}})))})
-            (seq (:card/releases card))
-            (assoc-in [:relationships :releases]
-                      {:data
+                                   (cond-> {:type "cards"
+                                            :id (utils/route-by-name
+                                                 request
+                                                 ::routes/card
+                                                 {:language language
+                                                  :card-id
+                                                  (str number
+                                                       (when-not (zero? parallel-id)
+                                                         (str "_P" parallel-id)))})
+                                            :links
+                                            {:self (->> (utils/route-by-name
+                                                         request
+                                                         ::routes/card
+                                                         {:language language
+                                                          :card-id
+                                                          (str number
+                                                               (when-not (zero? parallel-id)
+                                                                 (str "_P" parallel-id)))})
+                                                        (utils/update-api-path request))}}
+                                     notes
+                                     (assoc :meta
+                                            {:notes notes})))))))
+           (seq (:card/releases card))
+           (-> (assoc-in [:data :relationships :releases]
+                         {:data
+                          (->> (:card/releases card)
+                               (map (fn [{:release/keys [name]
+                                          :as release}]
+                                      (update release
+                                              :release/id utils/short-uuid)))
+                               (sort-by (juxt :release/date
+                                              :release/id))
+                               (mapv (fn [r]
+                                       (let [m (reduce-kv (fn [m k v]
+                                                            (if (nil? v)
+                                                              m
+                                                              (assoc m k v)))
+                                                          {}
+                                                          r)]
+                                         (cond-> m
+                                           (:release/date m)
+                                           (update :release/date
+                                                   utils/inst->iso8601)))))
+                               (map (fn [r]
+                                      {:type "releases"
+                                       :id (utils/route-by-name
+                                            request
+                                            ::routes/release
+                                            {:language language
+                                             :release (:release/id r)})})))})
+               (update :included
+                       (fnil concat [])
                        (->> (:card/releases card)
-                            (map (fn [{:release/keys [name]
-                                      :as release}]
-                                   (update release
-                                           :release/id utils/short-uuid)))
-                            (sort-by (juxt :release/date
-                                           :release/id))
-                            (mapv (fn [r]
-                                    (let [m (reduce-kv (fn [m k v]
-                                                         (if (nil? v)
-                                                           m
-                                                           (assoc m k v)))
-                                                       {}
-                                                       r)]
-                                      (cond-> m
-                                        (:release/date m)
-                                        (update :release/date
-                                                utils/inst->iso8601)))))
-                            (map (fn [r]
-                                   {:id (str "/" language "/releases/"
-                                             (:release/id r))
-                                    :type "releases"
-                                    :meta {:name (:release/name r)
-                                           :date (:release/date r)}
+                            (map (fn [{:release/keys [id name date]}]
+                                   {:type "releases"
+                                    :id (utils/route-by-name
+                                         request
+                                         ::routes/release
+                                         {:language language
+                                          :release (utils/short-uuid id)})
                                     :links
-                                    {:related (format "%s/%s"
-                                                      (utils/base-url context)
-                                                      (str language
-                                                           "/releases/"
-                                                           (:release/id r)))}})))}))}))
+                                    {:self
+                                     (->> (utils/route-by-name
+                                           request
+                                           ::routes/release
+                                           {:language language
+                                            :release (utils/short-uuid id)})
+                                          (utils/update-api-path request))}
+                                    :meta {:name name}}))))))))
      :handle-method-not-allowed errors/error405-body
      :handle-not-acceptable errors/error406-body
      :handle-not-found errors/error404-body

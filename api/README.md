@@ -4,91 +4,36 @@
 
 ## Usage
 
-The API depends on the Database, so when building the container, both projects need to be copied into the container.
+**NOTE**: Ensure you've already exported "cards.transit.json" (using `clojure -X:export` from the [database](/db)) and placed it in the resources directory.
 
-Build the container image from the root of this project using the following command:
+### Bulk Data Export
 
-**NOTE**: Ensure you've already generated a db.edn file in an accessible resources directory on the classpath first.
-
-```
-$ docker build -t dcg-api -f api/Dockerfile .
-```
-
-Then run the container:
+The API supports bulk data file endpoints to download from, but these files must be generated before starting the web server.
 
 ```
-$ docker run --rm -it -p 3000:3000 dcg-api
+$ API_NAME="Digimon Card Game (2020)" \
+  SITE_ORIGIN="https://example.com" \
+  API_ORIGIN="https://api.example.com" \
+  IMAGES_ORIGIN="https://images.example.com" \
+    clojure -X:bulk-data-export!
+Bulk data export complete
 ```
 
-Query the API:
+### Start the Server
 
 ```
-$ curl http://127.0.0.1:3000
+$ API_NAME="Digimon Card Game (2020)" \
+  SITE_ORIGIN="https://example.com" \
+  API_ORIGIN="https://api.example.com" \
+  IMAGES_ORIGIN="https://images.example.com" \
+    clojure -X:serve
+API started on port 3000
 ```
 
-```json
-{
-  "data": [
-    {
-      "id": "en",
-      "type": "language",
-      "attributes": {
-        "tag": "en",
-        "name": "English"
-      },
-      "meta": {
-        "latest-release": "Sun Aug 18 00:00:00 EDT 2024"
-      },
-      "links": {
-        "related": "http://127.0.0.1:3000/en"
-      }
-    },
-    {
-      "id": "ja",
-      "type": "language",
-      "attributes": {
-        "tag": "ja",
-        "name": "Japanese"
-      },
-      "meta": {
-        "latest-release": "Sat Aug 10 20:00:00 EDT 2024"
-      },
-      "links": {
-        "related": "http://127.0.0.1:3000/ja"
-      }
-    },
-    {
-      "id": "zh-Hans",
-      "type": "language",
-      "attributes": {
-        "tag": "zh-Hans",
-        "name": "Chinese"
-      },
-      "meta": {
-        "latest-release": "Sun Aug 04 00:00:00 EDT 2024"
-      },
-      "links": {
-        "related": "http://127.0.0.1:3000/zh-Hans"
-      }
-    },
-    {
-      "id": "ko",
-      "type": "language",
-      "attributes": {
-        "tag": "ko",
-        "name": "Korean"
-      },
-      "meta": {
-        "latest-release": "Thu Jul 18 20:00:00 EDT 2024"
-      },
-      "links": {
-        "related": "http://127.0.0.1:3000/ko"
-      }
-    }
-  ],
-  "links": {
-    "self": "http://127.0.0.1:3000/"
-  }
-}
+## Build
+
+```
+$ clojure -T:build uber
 ```
 
+The resulting uberjar is saved to the "target" directory.

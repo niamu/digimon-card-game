@@ -1,7 +1,41 @@
 (ns dcg.api.resources.errors
   (:require
-   [dcg.api.utils :as utils]
-   [liberator.representation :as representation]))
+   [clojure.data.json :as json]
+   [liberator.representation :as representation]
+   [dcg.api.utils :as utils]))
+
+(defmethod representation/render-map-generic "application/vnd.api+json"
+  [data {{:keys [uri] :as request} :request :as context}]
+  (let [self-url (utils/update-api-path request uri)]
+    (json/write-str (cond-> data
+                      (:data data)
+                      (assoc-in [:links :self] self-url)))))
+
+(defmethod representation/render-seq-generic "application/vnd.api+json"
+  [data {{:keys [uri] :as request} :request :as context}]
+  (let [self-url (utils/update-api-path request uri)]
+    (json/write-str (cond-> {:data data}
+                      (nil? (:errors data))
+                      (assoc-in [:links :self] self-url)))))
+
+(def error400-body
+  {:errors [{:status "400" :detail "Bad Request"}]
+   :meta {:documentation
+          {:description (format "This is the %s API. For documentation please see %s"
+                                (or (System/getenv "API_NAME")
+                                    "Digimon Card Game (2020)")
+                                (str (System/getenv "SITE_ORIGIN")
+                                     "/docs/api"))
+           :url (str (System/getenv "SITE_ORIGIN")
+                     "/docs/api")}}})
+
+(def error400
+  (constantly {:status 404
+               :headers {"Content-Type" "application/vnd.api+json"}
+               :body (representation/render-map-generic
+                      error400-body
+                      {:representation
+                       {:media-type "application/vnd.api+json"}})}))
 
 (def error403-body
   {:errors [{:status "403" :detail "Invalid anti-forgery token"}]})

@@ -12,5 +12,6 @@
         com.taoensso/tempura                  {:mvn/version "1.5.4"}
         org.clojars.brenton/google-diff-match-patch {:mvn/version "0.1"}}
  :aliases {:serve {:exec-fn dcg.api.core/-main}
+           :bulk-data-export! {:exec-fn dcg.api.core/bulk-data-export!}
            :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.9"}}
                    :ns-default build}}}

@@ -14,26 +14,24 @@
                                  [?i :image/language ?l]]})]
     {:allowed-methods [:head :get]
      :available-media-types ["application/vnd.api+json"]
-     :etag (fn [context] (utils/sha db-query))
-     :handle-ok (fn [context]
+     :etag (fn [_] (utils/sha db-query))
+     :handle-ok (fn [{request :request}]
                   (->> db-query
                        (sort-by (comp inst-ms second) >)
                        (mapv (fn [[language last-release]]
-                               {:id language
-                                :type "language"
-                                :attributes
-                                {:code language
-                                 :name (case language
-                                         "ja" "Japanese"
-                                         "en" "English"
-                                         "zh-Hans" "Chinese (Simplified)"
-                                         "ko" "Korean")}
+                               {:type "languages"
+                                :id (utils/route-by-name
+                                     request
+                                     :dcg.api.routes/language
+                                     {:language language})
                                 :meta
                                 {:latest-release (utils/inst->iso8601 last-release)}
                                 :links
-                                {:related (format "%s/%s/releases"
-                                                  (utils/base-url context)
-                                                  language)}}))))
+                                {:self (->> (utils/route-by-name
+                                             request
+                                             :dcg.api.routes/language
+                                             {:language language})
+                                            (utils/update-api-path request))}}))))
      :handle-method-not-allowed errors/error405-body
      :handle-not-acceptable errors/error406-body
      :as-response (fn [data {representation :representation :as context}]

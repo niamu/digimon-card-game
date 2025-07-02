@@ -2,45 +2,31 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as string]
+   [liberator.representation :as representation]
+   [reitit.core :as r]
    [reitit.ring :as ring]
    [ring.adapter.jetty :as jetty]
    [ring.middleware.defaults :as defaults]
    [taoensso.timbre :as logging]
    [dcg.api.db :as db]
+   [dcg.api.routes :as routes]
    [dcg.api.utils :as utils]
-   [dcg.api.resources.errors :as errors]
-   [dcg.api.resources.card :refer [card-resource]]
-   [dcg.api.resources.index :refer [index-resource]]
-   [dcg.api.resources.release :refer [releases-resource release-resource]])
+   [dcg.api.resources.card :as card]
+   [dcg.api.resources.errors :as errors])
   (:import
+   [java.io File]
+   [java.time ZonedDateTime]
    [org.eclipse.jetty.server.handler.gzip GzipHandler])
   (:gen-class))
 
-(def routes
-  [["/"
-    {:name ::index
-     :handler #'index-resource}]
-   ["/:language/releases"
-    {:name ::language
-     :handler (fn [request]
-                ((#'releases-resource request) request))}]
-   ["/:language/releases/:release"
-    {:name ::release
-     :handler (fn [request]
-                ((#'release-resource request) request))}]
-   ["/:language/cards/:card-id"
-    {:name ::card
-     :handler (fn [request]
-                ((#'card-resource request) request))}]])
-
 (def route-handler
   (ring/ring-handler
-   (ring/router routes {:conflicts nil})
+   (ring/router routes/routes)
    (ring/routes
     (ring/redirect-trailing-slash-handler {:method :strip})
-    (ring/create-default-handler {:not-found errors/error404
-                                  :method-not-allowed errors/error405
-                                  :not-acceptable errors/error406}))))
+    (ring/create-default-handler {:not-found #'errors/error400
+                                  :method-not-allowed #'errors/error405
+                                  :not-acceptable #'errors/error406}))))
 
 (defn wrap-cors
   [handler]
@@ -61,7 +47,10 @@
                                     "Accept-Language"
                                     "Cache-Control"
                                     "Content-Language"
-                                    "Content-Type"])))))))
+                                    "Content-Type"])))
+        (instance? File (:body response))
+        (-> (assoc-in [:headers "Content-Dispositon"] "attachment")
+            (assoc-in [:headers "Etag"] (utils/sha (:uri request))))))))
 
 (def handler
   (-> #'route-handler
@@ -86,6 +75,37 @@
                                "application/vnd.api+json"
                                "image/svg+xml"]))
                  (.setMinGzipSize 860))))
+
+(defn bulk-data-export!
+  [& args]
+  (db/import!)
+  (let [bulk-data-dir "resources/public/bulk-data/"
+        f (format "%s/all_cards-%s.json"
+                  bulk-data-dir
+                  (let [now (ZonedDateTime/now)]
+                    (str (.toLocalDate now)
+                         "-"
+                         (format "%02d%02d%02d"
+                                 (.getHour now)
+                                 (.getMinute now)
+                                 (.getSecond now)))))
+        cards (card/all-cards {::r/router (r/router routes/routes)})
+        last-card (last cards)]
+    (doseq [file (->> (file-seq (io/file bulk-data-dir))
+                      (filter #(.isFile %)))]
+      (io/delete-file file true))
+    (io/make-parents f)
+    (with-open [w (io/writer f :append true)]
+      (.write w "[\n")
+      (doseq [card cards]
+        (.write w (representation/render-item
+                   card {:request {:uri (get-in card [:data :id])}
+                         :representation
+                         {:media-type "application/vnd.api+json"}}))
+        (when (not= card last-card)
+          (.write w ",\n")))
+      (.write w "\n]")))
+  (println "Bulk data export complete"))
 
 (defn -main
   [& args]

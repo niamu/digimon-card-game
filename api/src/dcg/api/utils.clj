@@ -2,11 +2,20 @@
   (:require
    [clojure.data.json :as json]
    [clojure.string :as string]
-   [liberator.representation :as representation])
+   [reitit.core :as r])
   (:import
    [java.security MessageDigest]
    [java.time Instant ZoneId]
    [java.time.format DateTimeFormatter]))
+
+(defn update-api-path
+  [{:keys [scheme server-name]} path]
+  (str (or (System/getenv "API_ORIGIN")
+           (when scheme
+             (format "%s://%s"
+                     (name scheme)
+                     server-name)))
+       path))
 
 (defn update-image-path
   [{:keys [scheme server-name]} path]
@@ -19,16 +28,6 @@
            (System/getenv "IMAGES_ORIGIN")
            (string/replace #"^/images" "")))))
 
-(extend-type java.util.Date
-  json/JSONWriter
-  (-write [date out]
-    (json/-write (str date) out)))
-
-(extend-type java.net.URI
-  json/JSONWriter
-  (-write [uri out]
-    (json/-write (str uri) out)))
-
 (defn inst->iso8601
   [i]
   (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd")
@@ -37,6 +36,16 @@
                             Instant/ofEpochMilli
                             (.atZone (ZoneId/of "UTC")))]
     (.format ^DateTimeFormatter formatter zoned-date-time)))
+
+(extend-type java.util.Date
+  json/JSONWriter
+  (-write [date out]
+    (json/-write (inst->iso8601 date) out)))
+
+(extend-type java.net.URI
+  json/JSONWriter
+  (-write [uri out]
+    (json/-write (str uri) out)))
 
 (defn short-uuid
   [id]
@@ -48,13 +57,6 @@
                 (format "%02x" (bit-and c 0xFF))))
          (apply str))))
 
-(defn base-url
-  [{{:keys [scheme headers]} :request :as context}]
-  (when scheme
-    (str (name scheme)
-         "://"
-         (get headers "host"))))
-
 (defn sha
   [text]
   (->> (cond-> text
@@ -65,16 +67,8 @@
        (map #(format "%02x" %))
        (apply str)))
 
-(defmethod representation/render-map-generic "application/vnd.api+json"
-  [data {{:keys [uri]} :request :as context}]
-  (let [self-url (str (base-url context) uri)]
-    (json/write-str (cond-> data
-                      (:data data)
-                      (assoc :links {:self self-url})))))
-
-(defmethod representation/render-seq-generic "application/vnd.api+json"
-  [data {{:keys [uri]} :request :as context}]
-  (let [self-url (str (base-url context) uri)]
-    (json/write-str (cond-> {:data data}
-                      (nil? (:errors data))
-                      (assoc :links {:self self-url})))))
+(defn route-by-name
+  [{router ::r/router} name & [path-params]]
+  (-> router
+      (r/match-by-name name path-params)
+      r/match->path))

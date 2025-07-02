@@ -2,3 +2,4 @@
 .nrepl-port
 target/
 resources/cards.transit.json
+resources/public/bulk-data/
