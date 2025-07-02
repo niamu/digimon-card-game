@@ -34,8 +34,8 @@
     (let [{:keys [status] :as response} (handler request)]
       (cond-> response
         (= status 200)
-        (-> (assoc-in [:headers "Cache-Control"] (str "public, max-age="
-                                                      (* 60 60 24 365)))
+        (-> (assoc-in [:headers "Cache-Control"]
+                      "public, max-age=0, must-revalidate")
             (assoc-in [:headers "Access-Control-Allow-Methods"] "GET, OPTIONS")
             (assoc-in [:headers "Access-Control-Allow-Origin"] "*")
             (assoc-in [:headers "Access-Control-Max-Age"]

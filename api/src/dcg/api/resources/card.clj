@@ -621,7 +621,7 @@
                              {:data
                               (->> (:card/releases card)
                                    (map (fn [{:release/keys [name]
-                                             :as release}]
+                                              :as release}]
                                           (update release
                                                   :release/id utils/short-uuid)))
                                    (sort-by (juxt :release/date
@@ -821,7 +821,7 @@
                          {:data
                           (->> (:card/releases card)
                                (map (fn [{:release/keys [name]
-                                          :as release}]
+                                         :as release}]
                                       (update release
                                               :release/id utils/short-uuid)))
                                (sort-by (juxt :release/date
@@ -866,9 +866,11 @@
      :handle-method-not-allowed errors/error405-body
      :handle-not-acceptable errors/error406-body
      :handle-not-found errors/error404-body
-     :as-response (fn [data {representation :representation :as context}]
+     :as-response (fn [data {{media-type :media-type} :representation
+                            :as context}]
                     (-> data
                         (representation/as-response
                          (assoc-in context
                                    [:representation :media-type]
-                                   "application/vnd.api+json"))))}))
+                                   (or media-type
+                                       "application/vnd.api+json")))))}))
