@@ -223,8 +223,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-             {:image/keys [source]} :card/image
-             :as card}]
+            {:image/keys [source]} :card/image
+            :as card}]
          (cond-> card
            (= source (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -3481,22 +3481,22 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -3507,9 +3507,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                          :card/form
-                          :card/dp
-                          :card/level))}
+                         :card/form
+                         :card/dp
+                         :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3533,6 +3533,30 @@
                         (-> s
                             (string/replace "【≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌】"
                                             "≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
+ "BT22-028"
+ {"en" (fn [{:card/keys [effect] :as card}]
+         (cond-> card
+           effect
+           (update :card/effect
+                   (fn [s]
+                     (string/replace s
+                                     "[When Attacking] By placing 1"
+                                     "[When Attacking] [Once Per Turn] By placing 1")))))}
+ "BT22-093"
+ {"zh-Hans" (fn [card]
+              (-> card
+                  (assoc :card/play-cost 4)))}
+ "BT22-TOKEN"
+ {"ja" (fn [card]
+         (-> card
+             (dissoc :card/rarity)
+             (assoc :card/category :digimon)))
+  "en" (fn [card]
+         (-> card
+             (dissoc :card/rarity)))
+  "zh-Hans" (fn [card]
+              (-> card
+                  (dissoc :card/rarity)))}
  "EX1-005"
  {"zh-Hans" (fn [card]
               (update card :card/effect

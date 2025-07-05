@@ -167,14 +167,15 @@
                                 (string/replace #"," "")))
                     (catch ParseException _ nil)))]
     (when uri
-      {:release/id (format "release_%s_%s" language uri-path)
-       :release/genre genre
-       :release/name release-name
-       :release/product-uri (URI. uri)
-       :release/language language
-       :release/card-image-language (or card-image-language language)
-       :release/image-uri image
-       :release/date date})))
+      (cond-> {:release/id (format "release_%s_%s" language uri-path)
+               :release/genre genre
+               :release/name release-name
+               :release/product-uri (URI. uri)
+               :release/language language
+               :release/card-image-language (or card-image-language language)
+               :release/image-uri image}
+        date
+        (assoc :release/date date)))))
 
 (defn- release
   [{:origin/keys [card-image-language language url]}

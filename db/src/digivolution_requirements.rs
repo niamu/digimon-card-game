@@ -41,7 +41,7 @@ struct Template {
     requirements_count: i32,
 }
 
-const DIGIVOLVE_TEMPLATES: [Template; 8] = [
+const DIGIVOLVE_TEMPLATES: [Template; 11] = [
     Template {
         path: "resources/images/templates/digivolution-requirements/v1_1.png",
         version: 1,
@@ -81,6 +81,21 @@ const DIGIVOLVE_TEMPLATES: [Template; 8] = [
         path: "resources/images/templates/digivolution-requirements/v3_1.png",
         version: 3,
         requirements_count: 1,
+    },
+    Template {
+        path: "resources/images/templates/digivolution-requirements/v3_2.png",
+        version: 3,
+        requirements_count: 2,
+    },
+    Template {
+        path: "resources/images/templates/digivolution-requirements/v3_3.png",
+        version: 3,
+        requirements_count: 2,
+    },
+    Template {
+        path: "resources/images/templates/digivolution-requirements/v3_4.png",
+        version: 3,
+        requirements_count: 2,
     },
 ];
 
@@ -397,8 +412,8 @@ fn requirements_v2(
         let mut confirmed_colors: Vec<String> = Vec::new();
         for color in colors {
             let coords = Coords {
-                x: color.coords.x + base_coords.x,
-                y: color.coords.y + base_coords.y,
+                x: color.coords.x + base_coords.x + {if digivolve_template.version == 3 { 3 } else { 0 }},
+                y: color.coords.y + base_coords.y + {if digivolve_template.version == 3 { 4 } else { 0 }},
             };
             let color_in_image = color_at_coordinate(&image, coords);
             let diff = color_difference(color_in_image, color.rgb.clone());

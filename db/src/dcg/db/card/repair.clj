@@ -84,6 +84,7 @@
           (string/replace "{手札}" "［手札］")
           (string/replace "[育成]" "［育成］")
           (string/replace "{Security}" "[Security]")
+          (string/replace #"(Assembly\s\-[0-9]):" "【$1】")
           (string/replace #"(アセンブリ\-[0-9]):" "【$1】")
           (string/replace #"【(组装\-[0-9]):" "【$1】")
           (string/replace ",并减少登场费用。】" ",并减少登场费用。")

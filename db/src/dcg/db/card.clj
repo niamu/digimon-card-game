@@ -87,30 +87,48 @@
                    (let [prev-card (peek accl)
                          release (dissoc release :release/card-image-language)
                          releases-in-notes
-                         (some->> notes
-                                  (re-seq (card-utils/within-brackets-re
-                                           (get card-utils/text-punctuation
-                                                :square-brackets)))
-                                  (mapcat rest)
-                                  (remove nil?)
-                                  (map (fn [s]
-                                         (let [ver (re-find #"(?i)Ver\.?[0-9]\.[0-9]"
-                                                            notes)]
-                                           (-> s
-                                               (string/replace "-" "")
-                                               (string/replace #"0([0-9]+)"
-                                                               "$1")
-                                               (cond->> #__
-                                                 ver (str ver))))))
-                                  (filter (fn [r]
-                                            (contains? release-set-ids r)))
-                                  (map releases-by-set)
-                                  (sort-by (comp (fnil inst-ms
-                                                       (Date. Long/MAX_VALUE))
-                                                 :release/date))
-                                  (map #(dissoc %
-                                                :release/card-image-language
-                                                :release/http-opts)))
+                         (or (some->> notes
+                                      (re-seq (card-utils/within-brackets-re
+                                               (get card-utils/text-punctuation
+                                                    :square-brackets)))
+                                      (mapcat rest)
+                                      (remove nil?)
+                                      (map (fn [s]
+                                             (let [ver (re-find #"(?i)Ver\.?[0-9]\.[0-9]"
+                                                                notes)]
+                                               (-> s
+                                                   (string/replace "-" "")
+                                                   (string/replace #"0([0-9]+)"
+                                                                   "$1")
+                                                   (cond->> #__
+                                                     ver (str ver))))))
+                                      (filter (fn [r]
+                                                (contains? release-set-ids r)))
+                                      (map releases-by-set)
+                                      (sort-by (comp (fnil inst-ms
+                                                           (Date. Long/MAX_VALUE))
+                                                     :release/date))
+                                      (map #(dissoc %
+                                                    :release/card-image-language
+                                                    :release/http-opts)))
+                             (some->> releases
+                                      (filter (fn [release]
+                                                (when notes
+                                                  (or (string/starts-with?
+                                                       (string/lower-case
+                                                        (:release/name release))
+                                                       (string/lower-case notes))
+                                                      (string/starts-with?
+                                                       (string/lower-case notes)
+                                                       (string/lower-case
+                                                        (:release/name release)))))))
+                                      seq
+                                      (sort-by (comp (fnil inst-ms
+                                                           (Date. Long/MAX_VALUE))
+                                                     :release/date))
+                                      (map #(dissoc %
+                                                    :release/card-image-language
+                                                    :release/http-opts))))
                          existing-card-numbers (filter (fn [c]
                                                          (= (:card/number c)
                                                             number))
@@ -158,9 +176,8 @@
                                                            parallel-id))))))
                                   (dissoc :card/release)
                                   (assoc :card/releases
-                                         (if (empty? releases-in-notes)
-                                           [release]
-                                           releases-in-notes)))]
+                                         (or (seq releases-in-notes)
+                                             [release])))]
                      (conj accl card)))
                  []))))
 
@@ -901,9 +918,12 @@
                             cardLevel effect envolutionEffect safeEffect
                             imageCover getWayStr cardGroup]}]
                  (when imageCover
-                   (let [number (-> model
-                                    (string/replace #"_.*" "")
-                                    string/trim)
+                   (let [number (if (= model "-")
+                                  (str (string/replace cardGroup "-" "")
+                                       "-TOKEN")
+                                  (-> model
+                                      (string/replace #"_.*" "")
+                                      string/trim))
                          parallel-id (if (not= parallCard "0")
                                        0
                                        (or (some-> (re-find #"_([0-9]+)"
