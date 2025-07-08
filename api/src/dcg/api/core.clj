@@ -11,7 +11,7 @@
    [dcg.api.db :as db]
    [dcg.api.routes :as routes]
    [dcg.api.utils :as utils]
-   [dcg.api.resources.card :as card]
+   [dcg.api.resources.bulk-data :as bulk-data]
    [dcg.api.resources.errors :as errors])
   (:import
    [java.io File]
@@ -79,32 +79,8 @@
 (defn bulk-data-export!
   [& args]
   (db/import!)
-  (let [bulk-data-dir "resources/public/bulk-data/"
-        f (format "%s/all_cards-%s.json"
-                  bulk-data-dir
-                  (let [now (ZonedDateTime/now)]
-                    (str (.toLocalDate now)
-                         "-"
-                         (format "%02d%02d%02d"
-                                 (.getHour now)
-                                 (.getMinute now)
-                                 (.getSecond now)))))
-        cards (card/all-cards {::r/router (r/router routes/routes)})
-        last-card (last cards)]
-    (doseq [file (->> (file-seq (io/file bulk-data-dir))
-                      (filter #(.isFile %)))]
-      (io/delete-file file true))
-    (io/make-parents f)
-    (with-open [w (io/writer f :append true)]
-      (.write w "[\n")
-      (doseq [card cards]
-        (.write w (representation/render-item
-                   card {:request {:uri (get-in card [:data :id])}
-                         :representation
-                         {:media-type "application/vnd.api+json"}}))
-        (when (not= card last-card)
-          (.write w ",\n")))
-      (.write w "\n]")))
+  (let [request {::r/router (r/router routes/routes)}]
+    (bulk-data/export! request))
   (println "Bulk data export complete"))
 
 (defn -main

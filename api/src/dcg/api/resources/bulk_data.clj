@@ -2,6 +2,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as string]
+   [dcg.api.resources.card :as card]
    [dcg.api.resources.errors :as errors]
    [dcg.api.utils :as utils]
    [liberator.core :as liberator]
@@ -52,23 +53,28 @@
    :handle-ok (fn [{request :request}]
                 (->> (all-files)
                      (map (fn [{:keys [filename path size updated-at]}]
-                            {:type "bulk-data"
-                             :id (utils/sha filename)
-                             :attributes
-                             {:name (-> filename
-                                        (string/split #"-")
-                                        first
-                                        (string/split #"_")
-                                        (as-> #__ s
-                                          (->> s
-                                               (map string/capitalize)
-                                               (string/join " "))))
-                              :size size
-                              :content-type "application/vnd.api+json"
-                              :updated-at updated-at}
-                             :links
-                             {:download (->> path
-                                             (utils/update-api-path request))}}))))
+                            (let [prefix (-> filename
+                                             (string/split #"-\d{4}")
+                                             first)
+                                  lmap {"en" "English"
+                                        "ja" "Japanese"
+                                        "zh-Hans" "Chinese (Simplified)"
+                                        "ko" "Korean"}]
+                              {:type "bulk-data"
+                               :id (utils/sha filename)
+                               :attributes
+                               {:name (if (get lmap prefix)
+                                        (str (get lmap prefix)
+                                             " Cards")
+                                        (->> (string/split prefix #"_")
+                                             (map string/capitalize)
+                                             (string/join " ")))
+                                :size size
+                                :content-type "application/vnd.api+json"
+                                :updated-at updated-at}
+                               :links
+                               {:download (->> path
+                                               (utils/update-api-path request))}})))))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
    :as-response (fn [data {representation :representation :as context}]
@@ -77,3 +83,47 @@
                        (assoc-in context
                                  [:representation :media-type]
                                  "application/vnd.api+json"))))})
+
+(defn export!
+  [request]
+  (let [bulk-data-dir "resources/public/bulk-data/"
+        cards (card/all-cards request)]
+    ;; Clean bulk data directory
+    (doseq [file (->> (file-seq (io/file bulk-data-dir))
+                      (filter #(.isFile %)))]
+      (io/delete-file file true))
+    (doseq [[prefix filter-fn] (reduce (fn [accl {{id :id} :data}]
+                                         (let [lang (->> (string/split id #"/")
+                                                         (remove string/blank?)
+                                                         first)]
+                                           (assoc accl
+                                                  lang
+                                                  (fn [{{id :id} :data}]
+                                                    (string/starts-with?
+                                                     id
+                                                     (str "/" lang "/"))))))
+                                       {"all_cards" nil}
+                                       cards)]
+      (let [f (format "%s/%s-%s.json"
+                      bulk-data-dir
+                      prefix
+                      (let [now (ZonedDateTime/now)]
+                        (str (.toLocalDate now)
+                             "-"
+                             (format "%02d%02d%02d"
+                                     (.getHour now)
+                                     (.getMinute now)
+                                     (.getSecond now)))))]
+        (io/make-parents f)
+        (with-open [w (io/writer f :append true)]
+          (.write w "[\n")
+          (doseq [card (cond->> cards
+                         filter-fn
+                         (filter filter-fn))]
+            (.write w (representation/render-item
+                       card {:request {:uri (get-in card [:data :id])}
+                             :representation
+                             {:media-type "application/vnd.api+json"}}))
+            (when (not= card (last cards))
+              (.write w ",\n")))
+          (.write w "\n]"))))))
