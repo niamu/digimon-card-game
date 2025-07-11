@@ -17,6 +17,15 @@
                      server-name)))
        path))
 
+(defn update-asset-path
+  [{:keys [scheme server-name]} path]
+  (when path
+    (str (or (System/getenv "ASSETS_ORIGIN")
+             (format "%s://%s"
+                     (name scheme)
+                     server-name))
+         path)))
+
 (defn update-image-path
   [{:keys [scheme server-name]} path]
   (when path

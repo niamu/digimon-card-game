@@ -15,6 +15,7 @@ $ API_NAME="Digimon Card Game (2020)" \
   SITE_ORIGIN="https://example.com" \
   API_ORIGIN="https://api.example.com" \
   IMAGES_ORIGIN="https://images.example.com" \
+  ASSETS_ORIGIN="https://assets.example.com" \
     clojure -X:bulk-data-export!
 Bulk data export complete
 ```
@@ -26,6 +27,7 @@ $ API_NAME="Digimon Card Game (2020)" \
   SITE_ORIGIN="https://example.com" \
   API_ORIGIN="https://api.example.com" \
   IMAGES_ORIGIN="https://images.example.com" \
+  ASSETS_ORIGIN="https://assets.example.com" \
     clojure -X:serve
 API started on port 3000
 ```
