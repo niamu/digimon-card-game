@@ -213,7 +213,7 @@
        (spit (io/file "resources/phash_db.json"))))
 
 (defn ingest
-  []
+  [& _args]
   (logging/info "DB ingestion started...")
   (->> (process-cards)
        assertion/card-assertions
