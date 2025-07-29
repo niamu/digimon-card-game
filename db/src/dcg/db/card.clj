@@ -353,8 +353,8 @@
                                                (map name)
                                                (string/join "|"))))
                       (mapv keyword)))
-        play-cost (some->> (or (get info-top "Play Cost")
-                               (get info-top "登場コスト")
+        play-cost (some->> (or (get info-top "Cost")
+                               (get info-top "コスト")
                                (get info-top "등장 비용"))
                            (re-find #"[0-9]+")
                            parse-long)
@@ -643,7 +643,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri]
-                   :as release} dom-tree]
+                  :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -689,7 +689,7 @@
                                                  :color/index i
                                                  :color/color (keyword color)}))
                                  (into []))
-                     play-cost (some->> (get dl "登場コスト")
+                     play-cost (some->> (get dl "コスト")
                                         card-utils/text-content
                                         card-utils/normalize-string
                                         parse-long)
@@ -914,9 +914,9 @@
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                            dp rareDegree entryConsumeValue envolutionConsumeTwo
-                            cardLevel effect envolutionEffect safeEffect
-                            imageCover getWayStr cardGroup]}]
+                           dp rareDegree entryConsumeValue envolutionConsumeTwo
+                           cardLevel effect envolutionEffect safeEffect
+                           imageCover getWayStr cardGroup]}]
                  (when imageCover
                    (let [number (if (= model "-")
                                   (str (string/replace cardGroup "-" "")

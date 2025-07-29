@@ -33,7 +33,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -91,7 +91,9 @@
                                       (sort-by (juxt :highlight/field
                                                      :highlight/index))
                                       (map (juxt :highlight/type
-                                                 :highlight/text)))))
+                                                 (comp (fn [s]
+                                                         (subs s 1 (dec (count s))))
+                                                       :highlight/text))))))
                      (sorted-map))
              (reduce-kv
               (fn [accl _ m]
@@ -127,7 +129,9 @@
                                         (->> highlights
                                              (filter filter-fn)
                                              (map (juxt :highlight/type
-                                                        :highlight/text)))))
+                                                        (comp (fn [s]
+                                                                (subs s 1 (dec (count s))))
+                                                              :highlight/text))))))
                               {}
                               cards)]
                          (reduce-kv (fn [m l texts]
@@ -161,7 +165,7 @@
                               number)))
          (filter (fn [{:card/keys [highlights]}]
                    (some (fn [{highlight-type :highlight/type
-                               :highlight/keys [index]}]
+                              :highlight/keys [index]}]
                            (and (= :digixros highlight-type)
                                 (zero? index)))
                          highlights)))
@@ -521,32 +525,32 @@
        card-assertions)
 
   ;; Card values analysis
-  (map (fn [[k v]]
-         (let [issues (->> (partition 2 1
-                                      (vals v))
-                           (map #(apply data/diff %))
-                           (remove (fn [[only-in-a only-in-b _in-both]]
-                                     (and (nil? only-in-a)
-                                          (nil? only-in-b))))
-                           (map #(take 2 %)))
-               issue-keys (vec (into #{} (mapcat (fn [x] (mapcat keys x)) issues)))
-               incorrect (->> (vals v)
-                              (map #(select-keys % issue-keys))
-                              frequencies
-                              (sort-by val)
-                              ffirst)
-               incorrect-fn (fn [[_ v]]
-                              (= (select-keys v issue-keys)
-                                 incorrect))]
-           {k {:issue/keys issue-keys
-               :issue/incorrect (->> (filter incorrect-fn v)
-                                     (map (fn [[k v]]
-                                            {k (select-keys v issue-keys)}))
-                                     first)
-               :issue/correct (->> (remove incorrect-fn v)
-                                   (map (fn [[_ v]]
-                                          (select-keys v issue-keys)))
-                                   first)}}))
-       (card-values dcg.db.core/*cards))
+  (->> (card-values dcg.db.core/*cards)
+       (map (fn [[k v]]
+              (let [issues (->> (partition 2 1
+                                           (vals v))
+                                (map #(apply data/diff %))
+                                (remove (fn [[only-in-a only-in-b _in-both]]
+                                          (and (nil? only-in-a)
+                                               (nil? only-in-b))))
+                                (map #(take 2 %)))
+                    issue-keys (vec (into #{} (mapcat (fn [x] (mapcat keys x)) issues)))
+                    incorrect (->> (vals v)
+                                   (map #(select-keys % issue-keys))
+                                   frequencies
+                                   (sort-by val)
+                                   ffirst)
+                    incorrect-fn (fn [[_ v]]
+                                   (= (select-keys v issue-keys)
+                                      incorrect))]
+                {k {:issue/keys issue-keys
+                    :issue/incorrect (->> (filter incorrect-fn v)
+                                          (map (fn [[k v]]
+                                                 {k (select-keys v issue-keys)}))
+                                          first)
+                    :issue/correct (->> (remove incorrect-fn v)
+                                        (map (fn [[_ v]]
+                                               (select-keys v issue-keys)))
+                                        first)}}))))
 
   )

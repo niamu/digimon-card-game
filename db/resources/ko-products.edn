@@ -354,4 +354,14 @@
            :id "release_ko_42548",
            :card-image-language "ko",
            :genre "관련상품",
-           :date #inst "2025-07-01T00:00:00.000-00:00"})
+           :date #inst "2025-07-01T00:00:00.000-00:00"}
+ #:release{:name "인퍼널 어센션 [EXK-06]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/42664",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/664/042/18b402553555ffafa1a5393e5a87b124.jpg",
+           :language "ko",
+           :id "release_ko_42664",
+           :card-image-language "ko",
+           :genre "확장팩",
+           :date #inst "2025-07-18T00:00:00.000-00:00"})

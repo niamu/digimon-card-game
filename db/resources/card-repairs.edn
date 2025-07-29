@@ -3469,14 +3469,14 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
@@ -4059,7 +4059,10 @@
  "EX6-011"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
-                "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))}
+                "≪オーバーフロー《-5》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-5）"))
+  "ko" (fn [card]
+         (assoc card :card/inherited-effect
+                "《오버플로우 《-5》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -5) "))}
  "EX6-023"
  {"ja" (fn [card]
          (update card :card/effect
@@ -4127,7 +4130,20 @@
               (cond-> card
                 (= source
                    (java.net.URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682803EX6-027_02.png"))
-                (assoc :card/block-icon 3)))}
+                (assoc :card/block-icon 3)))
+  "ko" (fn [{{:image/keys [source]} :card/image :as card}]
+         (cond-> card
+           (= source
+              (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/920/042/2e2033e7bb3de0779b40b756cc57d066.png"))
+           (assoc :card/block-icon 3)
+           true
+           (assoc :card/color
+                  [{:color/id    "color/EX6-027_index0"
+                    :color/index 0
+                    :color/color :yellow}
+                   {:color/id    "color/EX6-027_index1"
+                    :color/index 1
+                    :color/color :red}])))}
  "EX6-028"
  {"ja"      (fn [{:card/keys [inherited-effect] :as card}]
               (cond-> card
@@ -4142,7 +4158,20 @@
               (cond-> card
                 (= source
                    (java.net.URI. "https://yugioh-1258002530.file.myqcloud.com/dtcg/Picture/1718691682804EX6-028_02.png"))
-                (assoc :card/block-icon 3)))}
+                (assoc :card/block-icon 3)))
+  "ko" (fn [{{:image/keys [source]} :card/image :as card}]
+         (cond-> card
+           (= source
+              (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/923/042/2ed77f5bf17c47f40d1c7ac2bf9f2f97.png"))
+           (assoc :card/block-icon 3)
+           true
+           (assoc :card/color
+                  [{:color/id    "color/EX6-028_index0"
+                    :color/index 0
+                    :color/color :yellow}
+                   {:color/id    "color/EX6-028_index1"
+                    :color/index 1
+                    :color/color :blue}])))}
  "EX6-029"
  {"ja" (fn [{:card/keys [inherited-effect] :as card}]
          (cond-> card
@@ -4174,7 +4203,16 @@
  "EX6-035"
  {"ja" (fn [card]
          (assoc card :card/inherited-effect
-                "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）"))}
+                "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）"))
+  "ko" (fn [card]
+         (-> card
+             (assoc :card/color
+                    [{:color/id    "color/EX6-035_index0"
+                      :color/index 0
+                      :color/color :green}
+                     {:color/id    "color/EX6-035_index1"
+                      :color/index 1
+                      :color/color :yellow}])))}
  "EX7-030"
  {"ja" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
@@ -4233,14 +4271,14 @@
          (update card :card/effect
                  (fn [s]
                    (cond-> s
-                     (not (string/includes? s "[Assembly]"))
+                     (not (string/includes? s "Assembly"))
                      (str "\n[Assembly -3] 4 [Eyesmon: Scatter Mode]\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
  "EX9-055"
  {"en" (fn [card]
          (update card :card/effect
                  (fn [s]
                    (cond-> s
-                     (not (string/includes? s "[Assembly]"))
+                     (not (string/includes? s "Assembly"))
                      (str "\n[Assembly -6] 4 [Negamon]\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
  "EX9-056"
  {"en" (fn [card]
@@ -4255,19 +4293,19 @@
          (update card :card/effect
                  (fn [s]
                    (cond-> s
-                     (not (string/includes? s "[Assembly]"))
+                     (not (string/includes? s "Assembly"))
                      (str "\n[Assembly -6] 4 level 5 [Cyborg] trait Digimon cards w/different names\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
  "EX9-074"
  {"en" (fn [card]
          (update card :card/effect
                  (fn [s]
                    (cond-> s
-                     (not (string/includes? s "[Assembly]"))
+                     (not (string/includes? s "Assembly"))
                      (str "\n[Assembly -7] 7 level 4 [DM] trait Digimon cards w/different names\nWhen this would be played, by placing the specified cards from the trash under it, reduce the play cost.")))))}
  "LM-005"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
-                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
+                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4)"))}
  "LM-006"
  {"en" (fn [card]
          (assoc card :card/color
@@ -4280,14 +4318,14 @@
  "LM-013"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
-                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
+                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4)"))}
  "LM-016"
  {"en" (fn [card]
          (assoc card :card/rarity "R"))}
  "LM-017"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
-                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4) -"))}
+                "《오버플로우 《-4》》(에어리어 또는 카드 아래에서부터, 그 이외의 장소로 보내질 경우, 메모리 -4)"))}
  "LM-027"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card

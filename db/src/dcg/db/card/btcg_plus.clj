@@ -180,19 +180,23 @@
                                (fn [xs {:card/keys [id] :as card}]
                                  (let [hash (cv/image-hash card)
                                        bandai-tcg-id
-                                       (->> tcg-cards
-                                            (map (fn [{{image-hash :image/hash
-                                                        :image/keys [path]}
-                                                       :card/image
-                                                       :as c}]
-                                                   [(.bitCount
-                                                     (.xor hash image-hash))
-                                                    (get c :card/bandai-tcg+)]))
-                                            (remove (fn [[distance _]]
-                                                      (> distance 11)))
-                                            sort
-                                            first
-                                            second)]
+                                       (when hash
+                                         (->> tcg-cards
+                                              (filter (fn [{{image-hash :image/hash}
+                                                           :card/image}]
+                                                        image-hash))
+                                              (map (fn [{{image-hash :image/hash
+                                                         :image/keys [path]}
+                                                        :card/image
+                                                        :as c}]
+                                                     [(.bitCount
+                                                       (.xor hash image-hash))
+                                                      (get c :card/bandai-tcg+)]))
+                                              (remove (fn [[distance _]]
+                                                        (> distance 11)))
+                                              sort
+                                              first
+                                              second))]
                                    (if bandai-tcg-id
                                      (assoc xs id bandai-tcg-id)
                                      xs)))
