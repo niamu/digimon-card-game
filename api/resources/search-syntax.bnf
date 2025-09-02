@@ -1,0 +1,46 @@
+<q> = whitespace* | (query-fragment whitespace*)+
+
+<query-fragment> = datom / has / text / trait / exact-string / not-string / string
+<whitespace> = <#"[\s\,]+">
+
+operator = <":"> | #"[>|<]?=" | #"[>|<]"
+not = <"-">
+
+datom = not? attribute operator value
+
+attribute =
+    #"(?i)color" |
+    #"(?i)name" |
+    #"(?i)number" |
+    #"(?i)language" |
+    #"(?i)category" |
+    #"(?i)block-icon" |
+    #"(?i)dp" |
+    #"(?i)form" |
+    #"(?i)attribute" |
+    #"(?i)type" |
+    #"(?i)rarity" |
+    #"(?i)play-cost" |
+    #"(?i)use-cost" |
+    #"(?i)level" |
+    #"(?i)effect" |
+    #"(?i)inherited-effect" |
+    #"(?i)security-effect" |
+    #"(?i)parallel-id" |
+    #"(?i)digivolve-cost" |
+    #"(?i)digivolve-level" |
+    #"(?i)digivolve-category" |
+    #"(?i)digivolve-form" |
+    #"(?i)digivolve-color" |
+    #"(?i)rarity-stars" |
+    #"(?i)rarity-stamp"
+
+has = not? <"has:"> value
+text = not? <"text:"> value
+trait = not? <"trait:"> value
+exact-string = not? <"!"> string
+not-string = <not> string
+<string> = (quoted / #"(?:[^\s\,]+)")
+
+value = string
+quoted = #"(?:\"[^\"]*\")"

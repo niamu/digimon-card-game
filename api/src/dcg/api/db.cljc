@@ -1,13 +1,16 @@
 (ns dcg.api.db
-  (:require
-   [clojure.java.io :as io]
-   [cognitect.transit :as transit]
-   [datomic.api :as d])
-  (:import
-   [com.cognitect.transit ReadHandler]
-   [java.net URI]))
+  #?(:clj
+     (:require
+      [clojure.java.io :as io]
+      [cognitect.transit :as transit]
+      [datomic.api :as d]))
+  #?(:clj
+     (:import
+      [com.cognitect.transit ReadHandler]
+      [java.net URI])))
 
-(def ^:private db-uri "datomic:mem://dcg")
+#?(:clj
+   (def ^:private db-uri "datomic:mem://dcg"))
 
 (def schema
   (concat
@@ -285,25 +288,28 @@
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}]))
 
-(defonce conn
-  (do (d/create-database db-uri)
-      (let [conn (d/connect db-uri)]
-        @(d/transact conn (vec schema))
-        conn)))
+#?(:clj
+   (defonce conn
+     (do (d/create-database db-uri)
+         (let [conn (d/connect db-uri)]
+           @(d/transact conn (vec schema))
+           conn))))
 
-(defn import!
-  []
-  (let [cards (with-open [in (-> (io/resource "cards.transit.json")
-                                 io/input-stream)]
-                (transit/read (transit/reader in :json
-                                              {:handlers
-                                               {"r" (reify ReadHandler
-                                                      (fromRep [_ rep]
-                                                        (URI. rep)))}})))]
-    (doseq [batch (partition-all 100 cards)]
-      @(d/transact conn (vec batch)))))
+#?(:clj
+   (defn import!
+     []
+     (let [cards (with-open [in (-> (io/resource "cards.transit.json")
+                                    io/input-stream)]
+                   (transit/read (transit/reader in :json
+                                                 {:handlers
+                                                  {"r" (reify ReadHandler
+                                                         (fromRep [_ rep]
+                                                           (URI. rep)))}})))]
+       (doseq [batch (partition-all 100 cards)]
+         @(d/transact conn (vec batch))))))
 
-(defn q
-  [query & inputs]
-  (let [inputs (cons (d/db conn) inputs)]
-    (apply d/q query inputs)))
+#?(:clj
+   (defn q
+     [query & inputs]
+     (let [inputs (cons (d/db conn) inputs)]
+       (apply d/q query inputs))))

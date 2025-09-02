@@ -4,6 +4,8 @@
    [clojure.string :as string]
    [dcg.api.resources.card :as card]
    [dcg.api.resources.errors :as errors]
+   [dcg.api.router :as router]
+   [dcg.api.routes :as routes]
    [dcg.api.utils :as utils]
    [liberator.core :as liberator]
    [liberator.representation :as representation])
@@ -43,7 +45,6 @@
        (into [])))
 
 (liberator/defresource bulk-data-resource
-  [request]
   {:allowed-methods [:head :get]
    :available-media-types ["application/vnd.api+json"]
    :etag (fn [_] (->> (all-files)
@@ -85,9 +86,9 @@
                                  "application/vnd.api+json"))))})
 
 (defn export!
-  [request]
+  []
   (let [bulk-data-dir "resources/public/bulk-data/"
-        cards (card/all-cards request)]
+        cards (card/all-cards)]
     ;; Clean bulk data directory
     (doseq [file (->> (file-seq (io/file bulk-data-dir))
                       (filter #(.isFile %)))]
@@ -113,17 +114,19 @@
                              (format "%02d%02d%02d"
                                      (.getHour now)
                                      (.getMinute now)
-                                     (.getSecond now)))))]
+                                     (.getSecond now)))))
+            cards (cond->> cards
+                    filter-fn
+                    (filter filter-fn))]
         (io/make-parents f)
         (with-open [w (io/writer f :append true)]
           (.write w "[\n")
-          (doseq [card (cond->> cards
-                         filter-fn
-                         (filter filter-fn))]
+          (doseq [{{:keys [id]} :data :as card} cards]
             (.write w (representation/render-item
-                       card {:request {:uri (get-in card [:data :id])}
-                             :representation
-                             {:media-type "application/vnd.api+json"}}))
+                       card
+                       {:request {:uri id}
+                        :representation
+                        {:media-type "application/vnd.api+json"}}))
             (when (not= card (last cards))
               (.write w ",\n")))
           (.write w "\n]"))))))

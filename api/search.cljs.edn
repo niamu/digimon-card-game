@@ -1,0 +1,6 @@
+{:main dcg.api.resources.search
+ :output-to "resources/public/js/search.js"
+ :output-dir "target/js/out"
+ :optimizations :advanced
+ :pretty-print false
+ :language-out :ecmascript5}

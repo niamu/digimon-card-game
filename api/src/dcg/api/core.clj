@@ -12,21 +12,13 @@
    [dcg.api.routes :as routes]
    [dcg.api.utils :as utils]
    [dcg.api.resources.bulk-data :as bulk-data]
-   [dcg.api.resources.errors :as errors])
+   [dcg.api.resources.errors :as errors]
+   [dcg.api.router :as router])
   (:import
    [java.io File]
    [java.time ZonedDateTime]
    [org.eclipse.jetty.server.handler.gzip GzipHandler])
   (:gen-class))
-
-(def route-handler
-  (ring/ring-handler
-   (ring/router routes/routes)
-   (ring/routes
-    (ring/redirect-trailing-slash-handler {:method :strip})
-    (ring/create-default-handler {:not-found #'errors/error400
-                                  :method-not-allowed #'errors/error405
-                                  :not-acceptable #'errors/error406}))))
 
 (defn wrap-cors
   [handler]
@@ -52,14 +44,21 @@
         (-> (assoc-in [:headers "Content-Dispositon"] "attachment")
             (assoc-in [:headers "Etag"] (utils/sha (:uri request))))))))
 
+(defn wrap-default-language
+  [handler]
+  (fn [request]
+    (handler (-> request
+                 (assoc ::default-language (utils/default-language request))))))
+
 (def handler
-  (-> #'route-handler
+  (-> (#'router/route-handler)
       (defaults/wrap-defaults (-> defaults/secure-site-defaults
                                   (assoc :cookies false)
                                   (assoc :session false)
                                   (assoc-in [:security :anti-forgery]
                                             {:error-response (errors/error403)})
                                   (assoc-in [:security :ssl-redirect] false)))
+      wrap-default-language
       wrap-cors))
 
 (defn- add-gzip-handler
@@ -68,19 +67,14 @@
                (doto (GzipHandler.)
                  (.setHandler (.getHandler server))
                  (.setIncludedMimeTypes
-                  (into-array ["text/css"
-                               "text/html"
-                               "application/javascript"
-                               "application/json"
-                               "application/vnd.api+json"
-                               "image/svg+xml"]))
+                  (into-array ["application/json"
+                               "application/vnd.api+json"]))
                  (.setMinGzipSize 860))))
 
 (defn bulk-data-export!
   [& args]
   (db/import!)
-  (let [request {::r/router (r/router routes/routes)}]
-    (bulk-data/export! request))
+  (bulk-data/export!)
   (println "Bulk data export complete"))
 
 (defn -main

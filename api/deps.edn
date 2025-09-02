@@ -1,17 +1,23 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure                   {:mvn/version "1.11.1"}
+ :deps {org.clojure/clojure                   {:mvn/version "1.12.1"}
+        org.clojure/clojurescript             {:mvn/version "1.12.42"}
         com.datomic/peer                      {:mvn/version "1.0.7387"}
-        com.fulcrologic/fulcro                {:mvn/version "3.8.2"}
         com.taoensso/timbre                   {:mvn/version "6.6.1"}
         com.taoensso/timbre-slf4j             {:mvn/version "6.6.1"}
+        instaparse/instaparse                 {:mvn/version "1.5.0"}
         liberator/liberator                   {:mvn/version "0.15.3"}
         metosin/reitit                        {:mvn/version "0.7.0-alpha7"}
         ring/ring-core                        {:mvn/version "1.11.0"}
         ring/ring-jetty-adapter               {:mvn/version "1.11.0"}
         ring/ring-defaults                    {:mvn/version "0.4.0"}
-        com.taoensso/tempura                  {:mvn/version "1.5.4"}
-        org.clojars.brenton/google-diff-match-patch {:mvn/version "0.1"}}
+        com.github.slugify/slugify            {:mvn/version "3.0.7"}
+        com.ibm.icu/icu4j                     {:mvn/version "77.1"}}
  :aliases {:serve {:exec-fn dcg.api.core/-main}
            :bulk-data-export! {:exec-fn dcg.api.core/bulk-data-export!}
            :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.9"}}
-                   :ns-default build}}}
+                   :ns-default build}
+           :cljs/build
+           {:main-opts ["-m" "cljs.main"
+                        "-co" "search.cljs.edn"
+                        "-O" "advanced"
+                        "-c" "dcg.api.resources.search"]}}}
