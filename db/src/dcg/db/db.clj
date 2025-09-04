@@ -7,7 +7,8 @@
    [datomic.client.api :as d])
   (:import
    [java.io PushbackReader Writer]
-   [java.net URI]))
+   [java.net URI]
+   [java.util UUID]))
 
 (def config
   {:server-type :datomic-local
@@ -116,6 +117,9 @@
      :db/cardinality :db.cardinality/many}
     {:db/ident :card/bandai-tcg+
      :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :card/panorama
+     :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/one}]
    ;; Supplemental Rarity
    [{:db/ident :supplemental-rarity/id
@@ -294,7 +298,21 @@
      :db/cardinality :db.cardinality/one}
     {:db/ident :faq/answer
      :db/valueType :db.type/string
-     :db/cardinality :db.cardinality/one}]))
+     :db/cardinality :db.cardinality/one}]
+   ;; Panoramas
+   [{:db/ident :panorama/id
+     :db/valueType :db.type/uuid
+     :db/unique :db.unique/identity
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :panorama/columns
+     :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :panorama/order
+     :db/valueType :db.type/string
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :panorama/cards
+     :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/many}]))
 
 (defonce conn
   (do (d/create-database client {:db-name "cards"})
@@ -312,12 +330,35 @@
   (let [inputs (cons (d/db conn) inputs)]
     (apply d/q query inputs)))
 
+(defn import-panoramas!
+  []
+  (let [panoramas (with-open [in (-> (io/resource "panorama.edn")
+                                     io/reader)]
+                    (clojure.edn/read (PushbackReader. in)))]
+    (doseq [panorama panoramas
+            :let [columns (count (first panorama))
+                  ids (vec (flatten panorama))
+                  id (UUID/nameUUIDFromBytes (.getBytes (apply str ids)))
+                  cards (->> ids
+                             (mapv (fn [card-id]
+                                     [:card/id card-id])))]]
+      (d/transact conn
+                  {:tx-data [{:panorama/id id
+                              :panorama/columns columns
+                              :panorama/cards cards
+                              :panorama/order (pr-str ids)}]})
+      (d/transact conn
+                  {:tx-data (vec (for [card-id ids]
+                                   {:card/id card-id
+                                    :card/panorama [:panorama/id id]}))}))))
+
 (defn import!
   []
   (let [cards (with-open [in (io/input-stream "resources/cards.transit.json")]
                 (transit/read (transit/reader in :json)))]
     (doseq [entities (partition-all 100 cards)]
-      (transact! entities))))
+      (transact! entities))
+    (import-panoramas!)))
 
 (defn export!
   []
@@ -421,7 +462,19 @@
                       :faq/date
                       :faq/question
                       :faq/answer]}
-                    :card/bandai-tcg+]
+                    :card/bandai-tcg+
+                    {:card/panorama
+                     [:panorama/id
+                      :panorama/columns
+                      :panorama/order
+                      {:panorama/cards
+                       [:card/id
+                        :card/name
+                        :card/number
+                        :card/parallel-id
+                        :card/language
+                        {:card/image
+                         [:image/path]}]}]}]
         card-datoms (d/datoms (d/db conn) {:index :avet
                                            :components [:card/id]
                                            :limit -1})]

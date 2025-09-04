@@ -241,10 +241,12 @@
   (->> (process-cards)
        assertion/card-assertions
        db/transact!)
+  (db/import-panoramas!)
   (logging/info "DB ingestion completed."))
 
 (defn -main
   [& _args]
+  (db/import-panoramas!)
   (db/export!)
   (generate-phash-db!))
 
