@@ -401,7 +401,8 @@
                                           :digivolve/index i
                                           :digivolve/cost cost
                                           :digivolve/color #{(nth colors i
-                                                                  (first colors))}}
+                                                                  (first colors))}
+                                          :digivolve/category :digimon}
                                    from (assoc :digivolve/level from))))
                          accl))
                      []))
@@ -914,9 +915,9 @@
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                           dp rareDegree entryConsumeValue envolutionConsumeTwo
-                           cardLevel effect envolutionEffect safeEffect
-                           imageCover getWayStr cardGroup]}]
+                            dp rareDegree entryConsumeValue envolutionConsumeTwo
+                            cardLevel effect envolutionEffect safeEffect
+                            imageCover getWayStr cardGroup]}]
                  (when imageCover
                    (let [number (if (= model "-")
                                   (str (string/replace cardGroup "-" "")

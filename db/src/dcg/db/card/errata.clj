@@ -10,7 +10,11 @@
    [java.text ParseException SimpleDateFormat]))
 
 (def ^:private repair
-  {"BT8-110" (fn [s]
+  {"BT8-097" (fn [s]
+               (string/replace s
+                               "[Main] Your opponent can't play Digimon by effects until the end of their turn. Delete all of your opponent's Digimon with 6000 DP or less."
+                               "[Main] Your opponent can't play Digimon by effects until the end of their next turn. Delete all of your opponent's Digimon with 6000 DP or less."))
+   "BT8-110" (fn [s]
                (string/replace s "[Security]You" "[Security] You"))
    "BT10-093" (fn [s]
                 (string/replace s
@@ -26,10 +30,14 @@
                (string/replace s
                                "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
                                "You may DNA digivolve this Digimon and one of your other Digimon in play into a Digimon card in your hand for its DNA digivolve cost."))
+   "EX3-030" (fn [s]
+               (string/replace s "[Inherited Effect]" ""))
    "EX3-057" (fn [s]
                (string/replace s "3000 or" "3000 DP or"))
    "LM-013" (fn [s]
-              (string/replace s "…at" "…At"))})
+              (string/replace s "…at" "…At"))
+   "ST16-11" (fn [s]
+               (string/replace s #"\.+" "."))})
 
 (defmulti errata
   (fn [{:origin/keys [language card-image-language]}]

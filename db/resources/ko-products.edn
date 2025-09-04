@@ -364,4 +364,14 @@
            :id "release_ko_42664",
            :card-image-language "ko",
            :genre "확장팩",
-           :date #inst "2025-07-18T00:00:00.000-00:00"})
+           :date #inst "2025-07-18T00:00:00.000-00:00"}
+ #:release{:name "팩 시크릿 크라이시스 [BTK-17]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/43669",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/669/043/a530507af492ba4b80f2e165a43e7a99.jpg",
+           :language "ko",
+           :id "release_ko_43669",
+           :card-image-language "ko",
+           :genre "확장팩",
+           :date #inst "2025-08-22T00:00:00.000-00:00"})

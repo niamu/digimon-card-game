@@ -100,21 +100,35 @@
                                            (get-in limitations [number :default]))
                       {:errata/keys [error correction]
                        :as errata-for-card} (get-in errata [number language])
-                      titles-re #"(?i)\s*\[?((Inherited|Security)\s)?Effect\]?\s+"
+                      titles-re #"(?i)((Inherited|Security)\s)?Effect"
                       errors (some-> error
                                      (string/replace "…" "")
-                                     (string/replace titles-re "\n")
                                      string/trim
                                      string/split-lines
                                      (as-> #__ coll
                                        (map string/trim coll)))
+                      errors-by-attribute
+                      (when (some #(re-matches titles-re %) errors)
+                        (->> errors
+                             (partition-by #(re-matches titles-re %))
+                             (apply concat)
+                             (partition-all 2)
+                             (map (fn [[attribute s]]
+                                    {(keyword "card"
+                                              (-> attribute
+                                                  string/lower-case
+                                                  (string/replace #"\s+" "-")))
+                                     s}))
+                             (apply merge)))
+                      errors (remove #(re-matches titles-re %) errors)
                       corrections (some-> correction
                                           (string/replace "…" "")
-                                          (string/replace titles-re "\n")
                                           string/trim
                                           string/split-lines
                                           (as-> #__ coll
-                                            (map string/trim coll)))]
+                                            (->> coll
+                                                 (map string/trim)
+                                                 (remove #(re-matches titles-re %)))))]
                   (cond-> (merge (get common-values-by-number number)
                                  card
                                  (select-keys (get common-values-by-number number)
@@ -124,32 +138,41 @@
                                         [:card/use-cost]))
                     errata-for-card
                     (as-> #__ c
-                      (-> (reduce-kv (fn [m k v]
-                                       (let [error-indexes
-                                             (some->> errors
-                                                      (map-indexed (fn [idx s]
-                                                                     [idx s])))
-                                             [error-index error]
-                                             (some->> error-indexes
-                                                      (filter (fn [[_ s]]
-                                                                (string/includes? v s)))
-                                                      first)
-                                             correction (and error-index
-                                                             (nth corrections
-                                                                  error-index
-                                                                  nil))]
-                                         (cond-> m
-                                           (and (string? v)
-                                                error
-                                                correction
-                                                (string/includes? v error)
-                                                (not (string/includes? v correction)))
-                                           (assoc k
-                                                  (string/replace v
-                                                                  error
-                                                                  correction)))))
-                                     c
-                                     c)
+                      (-> (reduce-kv
+                           (fn [m k v]
+                             (let [error-indexes
+                                   (some->> errors
+                                            (map-indexed (fn [idx s]
+                                                           [idx s])))
+                                   [error-index error]
+                                   (some->> error-indexes
+                                            (filter (fn [[_ s]]
+                                                      (string/includes? v s)))
+                                            first)
+                                   correction (and error-index
+                                                   (nth corrections
+                                                        error-index
+                                                        nil))]
+                               (cond-> m
+                                 (if errors-by-attribute
+                                   (and (string? v)
+                                        error
+                                        correction
+                                        (string/includes? v error)
+                                        (not (string/includes? v correction))
+                                        (= (get errors-by-attribute k)
+                                           error))
+                                   (and (string? v)
+                                        error
+                                        correction
+                                        (string/includes? v error)
+                                        (not (string/includes? v correction))))
+                                 (assoc k
+                                        (string/replace v
+                                                        error
+                                                        correction)))))
+                           c
+                           c)
                           (assoc :card/errata errata-for-card)))
                     (seq card-limitations)
                     (assoc :card/limitations card-limitations)

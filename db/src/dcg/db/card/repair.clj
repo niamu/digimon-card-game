@@ -90,6 +90,9 @@
           (string/replace ",并减少登场费用。】" ",并减少登场费用。")
           (string/replace #"【(DP\+[0-9]+)】" "$1")
           (string/replace #"\)ー$" ")")
+          (string/replace #"\.+" ".")
+          (string/replace "＜ルール＞" "〈ルール〉")
+          (string/replace "＜Rule＞" "⟨Rule⟩")
           ;; https://world.digimoncard.com/rule/card_text/
           (string/replace "X-Antibody" "X Antibody")))
 

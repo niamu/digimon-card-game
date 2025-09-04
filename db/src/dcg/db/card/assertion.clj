@@ -483,12 +483,7 @@
   (assert (empty? (digixros-highlights cards))
           (format "Card DigiXros highlights are incorrectly the first match:\n%s"
                   (digixros-highlights cards)))
-  (assert (= (rules cards)
-             {"BT14-052"
-              {"card/en_BT14-052_P0" {:card/name 1},
-               "card/ja_BT14-052_P0" {:card/name 1},
-               "card/ko_BT14-052_P0" {},
-               "card/zh-Hans_BT14-052_P0" {:card/name 1}}})
+  (assert (empty? (rules cards))
           (format "Card rules differ across languages:\n%s"
                   (rules cards)))
   (assert (= (card-errata cards)

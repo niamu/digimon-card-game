@@ -223,8 +223,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (= source (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -641,6 +641,9 @@
  "BT5-023"
  {"ko" (fn [card]
          (assoc card :card/rarity "C"))}
+ "BT5-033"
+ {"ko" (fn [card]
+         (assoc card :card/type "요정형"))}
  "BT5-034"
  {"ja" (fn [{{:image/keys [source]} :card/image :as card}]
          (cond-> card
@@ -688,12 +691,6 @@
  "BT5-112"
  {"en" (fn [card]
          (dissoc card :card/security-effect))}
- "BT6-003"
- {"ja" (fn [card]
-         (assoc card :card/dp 3000))}
- "BT6-005"
- {"ja" (fn [card]
-         (assoc card :card/dp 8000))}
  "BT6-007"
  {"ja" (fn [card]
          (assoc card :card/dp 2000))}
@@ -875,7 +872,9 @@
            (= source (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/BT6-056_P3.png"))
            (assoc-in [:card/image
                       :image/source]
-                     (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/BT12-074_P1.png"))))}
+                     (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/BT12-074_P1.png"))))
+  "ko" (fn [card]
+         (assoc card :card/type "기뢰형"))}
  "BT6-057"
  {"ja" (fn [card]
          (assoc card :card/dp 2000))}
@@ -1438,13 +1437,6 @@
  "BT8-094"
  {"zh-Hans" (fn [card]
               (dissoc card :card/type))}
- "BT8-097"
- {"en" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (-> s
-                       (string/replace "[Main] Your opponent can't play Digimon by effects until the end of their next turn. Delete all of your opponent's Digimon with 6000 DP or less."
-                                       "[Main] Delete all of your opponent's Digimon with 6000 DP or less. Your opponent can't play Digimon by effects until the end of their next turn.")))))}
  "BT8-111"
  {"zh-Hans" (fn [card]
               (assoc card :card/attribute "病毒种"))}
@@ -1485,8 +1477,9 @@
                   (assoc :card/inherited-effect
                          "【双方的回合】当名称中包含“暴龙兽”或“奥米加兽”的此数码宝贝因效果将要被消灭时,或将要放回到手牌、卡组时,可丢弃此数码宝贝进化源中2张Lv.相同的卡牌,并使此数码宝贝不会被消灭,不会放回到手牌、卡组。")))
   "ko" (fn [card]
-         (assoc card :card/effect
-                "【진화】 「그레이몬」 에서0"))}
+         (assoc card
+                :card/type "공룡형/X항체"
+                :card/effect "【진화】 「그레이몬」 에서0"))}
  "BT9-013"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -1657,7 +1650,17 @@
                       (fn [s]
                         (cond->> s
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
-                          (str "【进化】“狮子兽” 起0")))))}
+                          (str "【进化】“狮子兽” 起0")))))
+  "ko" (fn [card]
+         (-> card
+             (assoc :card/type "수인형/X항체")
+             (assoc :card/color
+                    [{:color/id "color/BT9-050_index0"
+                      :color/index 0
+                      :color/color :green}
+                     {:color/id "color/BT9-050_index1"
+                      :color/index 1
+                      :color/color :blue}])))}
  "BT9-051"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -1855,7 +1858,9 @@
                       (fn [s]
                         (cond->> s
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
-                          (str "【进化】拥有“Xros Heart”特征的Lv.2 起0")))))}
+                          (str "【进化】拥有“Xros Heart”特征的Lv.2 起0")))))
+  "ko" (fn [card]
+         (assoc card :card/type "소룡형/크로스 하트"))}
  "BT10-009"
  {"en" (fn [card]
          (update card :card/effect
@@ -1865,12 +1870,13 @@
                                        "")
                        (str "\n<DigiXros -2> [Shoutmon] + [Ballistamon] + [Dorulumon] + [Starmons] When you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.")))))
   "ko" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (-> s
-                       (string/replace "≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
-                                       "")
-                       (str "\n≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다")))))
+         (-> card
+             (update :card/effect
+                     (fn [s]
+                       (-> s
+                           (string/replace "≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"
+                                           "")
+                           (str "\n≪디지크로스-2≫「샤우트몬」×「바리스타몬」×「도루루몬」×「스타몬즈」 등장할 때, 패/배틀 에어리어에서 이 카드 아래에 놓을 수 있다. 1장마다 등장 코스트를 마이너스한다"))))))
   "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
@@ -1977,7 +1983,10 @@
                  (fn [s]
                    (-> s
                        (string/replace "[On Deletion] ("
-                                       "[On Deletion] ＜Save＞ (")))))}
+                                       "[On Deletion] ＜Save＞ (")))))
+  "ko" (fn [card]
+         (assoc card
+                :card/type "공룡형/블루 플레어"))}
  "BT10-024"
  {"en" (fn [card]
          (update card :card/effect
@@ -2215,6 +2224,10 @@
                         (cond->> s
                           (not (re-find (re-pattern "^.?进化[】〕]") s))
                           (str "【进化】“伽马兽” 起2")))))}
+ "BT10-081"
+ {"ko" (fn [card]
+         (assoc card
+                :card/type "마인형/바그라군"))}
  "BT10-082"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -2464,6 +2477,10 @@
                  {:color/id "color/BT11-064_index1"
                   :color/index 1
                   :color/color :red}]))}
+ "BT11-068"
+ {"ko" (fn [card]
+         (assoc card
+                :card/type "돌연변이형"))}
  "BT11-071"
  {"en" (fn [card]
          (update card :card/effect
@@ -2661,7 +2678,9 @@
                  (fn [s]
                    (string/replace s "from Koromon" "from [Koromon]"))))
   "ko" (fn [card]
-         (assoc card :card/color
+         (assoc card
+                :card/type "공룡형"
+                :card/color
                 [{:color/id "color/BT12-034_index0"
                   :color/index 0
                   :color/color :yellow}
@@ -2856,10 +2875,16 @@
                   :color/color :red}]))}
  "BT12-070"
  {"en" (fn [card]
-         (update card :card/effect
-                 (fn [s]
-                   (-> s
-                       (string/replace (re-pattern "^Digivolve\\s") "[Digivolve] ")))))
+         (-> card
+             (update :card/effect
+                     (fn [s]
+                       (-> s
+                           (string/replace (re-pattern "^Digivolve\\s") "[Digivolve] "))))
+             (update-in [:card/image :image/source]
+                        (fn [source]
+                          (if (string/ends-with? source "BT12-070_P4.png")
+                            (.toURI (clojure.java.io/resource "images/malformed-cards/en/BT12-070_P4.png"))
+                            source)))))
   "ko" (fn [card]
          (-> card
              (assoc :card/level 6)
@@ -2894,7 +2919,10 @@
                         (-> s
                             (string/replace "≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌\n\n"
                                             "")
-                            (str "\n≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
+                            (str "\n≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))
+  "ko" (fn [card]
+         (assoc card
+                :card/type "소룡형"))}
  "BT12-075"
  {"zh-Hans" (fn [card]
               (update card :card/effect
@@ -3133,6 +3161,14 @@
  "BT14-049"
  {"zh-Hans" (fn [card]
               (assoc card :card/attribute "数据种"))}
+ "BT14-052"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (when s
+                     (string/replace s
+                                     "〈룰〉 명칭 : "
+                                     "〈룰〉명칭: ")))))}
  "BT14-060"
  {"en" (fn [card]
          (update-in card [:card/image :image/source]
@@ -3264,6 +3300,60 @@
                  {:color/id "color/BT16-102_index2"
                   :color/index 2
                   :color/color :black}]))}
+ "BT17-001"
+ {"ko" (fn [{:card/keys [inherited-effect] :as card}]
+         (-> card
+             (dissoc :card/attribute)
+             (assoc :card/type "렛서형")
+             (cond-> #__
+               (not inherited-effect)
+               (assoc :card/inherited-effect
+                      "【어택 시】1 코스트 지불하는 것으로, DP 3000 이하의 상대의 디지몬 1마리를 소멸시킨다."))))}
+ "BT17-002"
+ {"ko" (fn [{:card/keys [inherited-effect] :as card}]
+         (-> card
+             (dissoc :card/attribute)
+             (assoc :card/type "렛서형")
+             (cond-> #__
+               (not inherited-effect)
+               (assoc :card/inherited-effect
+                      "【자신의 턴】[턴에 1회] 진화원에서 자신의 디지몬이 등장 했을때,《1드로우》"))))}
+ "BT17-003"
+ {"ko" (fn [{:card/keys [inherited-effect] :as card}]
+         (-> card
+             (dissoc :card/attribute)
+             (assoc :card/type "렛서형/AE사")
+             (cond-> #__
+               (not inherited-effect)
+               (assoc :card/inherited-effect
+                      "【자신의 턴】[턴에 1회] 이 디지몬의 진화원에 테이머 카드 가 효과로 놓였을 때, 메모리+1."))))}
+ "BT17-004"
+ {"ko" (fn [{:card/keys [inherited-effect] :as card}]
+         (-> card
+             (dissoc :card/attribute)
+             (assoc :card/type "돌연변이형")
+             (cond-> #__
+               (not inherited-effect)
+               (assoc :card/inherited-effect
+                      "【상대의 턴】이 디지몬이 「아르고몬」인 동안, 이 디지몬은 《블로커》를 얻는다."))))}
+ "BT17-005"
+ {"ko" (fn [{:card/keys [inherited-effect] :as card}]
+         (-> card
+             (dissoc :card/attribute)
+             (assoc :card/type "종족불명")
+             (cond-> #__
+               (not inherited-effect)
+               (assoc :card/inherited-effect
+                      "【소멸시】이 디지몬이 특징으로 「종족불명」을 가지고 있었다면, 메모리+1."))))}
+ "BT17-006"
+ {"ko" (fn [{:card/keys [inherited-effect] :as card}]
+         (-> card
+             (dissoc :card/attribute)
+             (assoc :card/type "렛서형/X항체/SoC")
+             (cond-> #__
+               (not inherited-effect)
+               (assoc :card/inherited-effect
+                      "【자신의 턴】[턴에 1회] 이 디지몬의 진화원에 테이머 카드 가 효과로 놓였을때, 이 디지몬을 자신의트래시의 특징 으로「SoC」를가진디지몬카드로진화시킬수있다."))))}
  "BT17-017"
  {"zh-Hans" (fn [{:card/keys [effect] :as card}]
               (cond-> card
@@ -3317,7 +3407,27 @@
                   :color/color :blue}
                  {:color/id "color/BT17-077_index2"
                   :color/index 2
+                  :color/color :green}]))
+  "ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/BT17-077_index0"
+                  :color/index 0
+                  :color/color :white}
+                 {:color/id "color/BT17-077_index1"
+                  :color/index 1
+                  :color/color :blue}
+                 {:color/id "color/BT17-077_index2"
+                  :color/index 2
                   :color/color :green}]))}
+ "BT17-089"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/BT17-089_index0"
+                  :color/index 0
+                  :color/color :green}
+                 {:color/id "color/BT17-089_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
  "BT17-094"
  {"ja" (fn [{:card/keys [security-effect] :as card}]
          (cond-> card
@@ -3354,6 +3464,20 @@
            (not security-effect)
            (assoc :card/security-effect
                   "【セキュリティ】自分の手札か/トラッシュから、名称に「大門大」/「リズム」を含むカード1枚をコストを支払わずに登場できる。その後、このカードをバトルエリアに置く。")))}
+ "BT17-101"
+ {"ko" (fn [{{:image/keys [source]} :card/image :as card}]
+         (cond-> card
+           (= source
+              (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/456/043/acd2c91d644b80b731895bc06365443a.png"))
+           (assoc :card/block-icon 3)
+           true
+           (assoc :card/color
+                  [{:color/id "color/BT17-101_index0"
+                    :color/index 0
+                    :color/color :purple}
+                   {:color/id "color/BT17-101_index1"
+                    :color/index 1
+                    :color/color :yellow}])))}
  "BT18-001"
  {"en" (fn [card]
          (-> card
@@ -3469,8 +3593,8 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
@@ -3750,6 +3874,9 @@
                    (string/replace s
                                    "-6000 for"
                                    "-6000 DP for"))))}
+ "EX3-038"
+ {"ko" (fn [card]
+         (assoc card :card/type "식물형"))}
  "EX3-052"
  {"en" (fn [card]
          (assoc card :card/dp 7000))}
@@ -4979,6 +5106,9 @@
            (not inherited-effect)
            (assoc :card/inherited-effect
                   "【자신의턴】 이디지몬이패의 「에이션트가루몬」 으로진화할때, 지불하는진화코스트를-2한다.")))}
+ "P-031"
+ {"ko" (fn [card]
+         (assoc card :card/type "성수형"))}
  "P-035"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
@@ -5153,8 +5283,8 @@
                                    "gets ＜Security A. -1＞ until"))))}
  "P-087"
  {"en" (fn [{:card/keys [language number]
-             {:image/keys [source]} :card/image
-             :as card}]
+            {:image/keys [source]} :card/image
+            :as card}]
          (cond-> card
            (= source (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-087_P1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -5370,17 +5500,61 @@
  "P-136"
  {"en" (fn [card]
          (dissoc card :card/attribute))}
+ "P-140"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-140_index0",
+                  :color/index 0,
+                  :color/color :green}
+                 {:color/id "color/P-140_index1",
+                  :color/index 1,
+                  :color/color :blue}]))}
+ "P-141"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-141_index0",
+                  :color/index 0,
+                  :color/color :black}
+                 {:color/id "color/P-141_index1",
+                  :color/index 1,
+                  :color/color :green}]))}
+ "P-142"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/P-142_index0",
+                  :color/index 0,
+                  :color/color :purple}
+                 {:color/id "color/P-142_index1",
+                  :color/index 1,
+                  :color/color :green}]))}
+ "P-143"
+ {"ko" (fn [card]
+         (assoc card :card/type "짐승형"))}
+ "P-144"
+ {"ko" (fn [card]
+         (assoc card :card/type "광석형/X항체"))}
+ "P-145"
+ {"ko" (fn [card]
+         (assoc card :card/type "언데드형/X항체"))}
  "P-146"
  {"zh-Hans" (fn [{:card/keys [security-effect] :as card}]
               (cond-> card
                 security-effect
                 (-> (dissoc :card/security-effect)
                     (assoc :card/inherited-effect security-effect))))}
+ "P-148"
+ {"ko" (fn [card]
+         (assoc card :card/type "렛서형/NSp"))}
  "P-149"
  {"zh-Hans" (fn [card]
               (assoc card
                      :card/inherited-effect
-                     "【攻击时】[每回合1次]若此数码宝贝为多色，则可丢弃我方的1张手牌，并消灭对方1只Lv.3的数码宝贝。"))}
+                     "【攻击时】[每回合1次]若此数码宝贝为多色，则可丢弃我方的1张手牌，并消灭对方1只Lv.3的数码宝贝。"))
+  "ko" (fn [card]
+         (assoc card :card/type "유충형"))}
+ "P-150"
+ {"ko" (fn [card]
+         (assoc card :card/type "곤충형"))}
  "P-151"
  {"ja"      (fn [{:card/keys [security-effect] :as card}]
               (cond-> card
@@ -5388,7 +5562,9 @@
                 (assoc :card/security-effect
                        "【セキュリティ】このカードの【メイン】効果を発揮する。")))
   "zh-Hans" (fn [card]
-              (assoc card :card/type "界放者"))}
+              (assoc card :card/type "界放者"))
+  "ko" (fn [card]
+         (assoc card :card/type "리버레이터"))}
  "P-152"
  {"ja"      (fn [{:card/keys [parallel-id] :as card}]
               (cond-> card
@@ -5400,13 +5576,37 @@
                         (and s
                              (cond->> s
                                (not (re-find (re-pattern "^.?进化") s))
-                               (str "【进化】登场费用不高于4的 “高吼會”/“多會路善”：费用0"))))))}
+                               (str "【进化】登场费用不高于4的 “高吼會”/“多會路善”：费用0"))))))
+  "ko" (fn [card]
+         (-> card
+             (assoc :card/type "강화형/크로스 하트")
+             (update :card/effect
+                     (fn [s]
+                       (and s
+                            (string/replace s
+                                            "〈룰〉명칭: 「샤우트몬」/「도루루몬」으로도 취급한다.≪"
+                                            "〈룰〉명칭: 「샤우트몬」/「도루루몬」으로도 취급한다.\n≪"))))))}
  "P-153"
  {"zh-Hans" (fn [card]
-              (assoc card :card/form "混合体"))}
+              (assoc card :card/form "混合体"))
+  "ko" (fn [card]
+         (assoc card
+                :card/type "사이보그형"
+                :card/color
+                [{:color/id "color/P-153_index0"
+                  :color/index 0
+                  :color/color :yellow}
+                 {:color/id "color/P-153_index1"
+                  :color/index 1
+                  :color/color :blue}]))}
+ "P-154"
+ {"ko" (fn [card]
+         (assoc card :card/type "사이보그형"))}
  "P-155"
  {"zh-Hans" (fn [card]
-              (assoc card :card/type "装置"))}
+              (assoc card :card/type "装置"))
+  "ko" (fn [card]
+         (assoc card :card/type "디바이스"))}
  "P-176"
  {"ja" (fn [card]
          (assoc card :card/color
@@ -5419,6 +5619,14 @@
                 [{:color/id "color/P-177_index0"
                   :color/index 0
                   :color/color :purple}]))}
+ "P-178"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (and s
+                        (cond->> s
+                          (not (string/starts-with? s "[Digivolve]"))
+                          (str "[Digivolve] [Veemon]: Cost 2\n"))))))}
  "P-179"
  {"ja" (fn [card]
          (update card :card/digivolution-requirements
@@ -5427,7 +5635,14 @@
                           (cond-> d
                             (nil? cost)
                             (assoc :digivolve/cost 4)))
-                        dr))))}
+                        dr))))
+  "en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (and s
+                        (cond->> s
+                          (not (string/starts-with? s "[Digivolve]"))
+                          (str "[Digivolve] [Justimon: Blitz Arm]/[Justimon: Accel Arm]: Cost 1\n"))))))}
  "P-180"
  {"ja" (fn [card]
          (assoc card :card/color
@@ -5442,4 +5657,38 @@
                   :color/color :green}
                  {:color/id "color/P-181_index1"
                   :color/index 1
-                  :color/color :black}]))}}
+                  :color/color :black}]))}
+ "TOKEN"
+ {"en" (fn [card]
+         (-> card
+             (assoc :card/id "card/en_TOKEN_P0"
+                    :card/rarity "TOKEN")
+             (assoc-in [:card/image :image/id]
+                       "image/en/TOKEN_P0")
+             (assoc-in [:card/image :image/path]
+                       "/images/cards/en/TOKEN.png")))
+  "ja" (fn [card]
+         (-> card
+             (assoc :card/id "card/ja_TOKEN_P0"
+                    :card/level 6
+                    :card/category :digimon
+                    :card/rarity "TOKEN")
+             (assoc-in [:card/image :image/id]
+                       "image/ja/TOKEN_P0")
+             (assoc-in [:card/image :image/path]
+                       "/images/cards/ko/TOKEN.png")))}
+ "tokencar"
+ {"ko" (fn [card]
+         (-> card
+             (assoc :card/id "card/ko_TOKEN_P0"
+                    :card/number "TOKEN"
+                    :card/rarity "TOKEN"
+                    :card/play-cost 14
+                    :card/color
+                    [{:color/id "color/TOKEN_index0"
+                      :color/index 0
+                      :color/color :white}])
+             (assoc-in [:card/image :image/id]
+                       "image/ko/TOKEN_P0")
+             (assoc-in [:card/image :image/path]
+                       "/images/cards/ko/TOKEN.png")))}}
