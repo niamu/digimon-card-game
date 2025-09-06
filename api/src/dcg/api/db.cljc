@@ -108,6 +108,9 @@
      :db/cardinality :db.cardinality/many}
     {:db/ident :card/bandai-tcg+
      :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :card/panorama
+     :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/one}]
    ;; Supplemental Rarity
    [{:db/ident :supplemental-rarity/id
@@ -286,7 +289,21 @@
      :db/cardinality :db.cardinality/one}
     {:db/ident :faq/answer
      :db/valueType :db.type/string
-     :db/cardinality :db.cardinality/one}]))
+     :db/cardinality :db.cardinality/one}]
+   ;; Panoramas
+   [{:db/ident :panorama/id
+     :db/valueType :db.type/uuid
+     :db/unique :db.unique/identity
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :panorama/columns
+     :db/valueType :db.type/long
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :panorama/order
+     :db/valueType :db.type/string
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :panorama/cards
+     :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/many}]))
 
 #?(:clj
    (defonce conn
@@ -313,3 +330,8 @@
      [query & inputs]
      (let [inputs (cons (d/db conn) inputs)]
        (apply d/q query inputs))))
+
+#?(:clj
+   (defn pull
+     [pattern eid]
+     (d/pull (d/db conn) pattern eid)))
