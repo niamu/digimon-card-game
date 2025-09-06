@@ -360,6 +360,44 @@
       (transact! entities))
     (import-panoramas!)))
 
+(defn- update-api-path
+  [request path]
+  (str (System/getenv "API_ORIGIN")
+       path))
+
+(defn- update-asset-path
+  [request path]
+  (when path
+    (str (System/getenv "ASSETS_ORIGIN")
+         path)))
+
+(defn- update-image-path
+  [path]
+  (when path
+    (str (System/getenv "IMAGES_ORIGIN")
+         (-> path
+             (string/replace #"\.png$" ".webp")
+             (string/replace #"^/images" "")))))
+
+(defn- update-release-images
+  [release]
+  (cond-> release
+    (:release/image release)
+    (update-in [:release/image :image/path]
+               update-image-path)
+    (:release/thumbnail release)
+    (update-in [:release/thumbnail :image/path]
+               update-image-path)))
+
+(defn- update-card-images
+  [card]
+  (-> card
+      (update-in [:card/image :image/path]
+                 update-image-path)
+      (update-in [:card/releases]
+                 (fn [releases]
+                   (map update-release-images releases)))))
+
 (defn export!
   []
   (let [pull-query [:card/id
@@ -468,20 +506,15 @@
                       :panorama/columns
                       :panorama/order
                       {:panorama/cards
-                       [:card/id
-                        :card/name
-                        :card/number
-                        :card/parallel-id
-                        :card/language
-                        {:card/image
-                         [:image/path]}]}]}]
+                       [:card/id]}]}]
         card-datoms (d/datoms (d/db conn) {:index :avet
                                            :components [:card/id]
                                            :limit -1})]
     (with-open [out (io/output-stream "resources/cards.transit.json")]
       (->> card-datoms
            (map (fn [{eid :e}]
-                  (d/pull (d/db conn) pull-query eid)))
+                  (-> (d/pull (d/db conn) pull-query eid)
+                      update-card-images)))
            (transit/write (transit/writer out :json))))))
 
 (comment
