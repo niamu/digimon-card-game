@@ -95,21 +95,8 @@
                                (->> coll
                                     (sort-by :faq/id)
                                     (map #(dissoc % :faq/id)))))
-                     (update-in [:card/image :image/path]
-                                utils/update-image-path)
                      (update :card/image
-                             (fn [{path :image/path}] path))
-                     (update-in [:card/releases]
-                                (fn [releases]
-                                  (->> releases
-                                       (map (fn [release]
-                                              (-> release
-                                                  (update-in [:release/thumbnail
-                                                              :image/path]
-                                                             utils/update-image-path)
-                                                  (update-in [:release/image
-                                                              :image/path]
-                                                             utils/update-image-path))))))))
+                             (fn [{path :image/path}] path)))
         card (cond-> card
                (not (seq (:card/digivolution-requirements card)))
                (dissoc :card/digivolution-requirements)

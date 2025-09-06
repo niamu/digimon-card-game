@@ -1024,7 +1024,7 @@
                                            (first remaining))
                                       (next remaining)))))})))
 
-(defn ^:export query-highlight
+(defn query-highlight
   [s]
   (->> (parser s)
        (transform transform-map)
@@ -1064,6 +1064,9 @@
                  (escape-html highlight))
                 (escape-html s))))
        (apply str)))
+
+#?(:cljs
+   (js/goog.exportSymbol "queryHighlight" query-highlight))
 
 #?(:clj
    (liberator/defresource search-resource

@@ -19,14 +19,6 @@
     (str (System/getenv "ASSETS_ORIGIN")
          path)))
 
-(defn update-image-path
-  [path]
-  (when path
-    (str (System/getenv "IMAGES_ORIGIN")
-         (cond-> (string/replace path #"\.png$" ".webp")
-           (System/getenv "IMAGES_ORIGIN")
-           (string/replace #"^/images" "")))))
-
 (defn inst->iso8601
   [i]
   (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd")

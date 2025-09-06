@@ -61,12 +61,6 @@
                                      :release release-slug}})
                :attributes
                (cond-> release
-                 (:release/image release)
-                 (update-in [:release/image :image/path]
-                            utils/update-image-path)
-                 (:release/thumbnail release)
-                 (update-in [:release/thumbnail :image/path]
-                            utils/update-image-path)
                  (:release/date release)
                  (update :release/date utils/inst->iso8601))}}
        (seq cards)
