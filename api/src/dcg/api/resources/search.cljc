@@ -51,16 +51,22 @@
   ([attribute operator value]
    (datom nil attribute operator value))
   ([not? attribute operator [_ v :as value]]
-   (let [valid? (allowable-strings attribute)
+   (let [valid-value? (allowable-strings attribute)
+         valid-operator? (or (nil? operator)
+                             (= operator '=))
          ?value (gensym (str "?"
                              (namespace attribute)
                              "-"
-                             (name attribute)))]
+                             (name attribute)))
+         valid? (and valid-value?
+                     valid-operator?)]
      (if valid?
        (with-meta [['?card attribute ?value]
                    [(list 'String/.toLowerCase ?value)
                     (symbol (str (name ?value) "-lower"))]
-                   (cond->> [(list 'String/.contains
+                   (cond->> [(list (if (= operator '=)
+                                     'String/.equals
+                                     'String/.contains)
                                    (symbol (str (name ?value) "-lower"))
                                    (string/lower-case v))]
                      (boolean not?)
@@ -70,12 +76,59 @@
                           :cljs gstring/format) "the %s %s \"%s\""
                        (name attribute)
                        (if (boolean not?)
-                         "does not include"
-                         "includes")
+                         (str "does not "
+                              (if (= operator '=)
+                                "equal"
+                                "include"))
+                         (if (= operator '=)
+                           "equals"
+                           "includes"))
                        v)))
+       (with-meta {:errors (cond-> []
+                             (not valid-value?)
+                             (conj (#?(:clj format
+                                       :cljs gstring/format)
+                                    "\"%s\" is not a valid attribute to query."
+                                    (name attribute)))
+                             (not valid-operator?)
+                             (conj (#?(:clj format
+                                       :cljs gstring/format)
+                                    "\"%s\" is not a valid operator for %s."
+                                    (name (or operator ":"))
+                                    (name attribute))))}
+         {:error? true})))))
+
+(defmethod datom :cost
+  ([attribute operator value]
+   (datom nil attribute operator value))
+  ([not? attribute operator [_ v :as value]]
+   (let [valid? (boolean (parse-long v))
+         v (or (parse-long v) v)
+         ?value (gensym "?cost")]
+     (if valid?
+       (with-meta (-> [(list 'or
+                             ['?card :card/play-cost ?value]
+                             ['?card :card/use-cost ?value])]
+                      (conj (cond->> [(list (or operator '=) ?value v)]
+                              (boolean not?)
+                              (list 'not))))
+         {:note (#?(:clj format
+                    :cljs gstring/format) "the play/use cost %s %s \"%s\""
+                 (cond-> " is"
+                   (boolean not?) (str " not"))
+                 (case (and operator (name operator))
+                   "<" "less than"
+                   "<=" "less than or equal to"
+                   ">" "greater than"
+                   ">=" "greater than or equal to"
+                   "equal to")
+                 v)
+          :instaparse.gll/start-index nil
+          :instaparse.gll/end-index nil})
        (with-meta {:errors [(#?(:clj format
                                 :cljs gstring/format)
-                             "\"%s\" is not a valid attribute to query."
+                             "\"%s\" is not a valid %s."
+                             v
                              (name attribute))]}
          {:error? true})))))
 
@@ -89,41 +142,60 @@
                              (name attribute)))
          ?value-lower (symbol (str (name ?value) "-lower"))
          ?rule (gensym "?rule")
-         ?rule-type (symbol (str (name ?rule) "-type"))]
-     (with-meta (if (boolean not?)
-                  [(list 'not-join ['?card]
-                         (list 'or-join
-                               ['?card ?value]
-                               ['?card :card/name ?value]
-                               (list 'and
-                                     ['?card :card/rules ?rule]
-                                     [?rule :rule/type ?rule-type]
-                                     [?rule :rule/value ?value]
-                                     [(list 'contains?
-                                            #{:card/name} ?rule-type)]))
-                         [(list 'String/.toLowerCase ?value) ?value-lower]
-                         [(list 'String/.contains ?value-lower
-                                (string/lower-case v))])]
-                  [(list 'or-join
-                         ['?card ?value]
-                         ['?card :card/name ?value]
-                         (list 'and
-                               ['?card :card/rules ?rule]
-                               [?rule :rule/type ?rule-type]
-                               [?rule :rule/value ?value]
-                               [(list 'contains?
-                                      #{:card/name} ?rule-type)]))
-                   [(list 'String/.toLowerCase ?value) ?value-lower]
-                   [(list 'String/.contains ?value-lower
-                          (string/lower-case v))]])
-       (assoc (meta value)
-              :note (#?(:clj format
-                        :cljs gstring/format) "the %s %s \"%s\""
-                     (name attribute)
-                     (if (boolean not?)
-                       "does not include"
-                       "includes")
-                     v))))))
+         ?rule-type (symbol (str (name ?rule) "-type"))
+         valid-operator? (or (nil? operator)
+                             (= operator '=))
+         op (if (= operator '=)
+                    'String/.equals
+                    'String/.contains)]
+     (if valid-operator?
+       (with-meta (if (boolean not?)
+                    [(list 'not-join ['?card]
+                           (list 'or-join
+                                 ['?card ?value]
+                                 ['?card :card/name ?value]
+                                 (list 'and
+                                       ['?card :card/rules ?rule]
+                                       [?rule :rule/type ?rule-type]
+                                       [?rule :rule/value ?value]
+                                       [(list 'contains?
+                                              #{:card/name} ?rule-type)]))
+                           [(list 'String/.toLowerCase ?value) ?value-lower]
+                           [(list op ?value-lower
+                                  (string/lower-case v))])]
+                    [(list 'or-join
+                           ['?card ?value]
+                           ['?card :card/name ?value]
+                           (list 'and
+                                 ['?card :card/rules ?rule]
+                                 [?rule :rule/type ?rule-type]
+                                 [?rule :rule/value ?value]
+                                 [(list 'contains?
+                                        #{:card/name} ?rule-type)]))
+                     [(list 'String/.toLowerCase ?value) ?value-lower]
+                     [(list op ?value-lower
+                            (string/lower-case v))]])
+         (assoc (meta value)
+                :note (#?(:clj format
+                          :cljs gstring/format) "the %s %s \"%s\""
+                       (name attribute)
+                       (if (boolean not?)
+                         (str "does not "
+                              (if (= operator '=)
+                                "is exactly"
+                                "include"))
+                         (if (= operator '=)
+                           "is exactly"
+                           "includes"))
+                       v)))
+       (with-meta {:errors
+                   (cond-> []
+                     (not valid-operator?)
+                     (conj (#?(:clj format
+                               :cljs gstring/format)
+                            "\"%s\" is not a valid operator for name."
+                            (name (or operator ":")))))}
+         {:error? true})))))
 
 (defmethod datom :card/number
   ([attribute operator value]
@@ -135,47 +207,70 @@
                              (name attribute)))
          ?value-lower (symbol (str (name ?value) "-lower"))
          ?rule (gensym "?rule")
-         ?rule-type (symbol (str (name ?rule) "-type"))]
-     (with-meta (if (boolean not?)
-                  [(list 'not-join ['?card]
-                         (list 'or-join
-                               ['?card ?value]
-                               ['?card :card/number ?value]
-                               (list 'and
-                                     ['?card :card/rules ?rule]
-                                     [?rule :rule/type ?rule-type]
-                                     [?rule :rule/value ?value]
-                                     [(list 'contains?
-                                            #{:card/number} ?rule-type)]))
-                         [(list 'String/.toLowerCase ?value) ?value-lower]
-                         [(list 'String/.contains ?value-lower
-                                (string/lower-case v))])]
-                  [(list 'or-join
-                         ['?card ?value]
-                         ['?card :card/number ?value]
-                         (list 'and
-                               ['?card :card/rules ?rule]
-                               [?rule :rule/type ?rule-type]
-                               [?rule :rule/value ?value]
-                               [(list 'contains?
-                                      #{:card/number} ?rule-type)]))
-                   [(list 'String/.toLowerCase ?value) ?value-lower]
-                   [(list 'String/.contains ?value-lower
-                          (string/lower-case v))]])
-       (assoc (meta value)
-              :note (#?(:clj format
-                        :cljs gstring/format) "the %s %s \"%s\""
-                     (name attribute)
-                     (if (boolean not?)
-                       "does not include"
-                       "includes")
-                     v))))))
+         ?rule-type (symbol (str (name ?rule) "-type"))
+         valid-operator? (or (nil? operator)
+                             (= operator '=))
+         op (if (= operator '=)
+                    'String/.equals
+                    'String/.contains)]
+     (if valid-operator?
+       (with-meta (if (boolean not?)
+                    [(list 'not-join ['?card]
+                           (list 'or-join
+                                 ['?card ?value]
+                                 ['?card :card/number ?value]
+                                 (list 'and
+                                       ['?card :card/rules ?rule]
+                                       [?rule :rule/type ?rule-type]
+                                       [?rule :rule/value ?value]
+                                       [(list 'contains?
+                                              #{:card/number} ?rule-type)]))
+                           [(list 'String/.toLowerCase ?value) ?value-lower]
+                           [(list op ?value-lower
+                                  (string/lower-case v))])]
+                    [(list 'or-join
+                           ['?card ?value]
+                           ['?card :card/number ?value]
+                           (list 'and
+                                 ['?card :card/rules ?rule]
+                                 [?rule :rule/type ?rule-type]
+                                 [?rule :rule/value ?value]
+                                 [(list 'contains?
+                                        #{:card/number} ?rule-type)]))
+                     [(list 'String/.toLowerCase ?value) ?value-lower]
+                     [(list op ?value-lower
+                            (string/lower-case v))]])
+         (assoc (meta value)
+                :note (#?(:clj format
+                          :cljs gstring/format) "the %s %s \"%s\""
+                       (name attribute)
+                       (if (boolean not?)
+                         (str "does not "
+                              (if (= operator '=)
+                                "equal"
+                                "include"))
+                         (if (= operator '=)
+                           "equals"
+                           "includes"))
+                       v)))
+       (with-meta {:errors
+                   (cond-> []
+                     (not valid-operator?)
+                     (conj (#?(:clj format
+                               :cljs gstring/format)
+                            "\"%s\" is not a valid operator for number."
+                            (name (or operator ":")))))}
+         {:error? true})))))
 
 (defmethod datom :supplemental-rarity/stamp
   ([attribute operator value]
    (datom nil attribute operator value))
   ([not? attribute operator [_ v :as value]]
-   (let [valid? (allowable-strings attribute)
+   (let [valid-value? (allowable-strings attribute)
+         valid-operator? (or (nil? operator)
+                             (= operator '=))
+         valid? (and valid-value?
+                     valid-operator?)
          ?value (gensym (str "?"
                              (namespace attribute)
                              "-"
@@ -198,10 +293,13 @@
                          (boolean not?)
                          (str " not"))
                        v)))
-       (with-meta {:errors [(#?(:clj format
-                                :cljs gstring/format)
-                             "\"%s\" is not a valid attribute to query."
-                             (name attribute))]}
+       (with-meta {:errors
+                   (cond-> []
+                     (not valid-operator?)
+                     (conj (#?(:clj format
+                               :cljs gstring/format)
+                            "\"%s\" is not a valid operator for number."
+                            (name (or operator ":")))))}
          {:error? true})))))
 
 (derive :card/category ::category)
@@ -523,7 +621,7 @@
                        (cond-> "is"
                          (boolean not?)
                          (str " not"))
-                       (case (name operator)
+                       (case (some-> operator name)
                          "<" "less than"
                          "<=" "less than or equal to"
                          ">" "greater than"
@@ -584,7 +682,7 @@
                        (if (boolean not?)
                          "does not digivolve"
                          "digivolves")
-                       (case (name operator)
+                       (case (some-> operator name)
                          "<" "less than"
                          "<=" "less than or equal to"
                          ">" "greater than"
@@ -615,7 +713,8 @@
                                                                    "rarity-"
                                                                    ""))
                     (#{"text"
-                       "traits"} a) (keyword a)
+                       "traits"
+                       "cost"} a) (keyword a)
                     :else (keyword "card" a))))
    :operator (fn
                ([])
@@ -625,12 +724,10 @@
              (subs s 1 (dec (count s))))
    :datom datom
    :not-string (fn [s]
-                 (let [attribute :card/name
-                       ?value (gensym (str "?"
-                                           (namespace attribute)
-                                           "-"
-                                           (name attribute)))]
-                   (with-meta [['?card attribute ?value]
+                 (let [?value (gensym "?card-name-or-number")]
+                   (with-meta [(list 'or
+                                     ['?card :card/name ?value]
+                                     ['?card :card/number ?value])
                                [(list 'String/.toLowerCase ?value)
                                 (symbol (str (name ?value) "-lower"))]
                                (list 'not
@@ -638,19 +735,17 @@
                                             (symbol (str (name ?value) "-lower"))
                                             (string/lower-case s))])]
                      {:note (#?(:clj format
-                                :cljs gstring/format) "the name does not include \"%s\"" s)
+                                :cljs gstring/format) "the name or number does not include \"%s\"" s)
                       :instaparse.gll/start-index nil
                       :instaparse.gll/end-index nil})))
    :exact-string (fn exact-string
                    ([s]
                     (exact-string nil s))
                    ([not? s]
-                    (let [attribute :card/name
-                          ?value (gensym (str "?"
-                                              (namespace attribute)
-                                              "-"
-                                              (name attribute)))]
-                      (with-meta [['?card attribute ?value]
+                    (let [?value (gensym "?card-name-or-number")]
+                      (with-meta [(list 'or
+                                        ['?card :card/name ?value]
+                                        ['?card :card/number ?value])
                                   [(list 'String/.toLowerCase ?value)
                                    (symbol (str (name ?value) "-lower"))]
                                   (cond->> [(list '=
@@ -659,7 +754,7 @@
                                     (boolean not?)
                                     (list 'not))]
                         {:note (#?(:clj format
-                                   :cljs gstring/format) "the name is %s \"%s\""
+                                   :cljs gstring/format) "the name or number is %s \"%s\""
                                 (cond->> "exactly"
                                   (boolean not?)
                                   (str "not "))
@@ -748,11 +843,11 @@
                                      "Checking if cards have \"%s\" is not supported."
                                      s)]}
                  {:error? true})))))
-   :trait (fn trait
+   :traits (fn traits
             ([value]
-             (trait nil value))
+             (traits nil value))
             ([not? [_ v :as value]]
-             (let [?value (gensym "?trait")
+             (let [?value (gensym "?traits")
                    ?value-lower (symbol (str (name ?value) "-lower"))
                    ?rule (gensym "?rule")
                    ?rule-type (symbol (str (name ?rule) "-type"))]
@@ -863,26 +958,25 @@
   (->> (insta/transform transform-map parse-tree)
        (map (fn [s]
               (if (string? s)
-                (with-meta (let [attribute :card/name
-                                 ?value (gensym (str "?"
-                                                     (namespace attribute)
-                                                     "-"
-                                                     (name attribute)))]
-                             [['?card attribute ?value]
+                (with-meta (let [?value (gensym "?card-name-or-number")]
+                             [(list 'or
+                                    ['?card :card/name ?value]
+                                    ['?card :card/number ?value])
                               [(list 'String/.toLowerCase ?value)
                                (symbol (str (name ?value) "-lower"))]
                               [(list 'String/.contains
                                      (symbol (str (name ?value) "-lower"))
                                      (string/lower-case s))]])
                   {:note (#?(:clj format
-                             :cljs gstring/format) "the name includes \"%s\"" s)
+                             :cljs gstring/format) "the name or number includes \"%s\"" s)
                    :instaparse.gll/start-index nil
                    :instaparse.gll/end-index nil})
                 s)))))
 
 (def ranking-rules
   '[[(rarity-rank ?r ?rank)
-     [(ground [["C"   0]
+     [(ground [["P"  -1]
+               ["C"   0]
                ["U"   1]
                ["R"   2]
                ["SR"  3]
@@ -906,7 +1000,7 @@
                 (apply concat)
                 (remove nil?)
                 distinct
-                (into []))]
+                (into ['[?card :card/id _]]))]
        (when where-clause
          (->> (db/q {:find [[(list 'pull '?card query) '...]]
                      :in '[$ %]
@@ -1076,7 +1170,8 @@
                     (string/blank? q))
       :exists? (fn [{{{{:keys [q page]
                        :or {page 1}} :query} :parameters
-                     :dcg.api.core/keys [default-language]} :request}]
+                     :dcg.api.core/keys [default-language]
+                     :or {default-language "en"}} :request}]
                  (let [{{:pagination/keys [pages]
                          :or {pages 1}} :query/pagination
                         :as query}

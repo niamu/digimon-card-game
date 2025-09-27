@@ -1,5 +1,6 @@
 (ns dcg.api.resources.release
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.string :as string]
    [liberator.core :as liberator]
    [liberator.representation :as representation]
@@ -13,7 +14,7 @@
   {:allowed-methods [:head :get]
    :available-media-types ["application/vnd.api+json"]
    :etag (fn [{::keys [release]}] (utils/sha release))
-   :exists? (fn [{{{:keys [language release]} :path-params} :request}]
+   :exists? (fn [{{{:keys [language release-id]} :path-params} :request}]
               (when-let [release (db/q '{:find [(pull ?r [:release/id
                                                           :release/name
                                                           :release/genre
@@ -35,7 +36,7 @@
                                                  [?c :card/number ?number]
                                                  [?i :image/language ?l]]}
                                        language
-                                       release)]
+                                       (string/lower-case release-id))]
                 {::release (dissoc release
                                    :release/id)
                  ::cards (->> (db/q '{:find [?number ?p]
@@ -49,26 +50,40 @@
                                               [?i :image/language ?l]]}
                                     (:release/id release))
                               sort)}))
+   :existed? (fn [{{{:keys [language release-id]} :path-params} :request}]
+               (and (s/conform ::routes/language language)
+                    (not= release-id
+                          (s/conform ::routes/release-id release-id))))
+   :moved-temporarily? true
+   :location (fn [{{{:keys [language release-id]} :path-params} :request}]
+               (router/by-name ::routes/release
+                               {:path
+                                {:language (s/conform ::routes/language language)
+                                 :release-id (string/lower-case release-id)}}))
    :handle-ok
    (fn [{{{:keys [language] release-slug :release} :path-params} :request
         ::keys [cards]
         release ::release}]
      (cond-> {:data
-              {:type "releases"
+              {:type "release"
                :id (router/by-name ::routes/release
                                    {:path
                                     {:language language
-                                     :release release-slug}})
+                                     :release-id release-slug}})
                :attributes
                (cond-> release
                  (:release/date release)
-                 (update :release/date utils/inst->iso8601))}}
+                 (update :release/date utils/inst->iso8601)
+                 (:release/image release)
+                 (update :release/image :image/path)
+                 (:release/thumbnail release)
+                 (update :release/thumbnail :image/path))}}
        (seq cards)
        (-> (assoc-in [:data :relationships :cards]
                      {:data
                       (->> cards
                            (map (fn [[number p]]
-                                  {:type "cards"
+                                  {:type "card"
                                    :id (router/by-name
                                         ::routes/card
                                         {:path
@@ -80,7 +95,7 @@
                    (fnil concat [])
                    (->> cards
                         (map (fn [[number p]]
-                               {:type "cards"
+                               {:type "card"
                                 :id (router/by-name
                                      ::routes/card
                                      {:path
@@ -108,12 +123,11 @@
                                  [:representation :media-type]
                                  "application/vnd.api+json"))))})
 
-(liberator/defresource releases-resource
+(liberator/defresource language-resource
   {:allowed-methods [:head :get]
    :available-media-types ["application/vnd.api+json"]
-   :exists? (fn [{{:keys [uri]} :request}]
-              (let [language (subs uri 1)
-                    db-query (db/q '{:find [(count-distinct ?card-id)
+   :exists? (fn [{{{:keys [language]} :path-params} :request}]
+              (let [db-query (db/q '{:find [(count-distinct ?card-id)
                                             (pull ?r [:release/id
                                                       :release/name
                                                       :release/date])]
@@ -126,93 +140,133 @@
                                              [?i :image/language ?l]]}
                                    language)]
                 {::db-query db-query}))
+   :existed? (fn [{{{:keys [language]} :path-params} :request}]
+               (s/conform ::routes/language language))
+   :moved-temporarily? true
+   :location (fn [{{{:keys [language]} :path-params} :request}]
+               (router/by-name ::routes/releases-for-language
+                               {:path
+                                {:language (s/conform ::routes/language language)}}))
    :etag (fn [{::keys [db-query]}]
            (utils/sha db-query))
    :handle-ok
-   (fn [{{:keys [uri]} :request
+   (fn [{{{:keys [language]} :path-params} :request
         ::keys [db-query]}]
-     (let [language (subs uri 1)]
-       (cond-> {:data
-                {:type "languages"
-                 :id (router/by-name (keyword "dcg.api.routes"
-                                              language))
-                 :attributes {:code language
-                              :name (case language
-                                      "ja" "Japanese"
-                                      "en" "English"
-                                      "zh-Hans" "Chinese (Simplified)"
-                                      "ko" "Korean")}}}
-         (seq db-query)
-         (-> (assoc-in [:data :relationships :releases]
-                       {:data
-                        (->> db-query
-                             (sort-by (comp (juxt :release/date
-                                                  :release/id) second))
-                             (mapv (fn [[card-count r]]
-                                     (let [m (reduce-kv (fn [m k v]
-                                                          (if (nil? v)
-                                                            m
-                                                            (assoc m k v)))
-                                                        {}
-                                                        r)]
-                                       (cond-> (assoc m
-                                                      :release/cards
-                                                      card-count)
-                                         (:release/date m)
-                                         (update :release/date utils/inst->iso8601)))))
-                             (map (fn [{n :release/name
-                                       :as r}]
-                                    {:type "releases"
-                                     :id (router/by-name
-                                          ::routes/release
-                                          {:path
-                                           {:language language
-                                            :release (utils/slugify n)}})})))})
-             (update :included
-                     (fnil concat [])
-                     (->> db-query
-                          (map (fn [[count {:release/keys [name]
-                                           :as release}]]
-                                 [count
-                                  (assoc release
-                                         :release/id (utils/slugify name))]))
-                          (sort-by (comp (juxt :release/date
-                                               :release/id) second))
-                          (mapv (fn [[card-count r]]
-                                  (let [m (reduce-kv (fn [m k v]
-                                                       (if (nil? v)
-                                                         m
-                                                         (assoc m k v)))
-                                                     {}
-                                                     r)]
-                                    (cond-> (assoc m
-                                                   :release/cards
-                                                   card-count)
-                                      (:release/date m)
-                                      (update :release/date utils/inst->iso8601)))))
-                          (map (fn [r]
-                                 {:type "releases"
-                                  :id (router/by-name
-                                       ::routes/release
-                                       {:path
-                                        {:language language
-                                         :release (:release/id r)}})
-                                  :links
-                                  {:self (->> (router/by-name
-                                               ::routes/release
-                                               {:path
-                                                {:language language
-                                                 :release (:release/id r)}})
-                                              utils/update-api-path)}
-                                  :meta
-                                  (cond-> {:name (:release/name r)
-                                           :cards (:release/cards r)}
-                                    (:release/date r)
-                                    (assoc :date
-                                           (:release/date r)))}))))))))
+     (cond-> {:data
+              {:type "language"
+               :id (router/by-name ::routes/releases-for-language
+                                   {:path
+                                    {:language language}})
+               :attributes {:code language
+                            :name (case language
+                                    "ja" "Japanese"
+                                    "en" "English"
+                                    "zh-Hans" "Chinese (Simplified)"
+                                    "ko" "Korean")}}}
+       (seq db-query)
+       (-> (assoc-in [:data :relationships :releases]
+                     {:data
+                      (->> db-query
+                           (sort-by (comp (juxt :release/date
+                                                :release/id) second))
+                           (mapv (fn [[card-count r]]
+                                   (let [m (reduce-kv (fn [m k v]
+                                                        (if (nil? v)
+                                                          m
+                                                          (assoc m k v)))
+                                                      {}
+                                                      r)]
+                                     (cond-> (assoc m
+                                                    :release/cards
+                                                    card-count)
+                                       (:release/date m)
+                                       (update :release/date utils/inst->iso8601)))))
+                           (map (fn [{n :release/name
+                                     :as r}]
+                                  {:type "release"
+                                   :id (router/by-name
+                                        ::routes/release
+                                        {:path
+                                         {:language language
+                                          :release-id (utils/slugify n)}})})))})
+           (update :included
+                   (fnil concat [])
+                   (->> db-query
+                        (map (fn [[count {:release/keys [name]
+                                         :as release}]]
+                               [count
+                                (assoc release
+                                       :release/id (utils/slugify name))]))
+                        (sort-by (comp (juxt :release/date
+                                             :release/id) second))
+                        (mapv (fn [[card-count r]]
+                                (let [m (reduce-kv (fn [m k v]
+                                                     (if (nil? v)
+                                                       m
+                                                       (assoc m k v)))
+                                                   {}
+                                                   r)]
+                                  (cond-> (assoc m
+                                                 :release/cards
+                                                 card-count)
+                                    (:release/date m)
+                                    (update :release/date utils/inst->iso8601)))))
+                        (map (fn [r]
+                               {:type "release"
+                                :id (router/by-name
+                                     ::routes/release
+                                     {:path
+                                      {:language language
+                                       :release-id (:release/id r)}})
+                                :links
+                                {:self (->> (router/by-name
+                                             ::routes/release
+                                             {:path
+                                              {:language language
+                                               :release-id (:release/id r)}})
+                                            utils/update-api-path)}
+                                :meta
+                                (cond-> {:name (:release/name r)
+                                         :cards (:release/cards r)}
+                                  (:release/date r)
+                                  (assoc :date
+                                         (:release/date r)))})))))))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
    :handle-not-found errors/error404-body
+   :as-response (fn [data {representation :representation :as context}]
+                  (-> data
+                      (representation/as-response
+                       (assoc-in context
+                                 [:representation :media-type]
+                                 "application/vnd.api+json"))))})
+
+(liberator/defresource releases-resource
+  {:allowed-methods [:head :get]
+   :available-media-types ["application/vnd.api+json"]
+   :exists? (fn [_]
+              {::db-query (db/q '{:find [?l (max ?date) (count ?r)]
+                                  :where [[?c :card/releases ?r]
+                                          [?r :release/date ?date]
+                                          [?c :card/language ?l]
+                                          [?i :image/language ?l]]})})
+   :etag (fn [{::keys [db-query]}] (utils/sha db-query))
+   :handle-ok
+   (fn [{request :request
+        ::keys [db-query]}]
+     (->> db-query
+          (sort-by (comp inst-ms second) >)
+          (mapv (fn [[language last-release releases]]
+                  (let [route (router/by-name ::routes/releases-for-language
+                                              {:path
+                                               {:language language}})]
+                    {:type "language"
+                     :id route
+                     :meta {:latest-release (utils/inst->iso8601 last-release)
+                            :total-releases releases}
+                     :links {:self (utils/update-api-path route)}})))))
+   :handle-method-not-allowed errors/error405-body
+   :handle-not-acceptable errors/error406-body
    :as-response (fn [data {representation :representation :as context}]
                   (-> data
                       (representation/as-response

@@ -1,5 +1,6 @@
 (ns dcg.api.resources.card
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.string :as string]
    [liberator.core :as liberator]
    [liberator.representation :as representation]
@@ -103,7 +104,7 @@
                (not (seq (:card/faqs card)))
                (dissoc :card/faqs))]
     (cond-> {:data
-             {:type "cards"
+             {:type "card"
               :id (router/by-name
                    ::routes/card
                    {:path {:language language
@@ -114,7 +115,8 @@
                                   (str "_P" parallel-id)))}})
               :attributes (cond-> (dissoc card
                                           :card/releases
-                                          :card/highlights)
+                                          :card/highlights
+                                          :card/panorama)
                             (:card/errata card)
                             (update :card/errata
                                     (fn [errata]
@@ -145,7 +147,7 @@
                     {:data
                      (->> alt-arts
                           (map (fn [{:card/keys [notes number parallel-id]}]
-                                 {:type "cards"
+                                 {:type "card"
                                   :id (router/by-name
                                        ::routes/card
                                        {:path
@@ -158,7 +160,7 @@
                   (fnil concat [])
                   (->> alt-arts
                        (map (fn [{:card/keys [notes number parallel-id]}]
-                              (cond-> {:type "cards"
+                              (cond-> {:type "card"
                                        :id (router/by-name
                                             ::routes/card
                                             {:path
@@ -185,7 +187,7 @@
                     {:data
                      (->> international-arts
                           (map (fn [{:card/keys [notes number language parallel-id]}]
-                                 {:type "cards"
+                                 {:type "card"
                                   :id (router/by-name
                                        ::routes/card
                                        {:path
@@ -198,7 +200,7 @@
                   (fnil concat [])
                   (->> international-arts
                        (map (fn [{:card/keys [notes number language parallel-id]}]
-                              (cond-> {:type "cards"
+                              (cond-> {:type "card"
                                        :id (router/by-name
                                             ::routes/card
                                             {:path
@@ -238,29 +240,29 @@
                                       (update :release/date
                                               utils/inst->iso8601)))))
                           (map (fn [{:release/keys [name] :as r}]
-                                 {:type "releases"
+                                 {:type "release"
                                   :id (router/by-name
                                        ::routes/release
                                        {:path
                                         {:language language
-                                         :release (utils/slugify name)}})})))})
+                                         :release-id (utils/slugify name)}})})))})
           (update :included
                   (fnil concat [])
                   (->> (:card/releases card)
                        (map (fn [{:release/keys [id name date]}]
-                              {:type "releases"
+                              {:type "release"
                                :id (router/by-name
                                     ::routes/release
                                     {:path
                                      {:language language
-                                      :release (utils/slugify name)}})
+                                      :release-id (utils/slugify name)}})
                                :links
                                {:self
                                 (->> (router/by-name
                                       ::routes/release
                                       {:path
                                        {:language language
-                                        :release (utils/slugify name)}})
+                                        :release-id (utils/slugify name)}})
                                      utils/update-api-path)}
                                :meta {:name name}}))))))))
 
@@ -296,7 +298,9 @@
    :available-media-types ["application/vnd.api+json"]
    :exists?
    (fn [{{{:keys [language card-id]} :path-params} :request}]
-     (let [[number parallel-id] (string/split card-id #"_P")
+     (let [[number parallel-id] (-> card-id
+                                    string/upper-case
+                                    (string/split #"_P"))
            parallel-id (or (some-> parallel-id
                                    parse-long)
                            0)
@@ -337,6 +341,16 @@
          {::alt-arts alt-arts
           ::international-arts international-arts
           ::card card})))
+   :existed? (fn [{{{{:keys [language card-id]} :path} :parameters} :request}]
+               (and (s/conform ::routes/language language)
+                    (not= card-id
+                          (s/conform ::routes/card-id card-id))))
+   :moved-temporarily? true
+   :location (fn [{{{{:keys [language card-id]} :path} :parameters} :request}]
+               (router/by-name ::routes/card
+                               {:path
+                                {:language (s/conform ::routes/language language)
+                                 :card-id (s/conform ::routes/card-id card-id)}}))
    :etag (fn [{{media-type :media-type} :representation
               ::keys [card]}]
            (str (utils/sha card)

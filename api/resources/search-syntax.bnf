@@ -1,6 +1,6 @@
 <q> = whitespace* | (query-fragment whitespace*)+
 
-<query-fragment> = datom / has / text / trait / exact-string / not-string / string
+<query-fragment> = datom / has / text / traits / exact-string / not-string / string
 <whitespace> = <#"[\s\,]+">
 
 operator = <":"> | #"[>|<]?=" | #"[>|<]"
@@ -22,6 +22,7 @@ attribute =
     #"(?i)rarity" |
     #"(?i)play-cost" |
     #"(?i)use-cost" |
+    #"(?i)cost" |
     #"(?i)level" |
     #"(?i)effect" |
     #"(?i)inherited-effect" |
@@ -37,7 +38,7 @@ attribute =
 
 has = not? <"has:"> value
 text = not? <"text:"> value
-trait = not? <"trait:"> value
+traits = not? <"traits:"> value
 exact-string = not? <"!"> string
 not-string = <not> string
 <string> = (quoted / #"(?:[^\s\,]+)")

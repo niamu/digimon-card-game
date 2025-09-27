@@ -74,8 +74,7 @@
                                 :content-type "application/vnd.api+json"
                                 :updated-at updated-at}
                                :links
-                               {:download (->> path
-                                               (utils/update-asset-path request))}})))))
+                               {:download (utils/update-asset-path path)}})))))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
    :as-response (fn [data {representation :representation :as context}]
