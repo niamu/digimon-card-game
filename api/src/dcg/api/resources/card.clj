@@ -46,10 +46,10 @@
                     {:release/thumbnail [:image/path]}
                     {:release/image [:image/path]}]}
    {:card/image [:image/path]}
-   {:card/highlights [:highlight/index
-                      :highlight/field
-                      :highlight/type
-                      :highlight/text]}
+   {:card/icons [:icon/index
+                 :icon/field
+                 :icon/type
+                 :icon/text]}
    :card/effect
    :card/inherited-effect
    :card/security-effect
@@ -115,7 +115,7 @@
                                   (str "_P" parallel-id)))}})
               :attributes (cond-> (dissoc card
                                           :card/releases
-                                          :card/highlights
+                                          :card/icons
                                           :card/panorama)
                             (:card/errata card)
                             (update :card/errata
@@ -352,13 +352,13 @@
                                 {:language (s/conform ::routes/language language)
                                  :card-id (s/conform ::routes/card-id card-id)}}))
    :etag (fn [{{media-type :media-type} :representation
-              ::keys [card]}]
+               ::keys [card]}]
            (str (utils/sha card)
                 "--"
                 media-type))
    :handle-ok
    (fn [{{:card/keys [language number parallel-id] :as card} ::card
-        ::keys [alt-arts international-arts]}]
+         ::keys [alt-arts international-arts]}]
      (process-card card alt-arts international-arts))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body

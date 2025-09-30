@@ -97,7 +97,7 @@
     {:db/ident :card/limitations
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}
-    {:db/ident :card/highlights
+    {:db/ident :card/icons
      :db/valueType :db.type/ref
      :db/cardinality :db.cardinality/many}
     {:db/ident :card/rules
@@ -245,21 +245,21 @@
      :db/valueType :db.type/tuple
      :db/tupleType :db.type/string
      :db/cardinality :db.cardinality/one}]
-   ;; Highlight
-   [{:db/ident :highlight/id
+   ;; Icon
+   [{:db/ident :icon/id
      :db/valueType :db.type/string
      :db/unique :db.unique/identity
      :db/cardinality :db.cardinality/one}
-    {:db/ident :highlight/type
+    {:db/ident :icon/type
      :db/valueType :db.type/keyword
      :db/cardinality :db.cardinality/one}
-    {:db/ident :highlight/field
+    {:db/ident :icon/field
      :db/valueType :db.type/keyword
      :db/cardinality :db.cardinality/one}
-    {:db/ident :highlight/index
+    {:db/ident :icon/index
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
-    {:db/ident :highlight/text
+    {:db/ident :icon/text
      :db/valueType :db.type/string
      :db/cardinality :db.cardinality/one}]
    ;; Rules
