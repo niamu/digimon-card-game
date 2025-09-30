@@ -75,25 +75,25 @@
                                                (into {}))}))))
                     (sorted-map)))))
 
-(defn- highlight-translations
+(defn- icon-translations
   [cards]
-  (let [filter-fn (fn [{htype :highlight/type}]
-                    ;; TODO: Add support for all highlight types
+  (let [filter-fn (fn [{htype :icon/type}]
+                    ;; TODO: Add support for all icon types
                     (or (= htype :timing)
                         (= htype :precondition)))
         tr-map
         (->> cards
-             (reduce (fn [accl {:card/keys [number language highlights]}]
+             (reduce (fn [accl {:card/keys [number language icons]}]
                        (assoc-in accl
                                  [number language]
-                                 (->> highlights
+                                 (->> icons
                                       (filter filter-fn)
-                                      (sort-by (juxt :highlight/field
-                                                     :highlight/index))
-                                      (map (juxt :highlight/type
+                                      (sort-by (juxt :icon/field
+                                                     :icon/index))
+                                      (map (juxt :icon/type
                                                  (comp (fn [s]
                                                          (subs s 1 (dec (count s))))
-                                                       :highlight/text))))))
+                                                       :icon/text))))))
                      (sorted-map))
              (reduce-kv
               (fn [accl _ m]
@@ -122,16 +122,16 @@
         (update-vals (fn [cards]
                        (let [l-map
                              (reduce
-                              (fn [accl {:card/keys [language highlights]}]
+                              (fn [accl {:card/keys [language icons]}]
                                 (update accl
                                         language
                                         (fnil (comp set concat) [])
-                                        (->> highlights
+                                        (->> icons
                                              (filter filter-fn)
-                                             (map (juxt :highlight/type
+                                             (map (juxt :icon/type
                                                         (comp (fn [s]
                                                                 (subs s 1 (dec (count s))))
-                                                              :highlight/text))))))
+                                                              :icon/text))))))
                               {}
                               cards)]
                          (reduce-kv (fn [m l texts]
@@ -155,26 +155,26 @@
                      (sorted-map)
                      xs)))))
 
-(defn- digixros-highlights
-  "DigiXros highlights should never be the first"
+(defn- digixros-icons
+  "DigiXros icons should never be the first"
   [cards]
   (let [ignored-card-numbers #{"BT10-063"}]
     (->> cards
          (remove (fn [{:card/keys [number]}]
                    (contains? ignored-card-numbers
                               number)))
-         (filter (fn [{:card/keys [highlights]}]
-                   (some (fn [{highlight-type :highlight/type
-                              :highlight/keys [index]}]
-                           (and (= :digixros highlight-type)
+         (filter (fn [{:card/keys [icons]}]
+                   (some (fn [{icon-type :icon/type
+                              :icon/keys [index]}]
+                           (and (= :digixros icon-type)
                                 (zero? index)))
-                         highlights)))
+                         icons)))
          (map (juxt :card/language :card/number))
          set
          (sort-by second))))
 
-(defn- highlights
-  "Card highlights that differ across languages"
+(defn- icons
+  "Card icons that differ across languages"
   [cards]
   (->> cards
        (group-by :card/number)
@@ -185,8 +185,8 @@
                                           (juxt :card/id
                                                 (comp #(dissoc % :mention)
                                                       frequencies
-                                                      #(map :highlight/type %)
-                                                      :card/highlights))))
+                                                      #(map :icon/type %)
+                                                      :card/icons))))
                                (apply merge)
                                (into (sorted-map)))]
                       (if (apply = (vals result))
@@ -368,38 +368,57 @@
                               "EX8" 4
                               "BT20" 4
                               "BT21" 5
+                              "EX9" 5
+                              "BT22" 5
+                              "EX10" 5
                               "ST20" 5
-                              "ST21" 5}]
-    (->> cards
-         (reduce (fn [accl {:card/keys [id number block-icon]}]
-                   (update-in accl
-                              [(string/replace number #"\-[0-9]+" "")
-                               block-icon]
-                              (fnil conj #{})
-                              id))
-                 {})
-         (reduce-kv (fn [accl release kv]
-                      (let [result (reduce (fn [m b]
-                                             (dissoc m (if (= b 0)
-                                                         nil
-                                                         b)))
-                                           kv
-                                           (range (or (get expected-block-icons
-                                                           release 0)
-                                                      0)
-                                                  (->> expected-block-icons
-                                                       vals
-                                                       (map (fn [b]
-                                                              (if (nil? b)
-                                                                0
-                                                                b)))
-                                                       (apply max)
-                                                       inc)))]
-                        (cond-> accl
-                          (and (seq result)
-                               (not (contains? #{"P" "LM"} release)))
-                          (assoc release result))))
-                    (sorted-map)))))
+                              "ST21" 5
+                              "BT23" 5}
+        saved-block-icons (->> (io/resource "block-icons.edn")
+                               io/reader
+                               (PushbackReader.)
+                               edn/read
+                               (into #{}))
+        current-block-icons
+        (->> cards
+             (reduce (fn [accl {:card/keys [id number block-icon]}]
+                       (cond-> accl
+                         (or (< (or block-icon 0)
+                                (or (get expected-block-icons
+                                         (string/replace number #"\-[0-9]+" ""))
+                                    0))
+                             (and (contains? expected-block-icons
+                                             (string/replace number #"\-[0-9]+" ""))
+                                  (= block-icon 3)
+                                  (string/includes? number
+                                                    (format "%02d" 8)))
+                             (and (not (contains? expected-block-icons
+                                                  (string/replace number #"\-[0-9]+" "")))
+                                  block-icon
+                                  (string/includes? number
+                                                    (format "%02d" block-icon)))
+                             (and (> (or block-icon 0)
+                                     (or (get expected-block-icons
+                                              (string/replace number #"\-[0-9]+" ""))
+                                         0))
+                                  block-icon
+                                  (string/includes? number
+                                                    (format "%02d" block-icon))))
+                         (update-in [number block-icon]
+                                    (fnil conj #{})
+                                    id)))
+                     {})
+             (into #{}))]
+    (set/difference current-block-icons
+                    saved-block-icons)))
+
+(defn single-language-cards
+  [cards]
+  (->> cards
+       (group-by :card/number)
+       (remove (fn [[_ xs]]
+                 (> (count xs) 1)))
+       (mapv (comp :card/id first second))))
 
 (defn card-assertions
   [cards]
@@ -438,13 +457,13 @@
   (assert (empty? (field-translations :card/rarity cards))
           (format "Card rarities differ across languages:\n%s"
                   (field-translations :card/rarity cards)))
-  (assert (empty? (highlight-translations cards))
-          (format "Card highlights do not match across languages:\n%s"
-                  (highlight-translations cards)))
+  (assert (empty? (icon-translations cards))
+          (format "Card icons do not match across languages:\n%s"
+                  (icon-translations cards)))
   (assert (empty? (card-digivolution-requirements cards))
           (format "Card digivolution requirements have issues:\n%s"
                   (card-digivolution-requirements cards)))
-  (assert (= (highlights cards)
+  (assert (= (icons cards)
              {"BT10-099"
               {"card/en_BT10-099_P0" {:timing 3, :keyword-effect 1},
                "card/ja_BT10-099_P0" {:timing 3, :keyword-effect 1},
@@ -478,11 +497,11 @@
                {:timing 3, :keyword-effect 2, :precondition 1},
                "card/zh-Hans_EX4-057_P1"
                {:timing 3, :keyword-effect 1, :precondition 1}}})
-          (format "Card highlights differ across languages:\n%s"
-                  (highlights cards)))
-  (assert (empty? (digixros-highlights cards))
-          (format "Card DigiXros highlights are incorrectly the first match:\n%s"
-                  (digixros-highlights cards)))
+          (format "Card icons differ across languages:\n%s"
+                  (icons cards)))
+  (assert (empty? (digixros-icons cards))
+          (format "Card DigiXros icons are incorrectly the first match:\n%s"
+                  (digixros-icons cards)))
   (assert (empty? (rules cards))
           (format "Card rules differ across languages:\n%s"
                   (rules cards)))
@@ -491,6 +510,7 @@
                      "P-071"
                      "BT10-086"
                      "BT4-041"
+                     "P-115"
                      "EX1-073"},
               "ja" #{"BT6-084"
                      "EX1-001"
@@ -506,18 +526,20 @@
               "zh-Hans" #{"LM-020"}})
           (format "Card errata not accounted for:\n%s"
                   (card-errata cards)))
-  (assert (= (first (data/diff (card-block-icons cards)
-                               {"BT12" {1 #{"card/en_BT12-001_P1"}},
-                                "BT6" {nil #{"card/zh-Hans_BT6-018_P2"}},
-                                "EX1" {nil #{"card/en_EX1-073_P2"}}}))
-             nil)
+  (assert (empty? (card-block-icons cards))
           (format "Card block icons may not be accurate:\n%s"
                   (card-block-icons cards)))
+  (assert (empty? (single-language-cards cards))
+          (format "Single language cards exist which need manual review:\n%s"
+                  (single-language-cards cards)))
   cards)
 
 (comment
   (->> dcg.db.core/*cards
        card-assertions)
+
+  (->> dcg.db.core/*cards
+       single-language-cards)
 
   ;; Card values analysis
   (->> (card-values dcg.db.core/*cards)

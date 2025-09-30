@@ -112,8 +112,12 @@
                                                     :release/card-image-language
                                                     :release/http-opts)))
                              (some->> releases
-                                      (filter (fn [release]
-                                                (when notes
+                                      (filter (fn [{:release/keys [cardlist-uri]
+                                                   :as release}]
+                                                (when (and notes
+                                                           (not (string/includes? notes
+                                                                                  "Limited Card Pack"))
+                                                           cardlist-uri)
                                                   (or (string/starts-with?
                                                        (string/lower-case
                                                         (:release/name release))
@@ -482,7 +486,6 @@
              :card/language language
              :card/number number
              :card/parallel-id parallel-id
-             :card/rarity rarity
              :card/category (case category
                               ;; en
                               "Digi-Egg" :digi-egg
@@ -523,6 +526,7 @@
                                     :content)))
              :card/image {:image/language language
                           :image/source (URI. (str origin image-source))}}
+      rarity (assoc :card/rarity rarity)
       play-cost (assoc (if (or (= category "オプション")
                                (= category "Option")
                                (= category "옵션"))
@@ -833,7 +837,6 @@
                           :card/language language
                           :card/number number
                           :card/parallel-id parallel-id
-                          :card/rarity rarity
                           :card/category (case category
                                            "デジタマ"   :digi-egg
                                            "デジモン"   :digimon
@@ -863,6 +866,7 @@
                           :card/notes notes
                           :card/image {:image/language language
                                        :image/source (URI. (str origin image-source))}}
+                   rarity (assoc :card/rarity rarity)
                    play-cost (assoc (if (= category "オプション")
                                       :card/use-cost
                                       :card/play-cost) play-cost)
@@ -915,9 +919,9 @@
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                            dp rareDegree entryConsumeValue envolutionConsumeTwo
-                            cardLevel effect envolutionEffect safeEffect
-                            imageCover getWayStr cardGroup]}]
+                           dp rareDegree entryConsumeValue envolutionConsumeTwo
+                           cardLevel effect envolutionEffect safeEffect
+                           imageCover getWayStr cardGroup]}]
                  (when imageCover
                    (let [number (if (= model "-")
                                   (str (string/replace cardGroup "-" "")
@@ -940,6 +944,7 @@
                                         card-utils/normalize-string
                                         (re-find #"[0-9]+")
                                         parse-long)
+                         rarity (last (re-find #"（(.*)）" rareDegree))
                          attribute (some-> attribute card-utils/normalize-string)
                          type (some-> type card-utils/normalize-string)
                          form (some-> form card-utils/normalize-string)
@@ -974,7 +979,6 @@
                               :card/language language
                               :card/number number
                               :card/parallel-id parallel-id
-                              :card/rarity (last (re-find #"（(.*)）" rareDegree))
                               :card/category (case belongsType
                                                "数码蛋"   :digi-egg
                                                "数码宝贝" :digimon
@@ -984,6 +988,7 @@
                               :card/name (card-utils/normalize-string name)
                               :card/image {:image/language language
                                            :image/source (URI. imageCover)}}
+                       rarity (assoc :card/rarity rarity)
                        play-cost (assoc (if (= belongsType "选项")
                                           :card/use-cost
                                           :card/play-cost) play-cost)

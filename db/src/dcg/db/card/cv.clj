@@ -106,7 +106,12 @@
       (assoc :card/digivolution-requirements
              (map-indexed
               (fn [idx {:keys [colors] :as r}]
-                (let [category (or (get (nth digivolution-requirements idx
+                (let [colors (if (= (count colors) 6)
+                               ["red" "blue" "yellow"
+                                "green" "black" "purple"
+                                "white"]
+                               colors)
+                      category (or (get (nth digivolution-requirements idx
                                              {:digivolve/category
                                               (-> (get r :category)
                                                   string/lower-case

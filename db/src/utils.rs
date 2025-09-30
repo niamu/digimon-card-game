@@ -82,8 +82,7 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
         &mask,
     )
     .unwrap();
-    drop(mask);
-    let mut mask = cv::core::no_array();
+    let mut new_mask = cv::core::no_array();
     let mut min_val = Some(0f64);
     let mut max_val = Some(0f64);
     let mut min_loc = Some(Point::default());
@@ -94,12 +93,41 @@ pub fn template_match(template: &Mat, image: &BoxedRef<'_, Mat>) -> MatchResult 
         max_val.as_mut(),
         min_loc.as_mut(),
         max_loc.as_mut(),
-        &mut mask,
+        &mut new_mask,
     )
     .unwrap();
-    coords.x = max_loc.unwrap().x;
-    coords.y = max_loc.unwrap().y;
-    result = max_val.unwrap();
+    if max_val.unwrap().is_nan() {
+        cv::imgproc::match_template(
+            &image_prep,
+            &template_prep,
+            &mut result_ccoeff,
+            cv::imgproc::TM_CCORR_NORMED,
+            &mask,
+        )
+        .unwrap();
+        drop(mask);
+        let mut new_mask = cv::core::no_array();
+        let mut min_val = Some(0f64);
+        let mut max_val = Some(0f64);
+        let mut min_loc = Some(Point::default());
+        let mut max_loc = Some(Point::default());
+        cv::core::min_max_loc(
+            &result_ccoeff,
+            min_val.as_mut(),
+            max_val.as_mut(),
+            min_loc.as_mut(),
+            max_loc.as_mut(),
+            &mut new_mask,
+        )
+        .unwrap();
+        coords.x = max_loc.unwrap().x;
+        coords.y = max_loc.unwrap().y;
+        result = max_val.unwrap();
+    } else {
+        coords.x = max_loc.unwrap().x;
+        coords.y = max_loc.unwrap().y;
+        result = max_val.unwrap();
+    }
     MatchResult {
         accuracy: result,
         coords,

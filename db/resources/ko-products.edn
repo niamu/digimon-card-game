@@ -374,4 +374,24 @@
            :id "release_ko_43669",
            :card-image-language "ko",
            :genre "확장팩",
-           :date #inst "2025-08-22T00:00:00.000-00:00"})
+           :date #inst "2025-08-22T00:00:00.000-00:00"}
+ #:release{:name "-동화의 무도-",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/44177",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/177/044/e92e0d010a530f08a6c226f87cd2c5b9.png",
+           :language "ko",
+           :id "release_ko_44177",
+           :card-image-language "ko",
+           :genre "구축완료 덱",
+           :date #inst "2025-09-19T00:00:00.000-00:00"}
+ #:release{:name "-선풍의 수호자-",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/44172",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/172/044/6f2787bf59273ae9a4f46dbd766aa8a0.png",
+           :language "ko",
+           :id "release_ko_44172",
+           :card-image-language "ko",
+           :genre "구축완료 덱",
+           :date #inst "2025-09-19T00:00:00.000-00:00"})

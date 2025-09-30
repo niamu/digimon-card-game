@@ -1,10 +1,10 @@
-(ns dcg.db.card.highlight
+(ns dcg.db.card.icon
   (:require
    [clojure.string :as string])
   (:import
    [java.util Date]))
 
-(defn- text->highlight-type
+(defn- text->icon-type
   [text language]
   (when text
     (cond
@@ -55,7 +55,7 @@
           "＜" :keyword-effect
           nil)))))
 
-(defn highlights-in-text
+(defn icons-in-text
   [text language]
   (let [re-escape-map {\[ "\\["
                        \] "\\]"
@@ -99,7 +99,7 @@
                          re-pattern)]
     (re-seq brackets-re text)))
 
-(defn process-highlights
+(defn process-icons
   [cards]
   (let [en-mentions (->> cards
                          (filter (fn [{:card/keys [language]}]
@@ -140,34 +140,34 @@
                               (get (first cards) :card/number))
                             (fn [cards]
                               (get (first cards) :card/parallel-id)))))
-        card-highlights
+        card-icons
         (fn [{:card/keys [id language] :as card}]
           (mapcat (fn [field]
                     (when-let [text (get card field)]
-                      (->> (highlights-in-text text language)
+                      (->> (icons-in-text text language)
                            (map-indexed
                             (fn [idx text]
-                              {:highlight/id (-> id
-                                                 (string/replace "card/"
-                                                                 "highlight/")
-                                                 (str "_"
-                                                      (name field)
-                                                      "_"
-                                                      idx))
-                               :highlight/type (text->highlight-type text
-                                                                     language)
-                               :highlight/index idx
-                               :highlight/text text
-                               :highlight/field field})))))
+                              {:icon/id (-> id
+                                            (string/replace "card/"
+                                                            "icon/")
+                                            (str "_"
+                                                 (name field)
+                                                 "_"
+                                                 idx))
+                               :icon/type (text->icon-type text
+                                                           language)
+                               :icon/index idx
+                               :icon/text text
+                               :icon/field field})))))
                   [:card/effect
                    :card/inherited-effect
                    :card/security-effect]))]
     (->> (reduce (fn [{:keys [translations] :as accl} card-group]
                    (let [cards (map (fn [card]
-                                      (let [highlights (card-highlights card)]
+                                      (let [icons (card-icons card)]
                                         (cond-> card
-                                          (seq highlights)
-                                          (assoc :card/highlights highlights))))
+                                          (seq icons)
+                                          (assoc :card/icons icons))))
                                     card-group)
                          without-brackets (fn [s] (subs s 1 (dec (count s))))
                          ja-map
@@ -175,85 +175,85 @@
                                   (filter (fn [{:card/keys [language]}]
                                             (= language "ja")))
                                   first
-                                  :card/highlights
-                                  (reduce (fn [m {:highlight/keys [index text field]
-                                                  :as highlight}]
+                                  :card/icons
+                                  (reduce (fn [m {:icon/keys [index text field]
+                                                 :as icon}]
                                             (let [ja-text (without-brackets text)]
                                               (-> m
                                                   (assoc [field ja-text index]
-                                                         highlight)
+                                                         icon)
                                                   (assoc [field ja-text]
-                                                         highlight)
+                                                         icon)
                                                   (assoc [field index]
-                                                         highlight))))
+                                                         icon))))
                                           {}))
-                         en-highlights
+                         en-icons
                          (some->> cards
                                   (filter (fn [{:card/keys [language]}]
                                             (= language "en")))
                                   first
-                                  :card/highlights
-                                  (remove (fn [{highlight-type :highlight/type
-                                                :highlight/keys [text]}]
+                                  :card/icons
+                                  (remove (fn [{icon-type :icon/type
+                                               :icon/keys [text]}]
                                             (let [text (without-brackets text)]
-                                              (or highlight-type
+                                              (or icon-type
                                                   (get translations text)
                                                   (some (fn [s]
                                                           (= s text))
                                                         en-mentions))))))
                          translations
-                         (reduce (fn [m {:highlight/keys [text
-                                                          index
-                                                          field]}]
+                         (reduce (fn [m {:icon/keys [text
+                                                    index
+                                                    field]}]
                                    (let [text (without-brackets text)
                                          ja-text (get m text)
-                                         {highlight-type :highlight/type
-                                          matched-ja-text :highlight/text}
+                                         {icon-type :icon/type
+                                          matched-ja-text :icon/text}
                                          (or (get ja-map [field ja-text index])
                                              (get ja-map [field ja-text])
                                              (get ja-map [field index]))]
                                      (cond-> m
                                        (and matched-ja-text
                                             (not (get m text))
-                                            (or (= highlight-type :timing)
-                                                (= highlight-type :precondition)))
+                                            (or (= icon-type :timing)
+                                                (= icon-type :precondition)))
                                        (assoc text
                                               (-> matched-ja-text
                                                   without-brackets)))))
                                  translations
-                                 en-highlights)
-                         update-highlights
-                         (fn [highlights]
-                           (->> highlights
-                                (map (fn [{:highlight/keys [text index field]
-                                           :as highlight}]
+                                 en-icons)
+                         update-icons
+                         (fn [icons]
+                           (->> icons
+                                (map (fn [{:icon/keys [text index field]
+                                          :as icon}]
                                        (let [text (without-brackets text)
                                              ja-text (get translations text)
-                                             {highlight-type :highlight/type}
+                                             {icon-type :icon/type}
                                              (or (get ja-map
                                                       [field ja-text index])
                                                  (get ja-map
                                                       [field ja-text]))
-                                             highlight-type
+                                             icon-type
                                              (if (contains? #{:timing
                                                               :precondition
                                                               :mention}
-                                                            highlight-type)
-                                               highlight-type
+                                                            icon-type)
+                                               icon-type
                                                :mention)]
-                                         (cond-> highlight
-                                           (nil? (:highlight/type highlight))
-                                           (assoc :highlight/type
-                                                  (or highlight-type
+                                         (cond-> icon
+                                           (nil? (:icon/type icon))
+                                           (assoc :icon/type
+                                                  (or icon-type
                                                       :mention))))))))
                          cards
-                         (map (fn [{:card/keys [highlights] :as card}]
+                         (map (fn [{:card/keys [icons] :as card}]
                                 (cond-> card
-                                  (some (fn [{highlight-type :highlight/type}]
-                                          (nil? highlight-type))
-                                        highlights)
-                                  (update :card/highlights
-                                          update-highlights)))
+                                  (some (fn [{icon-type :icon/type}]
+                                          (nil? icon-type))
+                                        icons)
+                                  (update :card/icons
+                                          update-icons)))
                               cards)]
                      (-> accl
                          (assoc :translations translations)

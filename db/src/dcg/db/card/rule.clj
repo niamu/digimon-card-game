@@ -2,7 +2,7 @@
   "Card rule revisions"
   (:require
    [clojure.string :as string]
-   [dcg.db.card.highlight :as highlight]
+   [dcg.db.card.icon :as icon]
    [dcg.db.card.utils :as card-utils]
    [dcg.db.utils :as utils]
    [hickory.core :as hickory]
@@ -508,10 +508,10 @@
                              (if (seq remaining)
                                (let [rule-type (first remaining)
                                      end-index (string/index-of rule rule-type)
-                                     highlights
+                                     icons
                                      (when end-index
                                        (-> (subs rule end-index)
-                                           (highlight/highlights-in-text language)
+                                           (icon/icons-in-text language)
                                            (as-> #__ xs
                                              (map (fn [s]
                                                     (subs s 1 (dec (count s))))
@@ -529,37 +529,37 @@
                                                      "속성:"
                                                      "특징:"
                                                      "特征:"}
-                                                   (map (fn [highlight]
+                                                   (map (fn [icon]
                                                           (let [rule-type
                                                                 (cond
                                                                   (contains? forms
-                                                                             highlight)
+                                                                             icon)
                                                                   :card/form
                                                                   (contains? attributes
-                                                                             highlight)
+                                                                             icon)
                                                                   :card/attribute
                                                                   (contains? types
-                                                                             highlight)
+                                                                             icon)
                                                                   :card/type
                                                                   :else :card/type)]
                                                             {:rule/type rule-type
-                                                             :rule/value highlight}))
-                                                        highlights)
+                                                             :rule/value icon}))
+                                                        icons)
                                                    #{"名称:"
                                                      "Name:"
                                                      "명칭:"}
-                                                   (map (fn [highlight]
+                                                   (map (fn [icon]
                                                           {:rule/type :card/name
-                                                           :rule/value highlight})
-                                                        highlights)
+                                                           :rule/value icon})
+                                                        icons)
                                                    #{"カードナンバー:"
                                                      "Card Number:"
                                                      "카드 넘버:"
                                                      "卡牌编号:"}
-                                                   (map (fn [highlight]
+                                                   (map (fn [icon]
                                                           {:rule/type :card/number
-                                                           :rule/value highlight})
-                                                        highlights)
+                                                           :rule/value icon})
+                                                        icons)
                                                    #{"枚まで入れられる"
                                                      "You can include up to"
                                                      "넘버의 카드는 덱에"

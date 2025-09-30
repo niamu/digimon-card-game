@@ -9,7 +9,7 @@
    [dcg.db.card.btcg-plus :as btcg-plus]
    [dcg.db.card.errata :as errata]
    [dcg.db.card.faq :as faq]
-   [dcg.db.card.highlight :as highlight]
+   [dcg.db.card.icon :as icon]
    [dcg.db.card.limitation :as limitation]
    [dcg.db.card.release :as release]
    [dcg.db.card.repair :as repair]
@@ -216,7 +216,7 @@
                                                              idx)))
                                             card-faqs))))))
              rule/process-rules
-             highlight/process-highlights)]
+             icon/process-icons)]
     (->> cards
          (filter (fn [{{:image/keys [path]} :card/image}]
                    (io/resource (subs path 1))))
