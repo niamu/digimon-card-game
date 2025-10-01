@@ -165,7 +165,7 @@
                               number)))
          (filter (fn [{:card/keys [icons]}]
                    (some (fn [{icon-type :icon/type
-                              :icon/keys [index]}]
+                               :icon/keys [index]}]
                            (and (= :digixros icon-type)
                                 (zero? index)))
                          icons)))
@@ -416,9 +416,15 @@
   [cards]
   (->> cards
        (group-by :card/number)
-       (remove (fn [[_ xs]]
-                 (> (count xs) 1)))
-       (mapv (comp :card/id first second))))
+       (reduce (fn [accl [_ xs]]
+                 (if-let [{:card/keys [id language]
+                           :as card} (when (= (count xs) 1)
+                                       (first xs))]
+                   (cond-> accl
+                     (not= language "ja")
+                     (conj id))
+                   accl))
+               [])))
 
 (defn card-assertions
   [cards]
@@ -529,6 +535,11 @@
   (assert (empty? (card-block-icons cards))
           (format "Card block icons may not be accurate:\n%s"
                   (card-block-icons cards)))
+  (assert (every? :card/color cards)
+          (format "Not every card has a color:\n%s"
+                  (->> cards
+                       (remove :card/color)
+                       (map :card/id))))
   (assert (empty? (single-language-cards cards))
           (format "Single language cards exist which need manual review:\n%s"
                   (single-language-cards cards)))
