@@ -33,7 +33,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                      :as card}]
+                                       :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -457,7 +457,14 @@
                                     "zh-Hans" "病毒种"},
                          :errors {["card/en_ST12-13_P0" "Data"] "データ種",
                                   ["card/en_ST12-13_P1" "Data"] "データ種",
-                                  ["card/en_ST12-13_P2" "Data"] "データ種"}}})
+                                  ["card/en_ST12-13_P2" "Data"] "データ種"}}
+              "BT23-077"
+              {:expected
+               {"ja" "ウィルス種"
+                "en" "Virus"
+                "ko" "바이러스종"
+                "zh-Hans" "病毒种"},
+               :errors {["card/en_BT23-077_P0" "Data"] "データ種"}}})
           (format "Card attributes differ across languages:\n%s"
                   (field-translations :card/attribute cards)))
   (assert (empty? (field-translations :card/rarity cards))
@@ -548,9 +555,6 @@
 (comment
   (->> dcg.db.core/*cards
        card-assertions)
-
-  (->> dcg.db.core/*cards
-       single-language-cards)
 
   ;; Card values analysis
   (->> (card-values dcg.db.core/*cards)

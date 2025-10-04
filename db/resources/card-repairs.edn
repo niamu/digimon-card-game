@@ -686,7 +686,7 @@
          (assoc card :card/type "요정형"))}
  "BT5-034"
  {"ja" (fn [{:card/keys [parallel-id]
-            {:image/keys [source]} :card/image :as card}]
+             {:image/keys [source]} :card/image :as card}]
          (cond-> card
            (= parallel-id 1)
            (assoc :card/block-icon 0)))
@@ -825,7 +825,7 @@
  {"ja" (fn [card]
          (assoc card :card/dp 4000))
   "ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/643/039/ebd5fbce5f68424f72d115809dad1892.png"))
@@ -1078,7 +1078,7 @@
               (assoc card :card/name "建御雷兽"))}
  "BT7-044"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (-> card
                   (assoc :card/name "ベタモン")
                   (cond-> #__
@@ -2133,7 +2133,7 @@
                (= parallel-id 2))
            (assoc :card/block-icon 2)))
   "ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/822/041/ce0f08447eca317cc4a94715a766d8aa.png"))
@@ -2779,7 +2779,7 @@
                                      "1张记述有《保存》的数码宝贝卡牌")))))}
  "BT12-038"
  {"ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (-> card
              (assoc :card/color
                     [{:color/id "color/BT12-038_index0"
@@ -3243,7 +3243,7 @@
                         (string/replace s "）" "） "))))}
  "BT14-041"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/DTCG/BT14-041_02.png"))
@@ -3372,7 +3372,7 @@
            (= parallel-id 2)
            (assoc :card/block-icon 3)))
   "ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/234/042/c9f5f6813b5da2e8184fe6d886d026e4.png"))
@@ -3383,8 +3383,8 @@
                 (= parallel-id 1)
                 (assoc :card/block-icon 3)))
   "ko" (fn [{:card/keys [parallel-id]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (or (= parallel-id 0)
                (= source
@@ -3503,7 +3503,7 @@
                 (= parallel-id 2)
                 (assoc :card/block-icon 3)))
   "ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/408/043/4d3c421971cc16b9c32c555a3644811e.png"))
@@ -3717,26 +3717,26 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT20-070"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "C"))}
@@ -3746,14 +3746,14 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -3764,9 +3764,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                         :card/form
-                         :card/dp
-                         :card/level))}
+                          :card/form
+                          :card/dp
+                          :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3814,8 +3814,30 @@
   "zh-Hans" (fn [card]
               (-> card
                   (dissoc :card/rarity)))}
+ "BT23-037"
+ {"en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 0)
+           (assoc :card/block-icon 5)))}
+ "BT23-043"
+ {"en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 0)
+           (assoc :card/block-icon 5)))}
+ "BT23-044"
+ {"en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 0)
+           (assoc :card/block-icon 5)))}
  "BT23-045"
- {"zh-Hans" (fn [{{:image/keys [source]} :card/image
+ {"en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> (assoc card
+                        :card/inherited-effect
+                        "＜Overflow (-4)＞ (As this card moves from the field or under a card to another area other than those, lose 4 memory.)")
+           (or (= parallel-id 0)
+               (= parallel-id 1))
+           (assoc :card/block-icon 5)))
+  "zh-Hans" (fn [{{:image/keys [source]} :card/image
                  :as card}]
               (cond-> card
                 (or (= source
@@ -3830,6 +3852,14 @@
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1759213349890BT23-101_P2.png"))
                 (assoc :card/block-icon 5)))}
+ "BT23-TOKEN"
+ {"ja" (fn [card]
+         (-> card
+             (assoc :card/category :digimon)
+             (dissoc :card/rarity)))
+  "en" (fn [card]
+         (-> card
+             (dissoc :card/rarity)))}
  "EX1-005"
  {"zh-Hans" (fn [card]
               (update card :card/effect
