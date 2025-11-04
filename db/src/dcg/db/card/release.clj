@@ -13,19 +13,22 @@
   (:import
    [java.io PushbackReader]
    [java.text ParseException SimpleDateFormat]
-   [java.time LocalDate ZoneOffset]
+   [java.time LocalDate Instant ZoneOffset]
+   [java.time.temporal ChronoUnit]
    [java.net URI]
    [java.util Date]))
 
 (defn- download-image!
-  [{:release/keys [id language image-uri] :as image}]
+  [{:release/keys [id language image-uri] :as image} & [{:keys [override?]
+                                                         :or {override? false}}]]
   (let [http-opts (utils/cupid-headers (str (.getScheme image-uri)
                                             "://"
                                             (.getHost image-uri)))
         filename (format "resources/images/releases/%s/image/%s.png"
                          language
                          (string/replace id (format "release_%s_" language) ""))]
-    (when-not (.exists (io/file filename))
+    (when (or override?
+              (not (.exists (io/file filename))))
       (when-let [image-bytes (some-> (str image-uri)
                                      (utils/as-bytes http-opts)
                                      card-utils/trim-transparency!)]
@@ -425,6 +428,13 @@
                             (download-image! product))))]
     (concat merged missing)))
 
+(defn- within-6-months?
+  [^Instant inst]
+  (let [now (Instant/now)]
+    (<= (.toEpochMilli (.minus now 180 ChronoUnit/DAYS))
+        (.toEpochMilli (.toInstant inst))
+        (.toEpochMilli (.plus now 180 ChronoUnit/DAYS)))))
+
 (defmethod releases "zh-Hans"
   [{:origin/keys [url language card-image-language]}]
   (let [origin-uri (new URI url)
@@ -475,7 +485,10 @@
                                  :release/image-uri (URI. productImage)
                                  :release/card-image-language card-image-language
                                  :release/product-uri product-uri}
-                                download-image!)))))))
+                                (download-image!
+                                 ;; NOTE: China likes to use placeholder images
+                                 ;; that we need to replace them over time.
+                                 {:override? (within-6-months? date)}))))))))
         releases-url (-> (new URI
                               (.getScheme origin-uri)
                               (string/replace (.getHost origin-uri)

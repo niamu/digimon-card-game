@@ -33,7 +33,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -410,7 +410,8 @@
                      {})
              (into #{}))]
     (set/difference current-block-icons
-                    saved-block-icons)))
+                    saved-block-icons)
+    #_current-block-icons))
 
 (defn single-language-cards
   [cards]
@@ -520,11 +521,12 @@
                   (rules cards)))
   (assert (= (card-errata cards)
              {"en" #{"BT3-111"
+                     "BT8-097"
                      "P-071"
                      "BT10-086"
                      "BT4-041"
                      "P-115"
-                     "EX1-073"},
+                     "EX1-073"}
               "ja" #{"BT6-084"
                      "EX1-001"
                      "BT10-058"

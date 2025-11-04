@@ -220,6 +220,9 @@
        hickory/parse
        hickory/as-hickory
        (select/select (select/descendant (select/id "inner")
-                                         (select/class "article")))
-       first :content (filter map?)
+                                         (select/class "article")
+                                         (select/and (select/tag :section)
+                                                     (select/has-descendant
+                                                      (select/class "baseTxt")))))
+       (filter map?)
        (elements->limitations origin)))
