@@ -396,6 +396,11 @@
       "card/zh-Hans_BT15-087_P0"
       "card/en_BT15-087_P1"
       "card/en_BT15-087_P2"}}]
+  ["P-105"
+   {5
+    #{"card/en_P-105_P4"
+      "card/ja_P-105_P4"
+      "card/zh-Hans_P-105_P3"}}]
   ["BT15-083"
    {3
     #{"card/ja_BT15-083_P1"
@@ -751,6 +756,11 @@
     #{"card/en_LM-044_P0"
       "card/ja_LM-044_P0"
       "card/zh-Hans_LM-044_P0"}}]
+  ["ST22-05"
+   {5
+    #{"card/zh-Hans_ST22-05_P0"
+      "card/en_ST22-05_P0"
+      "card/ja_ST22-05_P0"}}]
   ["BT4-015"
    {1
     #{"card/zh-Hans_BT4-015_P1"

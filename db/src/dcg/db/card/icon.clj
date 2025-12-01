@@ -12,6 +12,10 @@
           (string/includes? text "DigiXros")
           (string/includes? text "数码合体")
           (string/includes? text "디지크로스")) :digixros
+      (or (string/includes? text "オーバーフロー")
+          (string/includes? text "Overflow")
+          (string/includes? text "溢出")
+          (string/includes? text "오버플로우")) :overflow
       (or (re-matches #".リンク." text)
           (re-matches #".Link." text)
           (re-matches #".链接." text)
@@ -177,7 +181,7 @@
                                   first
                                   :card/icons
                                   (reduce (fn [m {:icon/keys [index text field]
-                                                 :as icon}]
+                                                  :as icon}]
                                             (let [ja-text (without-brackets text)]
                                               (-> m
                                                   (assoc [field ja-text index]
@@ -194,7 +198,7 @@
                                   first
                                   :card/icons
                                   (remove (fn [{icon-type :icon/type
-                                               :icon/keys [text]}]
+                                                :icon/keys [text]}]
                                             (let [text (without-brackets text)]
                                               (or icon-type
                                                   (get translations text)
@@ -203,8 +207,8 @@
                                                         en-mentions))))))
                          translations
                          (reduce (fn [m {:icon/keys [text
-                                                    index
-                                                    field]}]
+                                                     index
+                                                     field]}]
                                    (let [text (without-brackets text)
                                          ja-text (get m text)
                                          {icon-type :icon/type
@@ -226,7 +230,7 @@
                          (fn [icons]
                            (->> icons
                                 (map (fn [{:icon/keys [text index field]
-                                          :as icon}]
+                                           :as icon}]
                                        (let [text (without-brackets text)
                                              ja-text (get translations text)
                                              {icon-type :icon/type}

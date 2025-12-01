@@ -251,8 +251,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (= source (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -612,8 +612,8 @@
            (-> (assoc :card/id (format "card/%s_%s_P%d"
                                        language
                                        number
-                                       0)
-                      :card/parallel-id 0)
+                                       1)
+                      :card/parallel-id 1)
                (assoc-in [:card/image :image/id]
                          "/images/cards/en/BT3-105_P1.png")
                (assoc-in [:card/image :image/path]
@@ -2809,8 +2809,10 @@
                       :color/index 1
                       :color/color :red}])
              (cond-> #__
-               (= source
-                  (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/825/041/f5f3023b780b9581257b7ddcf7e59c7e.png"))
+               (or (= source
+                      (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/825/041/f5f3023b780b9581257b7ddcf7e59c7e.png"))
+                   (= source
+                      (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/986/037/e85da575f54d9e90217e4df4cfe336d1.png")))
                (assoc :card/block-icon 2))))
   "zh-Hans" (fn [card]
               (assoc card
@@ -3269,7 +3271,7 @@
               (assoc card :card/level 3))}
  "BT14-041"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/DTCG/BT14-041_02.png"))
@@ -3691,21 +3693,64 @@
          (-> card
              (dissoc :card/attribute)
              (assoc :card/type "Lesser")))}
+ "BT18-028"
+ {"ko" (fn [card]
+         (update card
+                 :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   "〈룰〉특징: 유형 「빙설형」을 가진다. ≪디지크로스 -2≫"
+                                   "〈룰〉특징: 유형 「빙설형」을 가진다.\n≪디지크로스 -2≫"))))}
  "BT18-040"
  {"ja" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
            (= parallel-id 2)
-           (assoc :card/block-icon 4)))}
+           (assoc :card/block-icon 4)))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT18-040_index0"
+                  :color/index 0
+                  :color/color :yellow}
+                 {:color/id    "color/BT18-040_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT18-071"
  {"ja" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
            (= parallel-id 2)
-           (assoc :card/block-icon 4)))}
+           (assoc :card/block-icon 4)))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT18-071_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id    "color/BT18-071_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
+ "BT18-072"
+ {"ko" (fn [card]
+         (update card
+                 :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   "〈룰〉특징: 유형 「곤충형」을 가진다. ≪디지크로스 -2≫"
+                                   "〈룰〉특징: 유형 「빙설형」을 가진다.\n≪디지크로스 -2≫"))))}
  "BT18-083"
  {"ja" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
            (= parallel-id 2)
-           (assoc :card/block-icon 4)))}
+           (assoc :card/block-icon 4)))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT18-083_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/BT18-083_index1"
+                  :color/index 1
+                  :color/color :black}]))}
  "BT18-086"
  {"ja" (fn [card] (assoc card :card/dp 0))
   "en" (fn [card] (assoc card :card/dp 0))}
@@ -3720,15 +3765,42 @@
  "BT18-089"
  {"ja" (fn [card]
          (assoc card :card/play-cost 4))
-  "en" (fn [card] (dissoc card :card/dp))}
+  "en" (fn [card] (dissoc card :card/dp))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT18-089_index0"
+                  :color/index 0
+                  :color/color :blue}
+                 {:color/id    "color/BT18-089_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT18-090"
  {"ja" (fn [card]
          (assoc card :card/play-cost 4))
-  "en" (fn [card] (dissoc card :card/dp))}
+  "en" (fn [card] (dissoc card :card/dp))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT18-090_index0"
+                  :color/index 0
+                  :color/color :green}
+                 {:color/id    "color/BT18-090_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT18-091"
  {"ja" (fn [card]
          (assoc card :card/play-cost 4))
-  "en" (fn [card] (dissoc card :card/dp))}
+  "en" (fn [card] (dissoc card :card/dp))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT18-091_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id    "color/BT18-091_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
  "BT18-092"
  {"ja" (fn [card]
          (assoc card :card/play-cost 4))
@@ -3740,7 +3812,16 @@
  "BT18-094"
  {"ja" (fn [card]
          (assoc card :card/play-cost 4))
-  "en" (fn [card] (dissoc card :card/dp))}
+  "en" (fn [card] (dissoc card :card/dp))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT18-094_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/BT18-094_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
  "BT18-100"
  {"en" (fn [card]
          (dissoc card :card/form))}
@@ -3764,6 +3845,21 @@
          (-> card
              (dissoc :card/attribute)
              (assoc :card/type "Lesser")))}
+ "BT19-037"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 3)
+           (assoc :card/block-icon 5)))
+  "en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 3)
+           (assoc :card/block-icon 5)))
+  "zh-Hans" (fn [{{:image/keys [source]} :card/image
+                  :as card}]
+              (cond-> card
+                (= source
+                   (java.net.URI. "https://source.windoent.com/dtcg/Picture/1763702092787BT19-037_ST22.png"))
+                (assoc :card/block-icon 5)))}
  "BT19-074"
  {"en" (fn [{:card/keys [inherited-effect] :as card}]
          (cond-> (assoc card :card/form "Mega")
@@ -3779,26 +3875,26 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT20-070"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "C"))}
@@ -3808,14 +3904,14 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -3826,9 +3922,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                         :card/form
-                         :card/dp
-                         :card/level))}
+                          :card/form
+                          :card/dp
+                          :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3900,7 +3996,7 @@
                (= parallel-id 1))
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (or (= source
                        (java.net.URI. "https://source.windoent.com/dtcg/Picture/1759213349873BT23-045.png"))
@@ -3909,7 +4005,7 @@
                 (assoc :card/block-icon 5)))}
  "BT23-101"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1759213349890BT23-101_P2.png"))
@@ -4598,7 +4694,7 @@
                       :color/color :yellow}])))}
  "EX6-043"
  {"ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (or (= source
                   (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/944/042/13e8d7c21d3fe83cb8433bd6f376e910.png"))
@@ -4816,6 +4912,21 @@
  {"zh-Hans" (fn [card]
               (assoc card :card/effect
                      "【进化】拥有“NSo”特征的Lv.3:费用2"))}
+ "EX8-037"
+ {"ja" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 5)))
+  "en" (fn [{:card/keys [parallel-id] :as card}]
+         (cond-> card
+           (= parallel-id 2)
+           (assoc :card/block-icon 5)))
+  "zh-Hans" (fn [{{:image/keys [source]} :card/image
+                  :as card}]
+              (cond-> card
+                (= source
+                   (java.net.URI. "https://source.windoent.com/dtcg/Picture/1763702092788EX8-037_ST22.png"))
+                (assoc :card/block-icon 5)))}
  "EX8-044"
  {"en" (fn [card]
          (assoc card :card/inherited-effect
@@ -5521,6 +5632,51 @@
                             (nil? cost)
                             (assoc :digivolve/cost 4)))
                         dr))))}
+ "ST22-01"
+ {"zh-Hans" (fn [card]
+              (dissoc card :card/attribute))}
+ "ST22-09"
+ {"en" (fn [card]
+         (update card
+                 :card/inherited-effect
+                 (fn [s]
+                   (string/replace s
+                                   "[End of Your Turn] [Once Per Turn] This Digimon may attack."
+                                   "＜Jamming＞ (This Digimon can't be deleted in battles against Security Digimon.)"))))}
+ "ST22-14"
+ {"zh-Hans" (fn [card]
+              (assoc card
+                     :card/attribute
+                     "病毒种"))}
+ "ST22-TOKEN"
+ {"zh-Hans" (fn [{:card/keys [dp] :as card}]
+              (cond-> card
+                (= dp 9000)
+                (assoc :card/id "card/zh-Hans_ST22-TOKEN02"
+                       :card/parallel-id 0
+                       :card/number "ST22-TOKEN02")
+                (= dp 6000)
+                (assoc :card/id "card/zh-Hans_ST22-TOKEN01"
+                       :card/parallel-id 0
+                       :card/number "ST22-TOKEN01")))}
+ "ST22-TOKEN01"
+ {"ja" (fn [card]
+         (-> card
+             (dissoc :card/rarity)
+             (assoc :card/category :digimon)))
+  "en" (fn [card]
+         (-> card
+             (dissoc :card/rarity)
+             (assoc :card/category :digimon)))}
+ "ST22-TOKEN02"
+ {"ja" (fn [card]
+         (-> card
+             (dissoc :card/rarity)
+             (assoc :card/category :digimon)))
+  "en" (fn [card]
+         (-> card
+             (dissoc :card/rarity)
+             (assoc :card/category :digimon)))}
  "P-003"
  {"en" (fn [{:card/keys [parallel-id] :as card}]
          (cond-> card
@@ -5790,8 +5946,8 @@
                                    "gets ＜Security A. -1＞ until"))))}
  "P-087"
  {"en" (fn [{:card/keys [language number]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (= source (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-087_P1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"

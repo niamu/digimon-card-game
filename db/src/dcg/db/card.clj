@@ -64,6 +64,10 @@
                                          :where [[?c :card/image ?i]
                                                  [?i :image/source ?source]
                                                  [?c :card/parallel-id ?p]]})
+                                 #_(->> dcg.db.core/*cards
+                                        (map (fn [{{:image/keys [source]} :card/image
+                                                  :card/keys [parallel-id]}]
+                                               [source parallel-id])))
                                  (reduce (fn [accl [uri p]]
                                            (assoc accl uri p))
                                          {}))]
@@ -104,6 +108,7 @@
                                                      ver (str ver))))))
                                       (filter (fn [r]
                                                 (contains? release-set-ids r)))
+                                      seq
                                       (map releases-by-set)
                                       (sort-by (comp (fnil inst-ms
                                                            (Date. Long/MAX_VALUE))
@@ -115,17 +120,14 @@
                                       (filter (fn [{:release/keys [cardlist-uri]
                                                    :as release}]
                                                 (when (and notes
-                                                           (not (string/includes? notes
-                                                                                  "Limited Card Pack"))
+                                                           (not (string/includes?
+                                                                 (string/lower-case notes)
+                                                                 "limited card pack"))
                                                            cardlist-uri)
-                                                  (or (string/starts-with?
-                                                       (string/lower-case
-                                                        (:release/name release))
-                                                       (string/lower-case notes))
-                                                      (string/starts-with?
-                                                       (string/lower-case notes)
-                                                       (string/lower-case
-                                                        (:release/name release)))))))
+                                                  (string/starts-with?
+                                                   (string/lower-case
+                                                    (:release/name release))
+                                                   (string/lower-case notes)))))
                                       seq
                                       (sort-by (comp (fnil inst-ms
                                                            (Date. Long/MAX_VALUE))
@@ -233,7 +235,11 @@
                                  (fn [accl {:card/keys [notes releases]}]
                                    (-> accl
                                        (update :card/notes
-                                               (fnil #(str % "\n" notes) ""))
+                                               (fnil (fn [s]
+                                                       (if (and (string? s)
+                                                                (string/includes? s notes))
+                                                         s
+                                                         (str s "\n" notes))) ""))
                                        (update :card/releases
                                                (fn [existing-releases]
                                                  (->> (set existing-releases)
@@ -243,6 +249,10 @@
                                  (first cards-per-source)
                                  (rest cards-per-source))]
                                cards-per-source)))
+                          (sort-by (juxt :card/id
+                                         (comp str
+                                               :image/source
+                                               :card/image)))
                           reindex-parallel-ids)))))))
 
 (defn image-processing
@@ -648,7 +658,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri]
-                   :as release} dom-tree]
+                  :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select

@@ -239,7 +239,7 @@
                          date-string (some->> div
                                               (select/select (select/tag :h4))
                                               first :content first)
-                         date (try (.parse (SimpleDateFormat. "MM.dd.yy")
+                         date (try (.parse (SimpleDateFormat. "MMM. dd, yyyy")
                                            date-string)
                                    (catch ParseException _ nil))
                          text-fixes (fn [s]

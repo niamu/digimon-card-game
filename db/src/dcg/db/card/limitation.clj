@@ -98,10 +98,18 @@
                                        (or (= tag :h4)
                                            (= tag :h5))))
                  (mapcat (fn [[subtitle & elements]]
-                           (let [subtitle (card-utils/text-content subtitle)
+                           (let [subtitle (if (or (= (:tag subtitle) :h4)
+                                                  (= (:tag subtitle) :h5))
+                                            (card-utils/text-content subtitle)
+                                            subtitle)
+                                 elements (concat (cond-> []
+                                                    (not (string? subtitle))
+                                                    (conj subtitle))
+                                                  elements)
                                  limitation (or parent-limitation
-                                                (limitation-type origin
-                                                                 subtitle))
+                                                (and subtitle
+                                                     (limitation-type origin
+                                                                      subtitle)))
                                  allowance
                                  (case limitation
                                    :banned-pair 0

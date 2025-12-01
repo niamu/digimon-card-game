@@ -70,10 +70,49 @@
                 :image/source image-uri
                 :image/path (string/replace filename #"^resources/" "/")}))))
 
+(defn- cardlist-uri-from-product
+  [{:origin/keys [url language] :as origin} product-uri]
+  (let [anchor (some->> (utils/http-get product-uri)
+                        hickory/parse
+                        hickory/as-hickory
+                        (select/select
+                         (select/descendant
+                          (select/id "inner")
+                          (select/and
+                           (select/tag "a")
+                           (select/attr "href"
+                                        (fn [href]
+                                          (string/includes?
+                                           href
+                                           (case language
+                                             "ja" "/card"
+                                             "ko" "=cardlist"
+                                             "/cardlist/")))))))
+                        seq
+                        first)
+        href
+        (some-> anchor
+                (get-in [:attrs :href])
+                (as-> #__ href
+                  (if (string/starts-with? href "http")
+                    href
+                    (str url (string/replace href
+                                             #"^(\.\.\/)+"
+                                             "/")))))]
+    (when (and href
+               (or (string/includes? href "notes=")
+                   (string/includes? href "free=")))
+      href)))
+
 (defn- product
-  [{:origin/keys [card-image-language language url]} dom-tree]
+  [{:origin/keys [card-image-language language url] :as origin} dom-tree]
   (let [genre (-> (select/select
-                   (select/descendant (select/class "genrename"))
+                   (select/descendant
+                    (select/or
+                     (select/attr :class
+                                  (fn [s]
+                                    (string/includes? s "genre-")))
+                     (select/class "genrename")))
                    dom-tree)
                   first
                   card-utils/text-content
@@ -81,7 +120,8 @@
                   (string/replace "Expansion" "Booster")
                   (string/replace "拡張" "ブースター")
                   (string/replace "Start " "Starter ")
-                  (string/replace "Advance " "Advanced "))
+                  (string/replace "Advance " "Advanced ")
+                  string/trim)
         release-name (-> (->> (select/select
                                (select/descendant (select/class "prodname"))
                                dom-tree)
@@ -91,7 +131,7 @@
                                         (and (string? s)
                                              (not (string/starts-with?
                                                    s "デジモンカードゲー")))))
-                              string/join)
+                              (string/join " "))
                          (string/replace #"\h+" " ")
                          (string/replace "Digital Monster card game booster,"
                                          "")
@@ -116,12 +156,35 @@
                                        dom-tree)
                         first
                         (get-in [:attrs :href])
-                        (as-> href
-                            (if (string/starts-with? href "http")
-                              href
-                              (str url "/products/" href)))))
+                        (as-> #__ href
+                          (if (string/starts-with? href "http")
+                            href
+                            (str url "/products/" href)))))
         uri-path (when uri
                    (string/replace (.getPath (URI. uri)) "/products/" ""))
+        cardlist-uri (some-> (select/select
+                              (select/descendant
+                               (select/and
+                                (select/tag "a")
+                                (select/attr "href"
+                                             (fn [href]
+                                               (string/includes?
+                                                href
+                                                (case language
+                                                  "ja" "/card"
+                                                  "ko" "=cardlist"
+                                                  "/cardlist/"))))))
+                              dom-tree)
+                             first
+                             (get-in [:attrs :href])
+                             (as-> #__ href
+                               (if (string/starts-with? href "http")
+                                 href
+                                 (str url (string/replace href
+                                                          "../cardlist"
+                                                          "/cardlist")))))
+        cardlist-uri (or cardlist-uri
+                         (cardlist-uri-from-product origin uri))
         image (let [src (->> dom-tree
                              (select/select
                               (select/descendant (select/class "prodinfo")
@@ -178,7 +241,9 @@
                :release/card-image-language (or card-image-language language)
                :release/image-uri image}
         date
-        (assoc :release/date date)))))
+        (assoc :release/date date)
+        cardlist-uri
+        (assoc :release/cardlist-uri (URI. cardlist-uri))))))
 
 (defn- release
   [{:origin/keys [card-image-language language url]}
@@ -205,23 +270,23 @@
                     (re-find #"category=(\d+)")
                     second
                     parse-long)
-        genre (string/replace genre
+        genre (string/replace (string/trim genre)
                               "Promotion card"
                               "Promotion Card")]
-    {:release/id (format "release_%s_%s" language id)
-     :release/name (if (or (nil? title)
-                           (string/blank? title))
-                     genre
-                     title)
-     :release/genre genre
-     :release/image-uri (URI. (cond->> img
-                                (not (string/starts-with? img "http"))
-                                (str url "/cardlist/")))
-     :release/cardlist-uri (URI. (cond->> href
-                                   (not (string/starts-with? href "http"))
-                                   (str url "/cardlist/")))
-     :release/language language
-     :release/card-image-language (or card-image-language language)}))
+    (cond-> {:release/id (format "release_%s_%s" language id)
+             :release/name (if (string/blank? title)
+                             genre
+                             title)
+             :release/image-uri (URI. (cond->> img
+                                        (not (string/starts-with? img "http"))
+                                        (str url "/cardlist/")))
+             :release/cardlist-uri (URI. (cond->> href
+                                           (not (string/starts-with? href "http"))
+                                           (str url "/cardlist/")))
+             :release/language language
+             :release/card-image-language (or card-image-language language)}
+      (not (string/blank? title))
+      (assoc :release/genre genre))))
 
 (defmulti releases
   (fn [{:origin/keys [language]}]
@@ -253,25 +318,16 @@
                                                    (select/tag "li")
                                                    (select/tag "a")))
                                (map (partial release origin)))
-        name-matches? (fn [r p]
-                        (let [product-name (-> (:release/name p)
-                                               (string/replace #"0([0-9])" "$1")
-                                               (string/replace "-" "")
-                                               (string/replace #"\s+【" "【")
-                                               string/lower-case)
-                              release-name (-> (:release/name r)
-                                               (string/replace #"0([0-9])" "$1")
-                                               (string/replace "-" "")
-                                               (string/replace #"\s+【" "【")
-                                               string/lower-case)]
-                          (or (string/includes? release-name
-                                                product-name)
-                              (string/includes? product-name
-                                                release-name))))
         merged
         (->> (reduce (fn [accl r]
                        (if-let [p (some->> products
-                                           (filter (fn [p] (name-matches? r p)))
+                                           (filter (fn [p]
+                                                     (and
+                                                      (not (string/starts-with?
+                                                            (:release/name r)
+                                                            "Promotion"))
+                                                      (= (:release/cardlist-uri r)
+                                                         (:release/cardlist-uri p)))))
                                            last)]
                          (conj accl
                                (-> (merge (dissoc p :release/id) r)
@@ -307,14 +363,40 @@
                                    (= name "Promotion Card"))
                                (str (case language
                                       "ja" "【P】"
-                                      "en" " [P]"))))))))
+                                      "en" " [P]")))))))
+             (map (fn [{:release/keys [name language] :as release}]
+                    (cond-> release
+                      (= name "プロモーションカード【P】")
+                      (assoc :release/genre "プロモーションカード")
+                      (= name "その他物販")
+                      (assoc :release/genre "その他")
+                      (= name "プレミアムバンダイ・イベント物販")
+                      (assoc :release/genre "プレミアムバンダイ")
+                      (or (= name "公式大会景品")
+                          (= name "店舗イベント景品"))
+                      (assoc :release/genre "プロモーションカード")))))
         merged-product-uris (set (map :release/product-uri merged))
         missing (->> products
                      (remove (fn [{:release/keys [product-uri]}]
                                (contains? merged-product-uris product-uri)))
                      (map (fn [product]
                             (download-image! product))))]
-    (concat merged missing)))
+    (->> (concat merged missing)
+         (sort-by (comp (fn [genre]
+                          (get {"Others" 99} genre 1))
+                        :release/genre))
+         (reduce (fn [accl {:release/keys [language cardlist-uri]
+                           :as release}]
+                   (conj accl
+                         (if (contains? (->> accl
+                                             (map (juxt :release/language
+                                                        :release/cardlist-uri))
+                                             (into #{}))
+                                        [language
+                                         cardlist-uri])
+                           (dissoc release :release/cardlist-uri)
+                           release)))
+                 []))))
 
 (defmethod releases "ko"
   [{:origin/keys [url] :as origin}]
@@ -329,9 +411,9 @@
                                  (select/tag "article")))
              (pmap (partial product origin))
              (map (fn [{:release/keys [genre] :as r}]
-                    (if (string/blank? genre)
-                      (assoc r :release/genre "확장팩")
-                      r)))
+                    (cond-> r
+                      (string/blank? genre)
+                      (assoc :release/genre "확장팩"))))
              (concat
               ;; NOTE: The Korean site removes older products.
               ;; Populate them from archived resources.
@@ -340,6 +422,7 @@
                         (PushbackReader.
                          (io/reader
                           (io/resource "ko-products.edn")))))
+             (sort-by (complement :release/cardlist-uri))
              ;; deduplicate
              (reduce (fn [accl release]
                        (if (contains? (set (map :release/name accl))
@@ -370,21 +453,12 @@
                                                   :release/http-opts
                                                   http-opts)
                                           (partial release origin))))
-        name-matches? (fn [r p]
-                        (let [product-name (-> (:release/name p)
-                                               (string/replace "-0" "-")
-                                               string/lower-case)
-                              release-name (-> (:release/name r)
-                                               (string/replace "-0" "-")
-                                               string/lower-case)]
-                          (or (string/includes? release-name
-                                                product-name)
-                              (string/includes? product-name
-                                                release-name))))
         merged
         (->> (reduce (fn [accl r]
                        (if-let [p (some->> products
-                                           (filter (fn [p] (name-matches? r p)))
+                                           (filter (fn [p]
+                                                     (= (:release/cardlist-uri r)
+                                                        (:release/cardlist-uri p))))
                                            last)]
                          (conj accl
                                (-> (merge (dissoc p :release/id) r)
@@ -419,7 +493,11 @@
                                                 #"\-$" "")))
                              (cond-> name
                                (= name "프로모션 카드")
-                               (str " [P]")))))))
+                               (str " [P]"))))))
+             (map (fn [{:release/keys [name] :as release}]
+                    (cond-> release
+                      (= name "프로모션 카드 [P]")
+                      (assoc :release/genre "프로모션 카드")))))
         merged-product-uris (set (map :release/product-uri merged))
         missing (->> products
                      (remove (fn [{:release/keys [product-uri]}]

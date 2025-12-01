@@ -33,7 +33,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                      :as card}]
+                                       :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -427,6 +427,21 @@
                    accl))
                [])))
 
+(defn limitations
+  [cards]
+  (->> cards
+       (filter (fn [{:card/keys [parallel-id limitations]}]
+                 (and limitations
+                      (zero? parallel-id))))
+       (group-by :card/number)
+       (reduce (fn [accl [number cards]]
+                 (cond-> accl
+                   (apply not= (map (comp count :card/limitations)
+                                    cards))
+                   (conj number)))
+               [])
+       sort))
+
 (defn card-assertions
   [cards]
   (assert (empty? (card-values cards))
@@ -549,6 +564,9 @@
                   (->> cards
                        (remove :card/color)
                        (map :card/id))))
+  (assert (empty? (limitations cards))
+          (format "Card limitations are not equal across languages:\n%s"
+                  (limitations cards)))
   (assert (empty? (single-language-cards cards))
           (format "Single language cards exist which need manual review:\n%s"
                   (single-language-cards cards)))
