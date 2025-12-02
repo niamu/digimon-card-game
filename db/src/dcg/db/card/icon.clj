@@ -88,7 +88,7 @@
                          ["\uFF62" "\uFF63"]))
         brackets-re (->> brackets
                          (map (fn [[open close]]
-                                (format "%s[^%s]+%s"
+                                (format "%s[^%s]+%s+"
                                         (string/escape open re-escape-map)
                                         (string/escape close re-escape-map)
                                         (string/escape close re-escape-map))))
@@ -181,7 +181,7 @@
                                   first
                                   :card/icons
                                   (reduce (fn [m {:icon/keys [index text field]
-                                                  :as icon}]
+                                                 :as icon}]
                                             (let [ja-text (without-brackets text)]
                                               (-> m
                                                   (assoc [field ja-text index]
@@ -198,7 +198,7 @@
                                   first
                                   :card/icons
                                   (remove (fn [{icon-type :icon/type
-                                                :icon/keys [text]}]
+                                               :icon/keys [text]}]
                                             (let [text (without-brackets text)]
                                               (or icon-type
                                                   (get translations text)
@@ -207,8 +207,8 @@
                                                         en-mentions))))))
                          translations
                          (reduce (fn [m {:icon/keys [text
-                                                     index
-                                                     field]}]
+                                                    index
+                                                    field]}]
                                    (let [text (without-brackets text)
                                          ja-text (get m text)
                                          {icon-type :icon/type
@@ -230,7 +230,7 @@
                          (fn [icons]
                            (->> icons
                                 (map (fn [{:icon/keys [text index field]
-                                           :as icon}]
+                                          :as icon}]
                                        (let [text (without-brackets text)
                                              ja-text (get translations text)
                                              {icon-type :icon/type}
