@@ -174,17 +174,20 @@
                                    (map (fn [card]
                                           (assoc-in card
                                                     [:card/image :image/hash]
-                                                    (cv/image-hash card)))))
+                                                    (-> (cv/image-roi-hash card)
+                                                        (get-in [:card/image
+                                                                 :image/hash]))))))
                               matched
                               (reduce
                                (fn [xs {:card/keys [id] :as card}]
-                                 (let [hash (cv/image-hash card)
+                                 (let [hash (-> (cv/image-roi-hash card)
+                                                (get-in [:card/image
+                                                         :image/hash]))
                                        bandai-tcg-id
                                        (when hash
                                          (->> tcg-cards
-                                              (filter (fn [{{image-hash :image/hash}
-                                                           :card/image}]
-                                                        image-hash))
+                                              (filter (comp :image/hash
+                                                            :card/image))
                                               (map (fn [{{image-hash :image/hash
                                                          :image/keys [path]}
                                                         :card/image
@@ -209,162 +212,3 @@
                       {}
                       cards-by-number))))
           {}))))
-
-(comment
-  (defonce bandai-tcg-cards (ingest))
-
-  (mapping dcg.db.core/*cards)
-
-  (let [tcg-cards (->> bandai-tcg-cards
-                       (group-by :card/language)
-                       (reduce-kv (fn [m language cards]
-                                    (assoc m language
-                                           (group-by :card/number cards)))
-                                  {}))
-        cards (->> dcg.db.core/*cards
-                   (group-by :card/language)
-                   (reduce-kv (fn [m language cards]
-                                (assoc m language
-                                       (group-by :card/number cards)))
-                              {}))]
-    (->> cards
-         (reduce-kv
-          (fn [accl language cards-by-number]
-            (let [tcg-cards-by-number (get tcg-cards language)]
-              (cond-> accl
-                tcg-cards-by-number
-                (assoc language
-                       (reduce-kv
-                        (fn [m number cards]
-                          (let [tcg-cards
-                                (->> (get tcg-cards-by-number
-                                          number)
-                                     (map (fn [card]
-                                            (assoc-in card
-                                                      [:card/image :image/hash]
-                                                      (cv/image-hash card)))))
-                                not-matched
-                                (reduce (fn [xs {:card/keys [id] :as card}]
-                                          (let [hash (cv/image-hash card)]
-                                            (if (nil? (->> tcg-cards
-                                                           (map (fn [{{image-hash :image/hash
-                                                                       :image/keys [path]} :card/image}]
-                                                                  (.bitCount (.xor hash image-hash))))
-                                                           (remove (fn [distance]
-                                                                     (> distance 11)))
-                                                           sort
-                                                           first))
-                                              (conj xs id)
-                                              xs)))
-                                        []
-                                        cards)]
-                            (cond-> m
-                              (and tcg-cards
-                                   (seq not-matched))
-                              (assoc number not-matched))))
-                        {}
-                        cards-by-number)))))
-          {})
-         vals
-         (mapcat vals)
-         flatten
-         sort))
-
-  (let [language "en"
-        number "ST2-07"
-        tcg-cards (->> bandai-tcg-cards
-                       (group-by :card/language)
-                       (reduce-kv (fn [m language cards]
-                                    (assoc m language
-                                           (group-by :card/number cards)))
-                                  {}))
-        cards (->> dcg.db.core/*cards
-                   (group-by :card/language)
-                   (reduce-kv (fn [m language cards]
-                                (assoc m language
-                                       (group-by :card/number cards)))
-                              {}))]
-    (->> (get-in cards [language number])
-         (map (fn [{:card/keys [id] :as card}]
-                (let [hash (cv/image-hash card)]
-                  {id (->> (get-in tcg-cards [language number])
-                           (map (fn [card]
-                                  (assoc-in card
-                                            [:card/image :image/hash]
-                                            (cv/image-hash card))))
-                           (sort-by (fn [{{image-hash :image/hash} :card/image}]
-                                      (.bitCount (.xor hash image-hash))))
-                           first
-                           ((juxt :card/bandai-tcg+
-                                  (fn [{{image-hash :image/hash} :card/image}]
-                                    (.bitCount (.xor hash image-hash)))
-                                  (comp :image/path :card/image))))})))
-         (apply merge)))
-
-  (let [language "ja"
-        tcg-cards (->> bandai-tcg-cards
-                       (group-by :card/language)
-                       (reduce-kv (fn [m language cards]
-                                    (assoc m language
-                                           (group-by :card/number cards)))
-                                  {}))
-        cards (->> dcg.db.core/*cards
-                   (filter (fn [card]
-                             (= (:card/language card) language)))
-                   (group-by :card/number))
-        discrepancies
-        (->> cards
-             (reduce-kv (fn [m number cards]
-                          (if (and (< (count cards)
-                                      (->> (get-in tcg-cards [language number])
-                                           (map :card/image)
-                                           set
-                                           count))
-                                   (not= (->> cards
-                                              (mapcat
-                                               (comp string/split-lines
-                                                     #(string/replace %
-                                                                      "、" "\n")
-                                                     :card/notes))
-                                              set)
-                                         (->> (get-in tcg-cards [language number])
-                                              (mapcat
-                                               (comp string/split-lines
-                                                     #(string/replace %
-                                                                      "、" "\n")
-                                                     :card/notes))
-                                              set)))
-                            (conj m number)
-                            m))
-                        [])
-             sort)]
-    (->> discrepancies
-         (mapcat (fn [number]
-                   (let [hashes (->> (get cards number)
-                                     (map cv/image-hash))]
-                     (->> (get-in tcg-cards [language number])
-                          (map (fn [card]
-                                 (assoc-in card
-                                           [:card/image :image/hash]
-                                           (cv/image-hash card))))
-                          (remove (fn [{{:image/keys [hash]} :card/image}]
-                                    (some (fn [db-hash]
-                                            (<= (.bitCount
-                                                 (.xor ^BigInteger hash db-hash))
-                                                5))
-                                          hashes)))))))))
-
-  (let [deck "Jq/.Jr0.Jr1!Jr2!Jr4!"
-        deck-parts (string/split deck #"!")
-        [main sideboard digi-eggs]
-        (->> deck-parts
-             (map (fn [cards]
-                    (->> (string/split cards #"\.")
-                         (map card-code->id)))))]
-    {:deck/digi-eggs digi-eggs
-     :deck/deck main
-     :deck/sideboard sideboard
-     :deck/icon ""
-     :deck/name ""})
-
-  )

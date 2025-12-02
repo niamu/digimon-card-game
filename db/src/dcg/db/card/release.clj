@@ -366,6 +366,8 @@
                                       "en" " [P]")))))))
              (map (fn [{:release/keys [name language] :as release}]
                     (cond-> release
+                      (= name "Promotion Card [P]")
+                      (assoc :release/genre "Promotion Card")
                       (= name "プロモーションカード【P】")
                       (assoc :release/genre "プロモーションカード")
                       (= name "その他物販")
