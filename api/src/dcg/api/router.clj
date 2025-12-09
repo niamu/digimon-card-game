@@ -42,7 +42,7 @@
                {:data
                 {:coercion spec/coercion
                  :middleware [(exception/create-exception-middleware
-                               {::exception/default (fn [exception request]
+                               {::exception/default (fn [_exception _request]
                                                       (errors/error406))})
                               coercion/coerce-request-middleware
                               coercion/coerce-response-middleware]}}))

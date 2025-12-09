@@ -146,7 +146,7 @@
       (-> (assoc-in [:data :relationships :alternate-arts]
                     {:data
                      (->> alt-arts
-                          (map (fn [{:card/keys [notes number parallel-id]}]
+                          (map (fn [{:card/keys [number parallel-id]}]
                                  {:type "card"
                                   :id (router/by-name
                                        ::routes/card
@@ -186,7 +186,7 @@
       (-> (assoc-in [:data :relationships :international-arts]
                     {:data
                      (->> international-arts
-                          (map (fn [{:card/keys [notes number language parallel-id]}]
+                          (map (fn [{:card/keys [number language parallel-id]}]
                                  {:type "card"
                                   :id (router/by-name
                                        ::routes/card
@@ -239,7 +239,7 @@
                                       (:release/date m)
                                       (update :release/date
                                               utils/inst->iso8601)))))
-                          (map (fn [{:release/keys [name] :as r}]
+                          (map (fn [{:release/keys [name]}]
                                  {:type "release"
                                   :id (router/by-name
                                        ::routes/release
@@ -249,7 +249,7 @@
           (update :included
                   (fnil concat [])
                   (->> (:card/releases card)
-                       (map (fn [{:release/keys [id name date]}]
+                       (map (fn [{:release/keys [name]}]
                               {:type "release"
                                :id (router/by-name
                                     ::routes/release
@@ -357,13 +357,13 @@
                 "--"
                 media-type))
    :handle-ok
-   (fn [{{:card/keys [language number parallel-id] :as card} ::card
+   (fn [{card ::card
          ::keys [alt-arts international-arts]}]
      (process-card card alt-arts international-arts))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
    :handle-not-found errors/error404-body
-   :as-response (fn [data {representation :representation :as context}]
+   :as-response (fn [data context]
                   (-> data
                       (representation/as-response
                        (assoc-in context

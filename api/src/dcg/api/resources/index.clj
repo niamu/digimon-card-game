@@ -11,7 +11,7 @@
    :handle-malformed errors/error400-body
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
-   :as-response (fn [data {representation :representation :as context}]
+   :as-response (fn [data context]
                   (-> data
                       (representation/as-response
                        (assoc-in context

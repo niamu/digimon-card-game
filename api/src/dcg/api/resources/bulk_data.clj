@@ -4,8 +4,6 @@
    [clojure.string :as string]
    [dcg.api.resources.card :as card]
    [dcg.api.resources.errors :as errors]
-   [dcg.api.router :as router]
-   [dcg.api.routes :as routes]
    [dcg.api.utils :as utils]
    [liberator.core :as liberator]
    [liberator.representation :as representation])
@@ -51,7 +49,7 @@
                      (map :filename)
                      (string/join ",")
                      utils/sha))
-   :handle-ok (fn [{request :request}]
+   :handle-ok (fn [_context]
                 (->> (all-files)
                      (map (fn [{:keys [filename path size updated-at]}]
                             (let [prefix (-> filename
@@ -77,7 +75,7 @@
                                {:download (utils/update-asset-path path)}})))))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
-   :as-response (fn [data {representation :representation :as context}]
+   :as-response (fn [data context]
                   (-> data
                       (representation/as-response
                        (assoc-in context
@@ -95,11 +93,11 @@
     (doseq [[prefix filter-fn] (reduce (fn [accl {{id :id} :data}]
                                          (let [lang (->> (string/split id #"/")
                                                          (remove string/blank?)
-                                                         first)]
+                                                         second)]
                                            (assoc accl
                                                   lang
                                                   (fn [{{id :id} :data}]
-                                                    (string/starts-with?
+                                                    (string/includes?
                                                      id
                                                      (str "/" lang "/"))))))
                                        {"all_cards" nil}

@@ -1,22 +1,15 @@
 (ns dcg.api.core
   (:require
-   [clojure.java.io :as io]
    [clojure.string :as string]
-   [liberator.representation :as representation]
-   [reitit.core :as r]
-   [reitit.ring :as ring]
    [ring.adapter.jetty :as jetty]
    [ring.middleware.defaults :as defaults]
-   [taoensso.timbre :as logging]
    [dcg.api.db :as db]
-   [dcg.api.routes :as routes]
    [dcg.api.utils :as utils]
    [dcg.api.resources.bulk-data :as bulk-data]
    [dcg.api.resources.errors :as errors]
    [dcg.api.router :as router])
   (:import
    [java.io File]
-   [java.time ZonedDateTime]
    [org.eclipse.jetty.server.handler.gzip GzipHandler])
   (:gen-class))
 
@@ -72,20 +65,24 @@
                  (.setMinGzipSize 860))))
 
 (defn bulk-data-export!
-  [& args]
+  [& _args]
   (db/import!)
   (bulk-data/export!)
   (println "Bulk data export complete"))
 
+(defn start-server!
+  [port]
+  (jetty/run-jetty #'handler
+                   {:join? false
+                    :ssl? false
+                    :port port
+                    :send-date-header? false
+                    :send-server-version? false
+                    :configurator add-gzip-handler})
+  (println (format "API started on port %d" port)))
+
 (defn -main
-  [& args]
+  [& _args]
   (let [port 3000]
     (db/import!)
-    (jetty/run-jetty #'handler
-                     {:join? false
-                      :ssl? false
-                      :port port
-                      :send-date-header? false
-                      :send-server-version? false
-                      :configurator add-gzip-handler})
-    (println (format "API started on port %d" port))))
+    (start-server!)))

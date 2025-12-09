@@ -62,8 +62,8 @@
                                  :release-id (string/lower-case release-id)}}))
    :handle-ok
    (fn [{{{:keys [language] release-slug :release} :path-params} :request
-        ::keys [cards]
-        release ::release}]
+         ::keys [cards]
+         release ::release}]
      (cond-> {:data
               {:type "release"
                :id (router/by-name ::routes/release
@@ -116,7 +116,7 @@
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
    :handle-not-found errors/error404-body
-   :as-response (fn [data {representation :representation :as context}]
+   :as-response (fn [data context]
                   (-> data
                       (representation/as-response
                        (assoc-in context
@@ -151,7 +151,7 @@
            (utils/sha db-query))
    :handle-ok
    (fn [{{{:keys [language]} :path-params} :request
-        ::keys [db-query]}]
+         ::keys [db-query]}]
      (cond-> {:data
               {:type "language"
                :id (router/by-name ::routes/releases-for-language
@@ -181,8 +181,7 @@
                                                     card-count)
                                        (:release/date m)
                                        (update :release/date utils/inst->iso8601)))))
-                           (map (fn [{n :release/name
-                                     :as r}]
+                           (map (fn [{n :release/name}]
                                   {:type "release"
                                    :id (router/by-name
                                         ::routes/release
@@ -193,7 +192,7 @@
                    (fnil concat [])
                    (->> db-query
                         (map (fn [[count {:release/keys [name]
-                                         :as release}]]
+                                          :as release}]]
                                [count
                                 (assoc release
                                        :release/id (utils/slugify name))]))
@@ -234,7 +233,7 @@
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
    :handle-not-found errors/error404-body
-   :as-response (fn [data {representation :representation :as context}]
+   :as-response (fn [data context]
                   (-> data
                       (representation/as-response
                        (assoc-in context
@@ -252,8 +251,7 @@
                                           [?i :image/language ?l]]})})
    :etag (fn [{::keys [db-query]}] (utils/sha db-query))
    :handle-ok
-   (fn [{request :request
-        ::keys [db-query]}]
+   (fn [{::keys [db-query]}]
      (->> db-query
           (sort-by (comp inst-ms second) >)
           (mapv (fn [[language last-release releases]]
@@ -267,7 +265,7 @@
                      :links {:self (utils/update-api-path route)}})))))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
-   :as-response (fn [data {representation :representation :as context}]
+   :as-response (fn [data context]
                   (-> data
                       (representation/as-response
                        (assoc-in context

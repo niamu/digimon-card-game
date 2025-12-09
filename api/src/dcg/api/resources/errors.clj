@@ -5,14 +5,14 @@
    [dcg.api.utils :as utils]))
 
 (defmethod representation/render-map-generic "application/vnd.api+json"
-  [data {{:keys [uri] :as request} :request :as context}]
+  [data {{:keys [uri] :as _request} :request :as _context}]
   (let [self-url (utils/update-api-path uri)]
     (json/write-str (cond-> data
                       (:data data)
                       (assoc-in [:links :self] self-url)))))
 
 (defmethod representation/render-seq-generic "application/vnd.api+json"
-  [data {{:keys [uri] :as request} :request :as context}]
+  [data {{:keys [uri] :as _request} :request :as _context}]
   (let [self-url (utils/update-api-path uri)]
     (json/write-str (cond-> {:data data}
                       (nil? (:errors data))
