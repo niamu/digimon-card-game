@@ -12,7 +12,7 @@ defmodule DcgCodec.Common do
 end
 
 defmodule DcgCodec.Language do
-  @language_map %{"ja" => 0, "en" => 1, "zh" => 2, "ko" => 3}
+  @language_map %{"ja" => 0, "en" => 1, "zh-Hans" => 2, "ko" => 3}
 
   def to_int(i) do
     Map.get(@language_map, i, 1)

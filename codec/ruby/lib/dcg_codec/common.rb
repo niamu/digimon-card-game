@@ -9,7 +9,7 @@ module DCGCodec
     # Deck codes are all prefixed with 'DCG'
     PREFIX = 'DCG'
 
-    LANGUAGE = { 0 => 'ja', 1 => 'en', 2 => 'zh', 3 => 'ko' }.freeze
+    LANGUAGE = { 0 => 'ja', 1 => 'en', 2 => 'zh-Hans', 3 => 'ko' }.freeze
 
     def self.compute_checksum(buffer)
       buffer.sum & 0xFF

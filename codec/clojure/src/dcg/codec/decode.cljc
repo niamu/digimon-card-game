@@ -135,7 +135,7 @@
                   card-set (if (zero? version)
                              (let [result (-> (drop @byte-index deck-bytes)
                                               (as-> deck-bytes
-                                                  (take 4 deck-bytes))
+                                                    (take 4 deck-bytes))
                                               codec/bytes->string
                                               string/trim)]
                                (swap! byte-index #(+ % 4))
@@ -212,7 +212,7 @@
              :deck/name (cond-> deck-name
                           icon? (as-> n (string/join (drop 8 n))))}
       (and (>= version 2)
-           (not (empty? sideboard)))
+           (seq sideboard))
       (assoc :deck/sideboard sideboard)
       icon?
       (assoc :deck/icon (cond-> deck-name

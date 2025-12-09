@@ -4,7 +4,7 @@ import {
   Card,
   Deck,
   Language,
-  char_to_base36,
+  charToBase36,
   computeChecksum,
 } from "./common";
 
@@ -64,7 +64,7 @@ export async function encode(
 ): Promise<string> {
   let deckBytes: number[] = new Array();
   const textEncoder = new TextEncoder();
-  const language_number = Language[Language[deck.language]] ?? 1;
+  const language_number = Language[deck.language] ?? 1;
 
   const version_and_digi_egg_count =
     3 <= version && version <= 4
@@ -113,7 +113,7 @@ export async function encode(
       // Use 8th bit as continue bit. If 0, reached end.
       for (let i = 0; i < card_set.length; i++) {
         const c = card_set[i];
-        let base36_char = char_to_base36.get(c);
+        let base36_char = charToBase36.get(c);
         if (!!card_set[parseInt(i.toString()) + 1]) {
           base36_char |= 0x80;
         }

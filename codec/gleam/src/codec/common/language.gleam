@@ -36,7 +36,7 @@ pub fn deserialize(
   case l {
     "ja" -> Ok(Japanese)
     "en" -> Ok(English)
-    "zh" -> Ok(Chinese)
+    "zh-Hans" -> Ok(Chinese)
     "ko" -> Ok(Korean)
     _ -> Ok(English)
   }
@@ -46,7 +46,7 @@ pub fn serialize(l: Option(Language)) -> String {
   case l {
     Some(Japanese) -> "ja"
     Some(English) -> "en"
-    Some(Chinese) -> "zh"
+    Some(Chinese) -> "zh-Hans"
     Some(Korean) -> "ko"
     _ -> ""
   }

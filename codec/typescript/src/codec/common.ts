@@ -4,7 +4,7 @@ export const PREFIX: string = "DCG";
 export enum Language {
   ja,
   en,
-  zh,
+  "zh-Hans",
   ko,
 }
 
@@ -16,7 +16,7 @@ export function computeChecksum(b: number[]): number {
   );
 }
 
-export const base36_to_char: Map<number, string> = new Map<number, string>(
+export const base36ToChar: Map<number, string> = new Map<number, string>(
   Array.from({ length: 36 }, (_, i) => {
     let idx = i;
     if (i > 9) idx = i + 7;
@@ -24,8 +24,8 @@ export const base36_to_char: Map<number, string> = new Map<number, string>(
   }),
 );
 
-export const char_to_base36 = new Map<string, number>(
-  Array.from(base36_to_char, (entry) => [entry[1], entry[0]]),
+export const charToBase36 = new Map<string, number>(
+  Array.from(base36ToChar, (entry) => [entry[1], entry[0]]),
 );
 
 interface ICard {
@@ -116,7 +116,7 @@ export class Deck implements IDeck {
           return c;
         }) || [],
       icon: this.icon,
-      language: this.language || Language[1],
+      language: Language[this.language] || Language[1],
       name: this.name,
     };
     if (deck?.sideboard?.length == 0) delete deck.sideboard;

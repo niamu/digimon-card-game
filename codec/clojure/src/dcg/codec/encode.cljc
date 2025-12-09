@@ -33,7 +33,7 @@
       (recur (bit-shift-right v 7)))))
 
 (defn- encode-bytes
-  [{:deck/keys [language digi-eggs deck sideboard icon name] :as d}]
+  [{:deck/keys [language digi-eggs deck sideboard icon name]}]
   (let [byte-buffer (atom [])
         version (if (<= 3 codec/version 4)
                   (bit-or (bit-shift-left codec/version 4)

@@ -11,10 +11,10 @@
   3)
 
 (def language->bits
-  {"ja" 0x00
-   "en" 0x01
-   "zh" 0x02
-   "ko" 0x03})
+  {"ja"      0x00
+   "en"      0x01
+   "zh-Hans" 0x02
+   "ko"      0x03})
 
 (def bits->language
   (set/map-invert language->bits))
@@ -34,7 +34,7 @@
   [^String s] ; Base64 string
   (let [replace-map {"/" "_" "+" "-" "=" ""}
         replace-map (merge replace-map (set/map-invert replace-map))]
-    (string/replace s #"/|\+|=|_|-" replace-map)))
+    (string/replace s #"/|\+|=|_|-" (fn [ch] (replace-map ch)))))
 
 (def char->base36
   {\0 0

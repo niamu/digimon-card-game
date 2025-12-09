@@ -4,7 +4,7 @@ VERSION = 5
 # Deck codes are all prefixed with "DCG"
 PREFIX = "DCG"
 
-LANGUAGE = {0: "ja", 1: "en", 2: "zh", 3: "ko"}
+LANGUAGE = {0: "ja", 1: "en", 2: "zh-Hans", 3: "ko"}
 
 
 def compute_checksum(total_card_bytes, buffer):

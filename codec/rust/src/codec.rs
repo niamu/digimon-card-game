@@ -47,7 +47,7 @@ pub enum Language {
     #[serde(alias = "en", rename(serialize = "en"))]
     English,
     /// Chinese
-    #[serde(alias = "zh", rename(serialize = "zh"))]
+    #[serde(alias = "zh-Hans", rename(serialize = "zh-Hans"))]
     Chinese,
     /// Korean
     #[serde(alias = "ko", rename(serialize = "ko"))]

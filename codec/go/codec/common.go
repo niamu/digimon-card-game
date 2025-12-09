@@ -28,14 +28,14 @@ var (
 	Language_name = map[uint8]string{
 		1: "ja",
 		2: "en",
-		3: "zh",
+		3: "zh-Hans",
 		4: "ko",
 	}
 	Language_value = map[string]uint8{
-		"ja": 1,
-		"en": 2,
-		"zh": 3,
-		"ko": 4,
+		"ja":      1,
+		"en":      2,
+		"zh-Hans": 3,
+		"ko":      4,
 	}
 
 	Base36ToChar = map[uint8]string{

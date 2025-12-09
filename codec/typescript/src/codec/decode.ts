@@ -5,7 +5,7 @@ import {
   Deck,
   Language,
   computeChecksum,
-  base36_to_char,
+  base36ToChar,
 } from "./common";
 
 let byteOffset: number = 0;
@@ -155,7 +155,7 @@ function parseDeck(deckBytes: Uint8Array) {
       while (true) {
         let current_byte: number = deckBytes[byteOffset];
         byteOffset++;
-        card_set += base36_to_char.get(current_byte & 0x3f);
+        card_set += base36ToChar.get(current_byte & 0x3f);
         if (current_byte >> 7 == 0) {
           break;
         }
@@ -220,7 +220,9 @@ function decodeDeckString(deckCode: string): Uint8Array {
     throw Error('Deck codes must begin with "DCG"');
   }
   return Uint8Array.from(
-    atob(deckCode.substr(PREFIX.length).replace(/_/g, "/").replace(/-/g, "+")),
+    atob(
+      deckCode.substring(PREFIX.length).replace(/_/g, "/").replace(/-/g, "+"),
+    ),
     (c) => c.charCodeAt(0),
   );
 }
