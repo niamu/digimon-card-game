@@ -18,3 +18,4 @@ resources/db/
 resources/phash_db.json
 resources/cards.transit.json
 src/main.rs
+dev/*
