@@ -24,7 +24,10 @@
                                                            [:image/path]}
                                                           {:release/thumbnail
                                                            [:image/path]}
-                                                          :release/date]) .]
+                                                          :release/date
+                                                          {:card/_releases
+                                                           [:card/number
+                                                            :card/parallel-id]}]) .]
                                          :in [$ ?language ?release]
                                          :where [[?r :release/name ?name]
                                                  [?r :release/language ?language]
@@ -38,17 +41,12 @@
                                        language
                                        (string/lower-case release-id))]
                 {::release (dissoc release
-                                   :release/id)
-                 ::cards (->> (db/q '{:find [?number ?p]
-                                      :in [$ ?id]
-                                      :where [[?r :release/id ?id]
-                                              [?c :card/releases ?r]
-                                              [?c :card/language ?l]
-                                              [?c :card/image ?i]
-                                              [?c :card/number ?number]
-                                              [?c :card/parallel-id ?p]
-                                              [?i :image/language ?l]]}
-                                    (:release/id release))
+                                   :release/id
+                                   :card/_releases)
+                 ::cards (->> release
+                              :card/_releases
+                              (map (juxt :card/number
+                                         :card/parallel-id))
                               sort)}))
    :existed? (fn [{{{:keys [language release-id]} :path-params} :request}]
                (and (s/conform ::routes/language language)
@@ -61,15 +59,15 @@
                                 {:language (s/conform ::routes/language language)
                                  :release-id (string/lower-case release-id)}}))
    :handle-ok
-   (fn [{{{:keys [language] release-slug :release} :path-params} :request
-         ::keys [cards]
-         release ::release}]
+   (fn [{{{:keys [language release-id]} :path-params} :request
+        ::keys [cards]
+        release ::release}]
      (cond-> {:data
               {:type "release"
                :id (router/by-name ::routes/release
                                    {:path
                                     {:language language
-                                     :release-id release-slug}})
+                                     :release-id release-id}})
                :attributes
                (cond-> release
                  (:release/date release)

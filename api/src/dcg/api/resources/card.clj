@@ -268,30 +268,29 @@
 
 (defn all-cards
   []
-  (->> (db/q {:find [[(list 'pull '?c query) '...]]
-              :where '[[?c :card/id _]]})
-       (map (fn [{:card/keys [language number parallel-id] :as card}]
-              (let [alt-arts (db/q '{:find [[(pull ?c [:card/notes
-                                                       :card/number
-                                                       :card/parallel-id]) ...]]
-                                     :in [$ ?language ?number ?p]
-                                     :where [[?c :card/language ?language]
-                                             [?c :card/number ?number]
-                                             (not [?c :card/parallel-id ?p])]}
-                                   language
-                                   number
-                                   parallel-id)
-                    international-arts
-                    (db/q '{:find [[(pull ?c [:card/notes
-                                              :card/language
-                                              :card/number
-                                              :card/parallel-id]) ...]]
-                            :in [$ ?language ?number]
-                            :where [[?c :card/number ?number]
-                                    (not [?c :card/language ?language])]}
-                          language
-                          number)]
-                (process-card card alt-arts international-arts))))))
+  (let [cards (db/q {:find [[(list 'pull '?c query) '...]]
+                     :where '[[?c :card/id _]]})
+        cards-by-number (group-by :card/number cards)]
+    (->> cards
+         (map (fn [{:card/keys [id language number parallel-id] :as card}]
+                (let [alt-arts
+                      (->> (get cards-by-number number)
+                           (remove (fn [card]
+                                     (= id (:card/id card))))
+                           (filter (comp (partial = language)
+                                         :card/language))
+                           (map #(select-keys % [:card/notes
+                                                 :card/number
+                                                 :card/parallel-id])))
+                      international-arts
+                      (->> (get cards-by-number number)
+                           (remove (comp (partial = language)
+                                         :card/language))
+                           (map #(select-keys % [:card/notes
+                                                 :card/language
+                                                 :card/number
+                                                 :card/parallel-id])))]
+                  (process-card card alt-arts international-arts)))))))
 
 (liberator/defresource card-resource
   {:allowed-methods [:head :get]
@@ -304,39 +303,34 @@
            parallel-id (or (some-> parallel-id
                                    parse-long)
                            0)
-           card (db/q {:find [(list 'pull '?c query) '.]
-                       :in '[$ ?language ?number ?parallel-id]
-                       :where '[[?c :card/language ?language]
-                                [?c :card/image ?i]
-                                [?c :card/number ?number]
-                                [?c :card/parallel-id ?parallel-id]
-                                [?i :image/language ?language]]}
-                      language
-                      number
-                      parallel-id)
-           international-arts (db/q '{:find [[(pull ?c [:card/notes
-                                                        :card/language
-                                                        :card/number
-                                                        :card/parallel-id]) ...]]
-                                      :in [$ ?language ?number]
-                                      :where [(not [?c :card/language ?language])
-                                              [?c :card/image ?i]
-                                              [?c :card/number ?number]
-                                              (not [?i :image/language ?language])]}
-                                    language
-                                    number)
-           alt-arts (db/q '{:find [[(pull ?c [:card/notes
-                                              :card/number
-                                              :card/parallel-id]) ...]]
-                            :in [$ ?language ?number ?parallel-id]
-                            :where [[?c :card/language ?language]
-                                    [?c :card/image ?i]
-                                    [?c :card/number ?number]
-                                    (not [?c :card/parallel-id ?parallel-id])
-                                    [?i :image/language ?language]]}
-                          language
-                          number
-                          parallel-id)]
+           cards-for-number (db/q {:find [[(list 'pull '?c query) '...]]
+                                   :in '[$ ?number]
+                                   :where '[[?c :card/number ?number]]}
+                                  number)
+           card (get-in (reduce (fn [accl {:card/keys [language
+                                                      parallel-id]
+                                          :as card}]
+                                  (assoc-in accl
+                                            [language parallel-id]
+                                            card))
+                                {}
+                                cards-for-number)
+                        [language parallel-id])
+           alt-arts (->> cards-for-number
+                         (remove (fn [{:card/keys [id]}]
+                                   (= id (:card/id card))))
+                         (filter (comp (partial = language)
+                                       :card/language))
+                         (map #(select-keys % [:card/notes
+                                               :card/number
+                                               :card/parallel-id])))
+           international-arts (->> cards-for-number
+                                   (remove (comp (partial = language)
+                                                 :card/language))
+                                   (map #(select-keys % [:card/notes
+                                                         :card/language
+                                                         :card/number
+                                                         :card/parallel-id])))]
        (when card
          {::alt-arts alt-arts
           ::international-arts international-arts
@@ -352,13 +346,13 @@
                                 {:language (s/conform ::routes/language language)
                                  :card-id (s/conform ::routes/card-id card-id)}}))
    :etag (fn [{{media-type :media-type} :representation
-               ::keys [card]}]
+              ::keys [card]}]
            (str (utils/sha card)
                 "--"
                 media-type))
    :handle-ok
    (fn [{card ::card
-         ::keys [alt-arts international-arts]}]
+        ::keys [alt-arts international-arts]}]
      (process-card card alt-arts international-arts))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body
