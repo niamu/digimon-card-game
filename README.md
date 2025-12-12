@@ -1,6 +1,8 @@
-# Digimon Card Game (2020)
+# Tools for the Digimon Card Game (2020)
 
-This repository hosts multiple tools for the [Digimon Card Game (2020)](https://world.digimoncard.com).
+[![Heroicc](https://assets.heroi.cc/images/metatag.png)](https://heroi.cc)
+
+This repository hosts tools for the [Digimon Card Game (2020)](https://world.digimoncard.com) and is the foundations for [Heroicc](https://heroi.cc).
 
 ## Codec
 
@@ -17,3 +19,13 @@ The [codec](/codec) directory hosts multiple library implementations for encodin
 ## Card Scanner
 
 [card-scanner](/card-scanner) is an in-browser tool that uses the webcam to match cards using a perceptual hash.
+
+---
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa] unless otherwise stated.
+
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
+
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
