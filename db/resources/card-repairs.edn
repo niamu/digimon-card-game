@@ -700,7 +700,7 @@
          (assoc card :card/type "요정형"))}
  "BT5-034"
  {"ja" (fn [{:card/keys [parallel-id]
-            {:image/keys [source]} :card/image :as card}]
+             {:image/keys [source]} :card/image :as card}]
          (cond-> card
            (= parallel-id 1)
            (assoc :card/block-icon 0)))
@@ -2622,15 +2622,8 @@
          (assoc card :card/effect
                 "[On Play][When Digivolving] You may play 1 purple level 4 or lower Digimon card or 1 level 4 or lower Digimon card with [Xros Heart] in its traits from your trash without paying the cost. If DigiXrosing, add 1 to the number of cards you play with this effect.\n[All Turns] All of your Digimon with [Xros Heart] in their traits or with ＜Retaliation＞ gain ＜Rush＞ and ＜Blocker＞.\n<DigiXros -3> 1 Digimon card w/[Xros Heart] in traits\nWhen you would play this card, you may place specified cards from your hand/battle area under it. Each placed card reduces the play cost.\nWhen you would play this card, you can also place cards from your trash in digivolution cards for a DigiXros."))
   "zh-Hans" (fn [card]
-              (update card :card/effect
-                      (fn [s]
-                        (-> s
-                            (string/replace "【≪数码合体-3≫1张拥有“Xros Heart”特征的数码宝贝卡牌当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用】"
-                                            "")
-                            (string/replace "≪数码合体-3≫1张拥有“Xros Heart”特征的数码宝贝卡牌\n"
-                                            "")
-                            string/trim
-                            (str "\n≪数码合体-3≫1张拥有“Xros Heart”特征的数码宝贝卡牌当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用")))))}
+              (assoc card :card/effect
+                     "此卡牌的数码合体也可以放置我方废弃区中的卡牌。\n\n【登场时】【进化时】可以从我方的废弃区中,不支付费用登场1张拥有“Xros Heart”特征且等级不高于Lv.4的数码宝贝卡牌或等级不高于Lv.4的紫色数码宝贝卡牌。若进行了数码合体,则通过此效果登场的张数+1。\n\n【双方的回合】我方所有拥有“Xros Heart”特征或《同归于尽》效果的数码宝贝获得《速攻》和《阻挡者》效果。\n\n≪数码合体-3≫1张拥有“Xros Heart”特征的数码宝贝卡牌当将要登场时,可以从手牌/战斗区中置于此卡牌的下方。每放置1张减少登场费用"))}
  "BT11-089"
  {"en" (fn [card]
          (update card :card/effect
@@ -2727,12 +2720,9 @@
   "zh-Hans" (fn [card]
               (update card :card/effect
                       (fn [s]
-                        (some-> s
-                                (string/replace (re-pattern "\\n\\n【≪数码合体-2≫.*") "")
-                                (string/replace (re-pattern "^.?数码合体.*?\\n") "")
-                                (str "\n"
-                                     "≪数码合体-2≫ "
-                                     "1张记述有《保存》的数码宝贝卡牌")))))}
+                        (cond-> s
+                          (not (string/includes? s "≪数码合体-2≫"))
+                          (str "\n\n≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
  "BT12-012"
  {"en" (fn [card]
          (update-in card [:card/image :image/source]
@@ -3424,7 +3414,7 @@
            (= parallel-id 2)
            (assoc :card/block-icon 3)))
   "ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/234/042/c9f5f6813b5da2e8184fe6d886d026e4.png"))
@@ -3435,8 +3425,8 @@
                 (= parallel-id 1)
                 (assoc :card/block-icon 3)))
   "ko" (fn [{:card/keys [parallel-id]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (or (= parallel-id 0)
                (= source
@@ -3558,7 +3548,7 @@
                 (= parallel-id 2)
                 (assoc :card/block-icon 3)))
   "ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/408/043/4d3c421971cc16b9c32c555a3644811e.png"))
@@ -3893,8 +3883,8 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT20-070"
  {"zh-Hans" (fn [card]
               (assoc card :card/rarity "C"))}
@@ -3904,14 +3894,14 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -3922,9 +3912,9 @@
                      (fn [s]
                        (string/replace s "【進化】「カッキンモン」:コスト0\n" "")))))
   "en" (fn [card] (dissoc card
-                          :card/form
-                          :card/dp
-                          :card/level))}
+                         :card/form
+                         :card/dp
+                         :card/level))}
  "BT20-091"
  {"en" (fn [card] (dissoc card :card/dp))}
  "EX-006"
@@ -3996,7 +3986,7 @@
                (= parallel-id 1))
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                  :as card}]
+                 :as card}]
               (cond-> card
                 (or (= source
                        (java.net.URI. "https://source.windoent.com/dtcg/Picture/1759213349873BT23-045.png"))
@@ -4005,7 +3995,7 @@
                 (assoc :card/block-icon 5)))}
  "BT23-101"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image
-                  :as card}]
+                 :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1759213349890BT23-101_P2.png"))
@@ -5748,11 +5738,26 @@
  "P-018"
  {"zh-Hans" (fn [card]
               (assoc card :card/dp 3000))}
+ "P-021"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/effect
+                     "【主要】当我方场上存在\u201C太刀川美美\u201D时,可从我方的手牌中不支付费用登场1张\u201C巴鲁兽\u201D,并将我方的1张\u201C太刀川美美\u201D放回到手牌中。"))}
+ "P-022"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/effect
+                     "【主要】当我方场上存在\u201C本宫大辅\u201D和\u201C一乘寺贤\u201D时,可将我方手牌中的1张\u201CXV兽\u201D和1张\u201C飞虫兽\u201D自选顺序放回到卡组最下方,并不支付费用从我方手牌中登场1张\u201C机甲龙兽\u201D。"))}
  "P-023"
  {"ja" (fn [card]
          (update card :card/effect
                  (fn [s]
-                   (string/replace s "高石 タケル" "高石タケル"))))}
+                   (string/replace s "高石 タケル" "高石タケル"))))
+  "zh-Hans" (fn [card]
+              (assoc card :card/effect
+                     "【主要】当我方场上存在\u201C高石岳\u201D时,将我方1只\u201C巴达兽\u201D正面朝下置于安防区最下方。丢弃该数码宝贝的所有进化源。"))}
+ "P-024"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/effect
+                     "【主要】当我方场上存在\u201C八神太一时\u201D,可将我方的1只\u201C亚古兽\u201D放回到卡组最下方,并《抽3张卡》（从我方卡组上方抽取3张卡牌）。丢弃该数码宝贝的所有进化源。"))}
  "P-028"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
               (cond-> card
@@ -5857,7 +5862,10 @@
                      (assoc :card/play-cost 3)
                      (dissoc :card/security-effect))
            security-effect
-           (assoc :card/effect security-effect)))}
+           (assoc :card/effect security-effect)))
+  "zh-Hans" (fn [card]
+              (assoc card :card/effect
+                     "【安防】当战斗结束时,《抽2张卡》（从我方的卡组上方抽取2张卡牌）。此后,此卡牌加入手牌。\n※此卡不属于名称中包含“龙兽”的数码宝贝"))}
  "P-068"
  {"en" (fn [{:card/keys [effect security-effect] :as card}]
          (cond-> (-> card

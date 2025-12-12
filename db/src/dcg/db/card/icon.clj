@@ -149,6 +149,20 @@
           (mapcat (fn [field]
                     (when-let [text (get card field)]
                       (->> (icons-in-text text language)
+                           (remove
+                            (fn [text]
+                              (let [icon-type (text->icon-type text
+                                                               language)]
+                                (and (or (= icon-type :mention)
+                                         (nil? icon-type))
+                                     (or (and (or (= language "ja")
+                                                  (= language "zh-Hans"))
+                                              (re-find #"。.$" text))
+                                         (and (or (= language "en")
+                                                  (= language "ko"))
+                                              (re-find #"\..$" text))
+                                         (and (= language "zh-Hans")
+                                              (re-find #"," text)))))))
                            (map-indexed
                             (fn [idx text]
                               {:icon/id (-> id

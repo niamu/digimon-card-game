@@ -46,6 +46,7 @@
           (string/replace #"(デジクロス\s?[\-\+][0-9]+):" "【$1】")
           (string/replace #"(DigiXros\s?[\-\+][0-9]+)\s?:" "<$1>")
           (string/replace #"(数码合体\s?[\-\+][0-9]+)\s?[:：]" "≪$1≫")
+          (string/replace #"【(≪数码合体.*?(\s.*)?)】" "$1")
           (string/replace #"(디지크로스\s?[\-\+][0-9]+)\s?:" "≪$1≫")
           (string/replace #"^≪?ジョグレス:?(.*?ら0)≫?"
                           "【ジョグレス】$1")
@@ -64,6 +65,7 @@
           (string/replace #"(爆裂进化):" "【$1】")
           (string/replace #"(進化|进化|진화)\s?:" "【$1】")
           (string/replace #"[〔［\[](進化|进化|진화)[］〕\]]" "【$1】")
+          (string/replace "】:" "】")
           (string/replace #"(Burst Digivolve):" "[$1]")
           (string/replace #"(Digivolve):" "[$1]")
           (string/replace #"《(진화):(.*?)》" "【$1】$2")

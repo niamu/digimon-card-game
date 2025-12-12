@@ -33,7 +33,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -74,6 +74,75 @@
                                                          (= ja most-common)))
                                                (into {}))}))))
                     (sorted-map)))))
+
+(defn- mentions
+  [cards]
+  (let [checked-card-numbers
+        #{"P-067"
+          "ST9-06"
+          "BT1-017"
+          "BT1-043"
+          "BT2-012"
+          "BT4-013"
+          "BT5-012"
+          "BT5-022"
+          "BT6-029"
+          "BT7-049"
+          "BT7-052"
+          "BT8-011"
+          "BT8-036"
+          "BT8-044"
+          "BT8-112"
+          "BT9-061"
+          "EX1-003"
+          "EX1-020"
+          "EX3-040"
+          "EX3-059"
+          "EX3-060"
+          "EX7-046"
+          "BT11-011"
+          "BT11-052"
+          "BT11-054"
+          "BT11-055"
+          "BT11-059"
+          "BT14-011"
+          "BT14-016"
+          "BT14-029"
+          "BT14-054"
+          "BT14-067"
+          "BT15-016"
+          "BT21-015"}]
+    (->> cards
+         (filter :card/icons)
+         (group-by :card/number)
+         (remove (fn [[number cards]]
+                   (every? (fn [card]
+                             (->> card
+                                  :card/icons
+                                  (every? (comp (partial not= :mention)
+                                                :icon/type))))
+                           cards)))
+         (remove (fn [[number cards]]
+                   (or (contains? checked-card-numbers number)
+                       (->> cards
+                            (group-by :card/language)
+                            (every? (fn [[language cards]]
+                                      (->> cards
+                                           (mapcat :card/icons)
+                                           (some (comp (partial = :mention)
+                                                       :icon/type)))))))))
+         (map (fn [[number cards]]
+                [number
+                 (->> cards
+                      (keep (comp (fn [icons]
+                                    (->> icons
+                                         (filter (comp (partial = :mention)
+                                                       :icon/type))
+                                         seq))
+                                  :card/icons)))]))
+         (sort-by (comp (juxt count
+                              identity)
+                        first)))))
 
 (defn- icon-translations
   [cards]
@@ -165,7 +234,7 @@
                               number)))
          (filter (fn [{:card/keys [icons]}]
                    (some (fn [{icon-type :icon/type
-                               :icon/keys [index]}]
+                              :icon/keys [index]}]
                            (and (= :digixros icon-type)
                                 (zero? index)))
                          icons)))
@@ -373,7 +442,8 @@
                               "EX10" 5
                               "ST20" 5
                               "ST21" 5
-                              "BT23" 5}
+                              "BT23" 5
+                              "ST22" 5}
         saved-block-icons (->> (io/resource "block-icons.edn")
                                io/reader
                                (PushbackReader.)
@@ -487,7 +557,7 @@
           (format "Card rarities differ across languages:\n%s"
                   (field-translations :card/rarity cards)))
   (assert (empty? (icon-translations cards))
-          (format "Card icons do not match across languages:\n%s"
+          (format "Card icon translations do not match across languages:\n%s"
                   (icon-translations cards)))
   (assert (empty? (card-digivolution-requirements cards))
           (format "Card digivolution requirements have issues:\n%s"
@@ -564,6 +634,9 @@
                   (->> cards
                        (remove :card/color)
                        (map :card/id))))
+  (assert (empty? (mentions cards))
+          (format "Card mentions are not equal across languages:\n%s"
+                  (mentions cards)))
   (assert (empty? (limitations cards))
           (format "Card limitations are not equal across languages:\n%s"
                   (limitations cards)))
