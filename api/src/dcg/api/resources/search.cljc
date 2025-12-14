@@ -721,10 +721,20 @@
              (subs s 1 (dec (count s))))
    :datom datom
    :not-string (fn [s]
-                 (let [?value (gensym "?card-name-or-number")]
-                   (with-meta [(list 'or
-                                     ['?card :card/name ?value]
-                                     ['?card :card/number ?value])
+                 (let [?value (gensym "?card-name-or-number")
+                       ?rule (gensym "?rule")
+                       ?rule-type (symbol (str (name ?rule) "-type"))]
+                   (with-meta [(list 'or-join
+                                        ['?card ?value]
+                                        ['?card :card/name ?value]
+                                        ['?card :card/number ?value]
+                                        (list 'and
+                                              ['?card :card/rules ?rule]
+                                              [?rule :rule/type ?rule-type]
+                                              [?rule :rule/value ?value]
+                                              [(list 'contains?
+                                                     #{:card/name
+                                                       :card/number} ?rule-type)]))
                                [(list 'String/.toLowerCase ?value)
                                 (symbol (str (name ?value) "-lower"))]
                                (list 'not
@@ -739,14 +749,24 @@
                    ([s]
                     (exact-string nil s))
                    ([not? s]
-                    (let [?value (gensym "?card-name-or-number")]
-                      (with-meta [(list 'or
+                    (let [?value (gensym "?card-name-or-number")
+                          ?rule (gensym "?rule")
+                          ?rule-type (symbol (str (name ?rule) "-type"))
+                          ?value-lower (symbol (str (name ?value) "-lower"))]
+                      (with-meta [(list 'or-join
+                                        ['?card ?value]
                                         ['?card :card/name ?value]
-                                        ['?card :card/number ?value])
-                                  [(list 'String/.toLowerCase ?value)
-                                   (symbol (str (name ?value) "-lower"))]
+                                        ['?card :card/number ?value]
+                                        (list 'and
+                                              ['?card :card/rules ?rule]
+                                              [?rule :rule/type ?rule-type]
+                                              [?rule :rule/value ?value]
+                                              [(list 'contains?
+                                                     #{:card/name
+                                                       :card/number} ?rule-type)]))
+                                  [(list 'String/.toLowerCase ?value) ?value-lower]
                                   (cond->> [(list '=
-                                                  (symbol (str (name ?value) "-lower"))
+                                                  ?value-lower
                                                   (string/lower-case s))]
                                     (boolean not?)
                                     (list 'not))]
@@ -955,10 +975,20 @@
   (->> (insta/transform transform-map parse-tree)
        (map (fn [s]
               (if (string? s)
-                (with-meta (let [?value (gensym "?card-name-or-number")]
-                             [(list 'or
+                (with-meta (let [?value (gensym "?card-name-or-number")
+                                 ?rule (gensym "?rule")
+                                 ?rule-type (symbol (str (name ?rule) "-type"))]
+                             [(list 'or-join
+                                    ['?card ?value]
                                     ['?card :card/name ?value]
-                                    ['?card :card/number ?value])
+                                    ['?card :card/number ?value]
+                                    (list 'and
+                                          ['?card :card/rules ?rule]
+                                          [?rule :rule/type ?rule-type]
+                                          [?rule :rule/value ?value]
+                                          [(list 'contains?
+                                                 #{:card/name
+                                                   :card/number} ?rule-type)]))
                               [(list 'String/.toLowerCase ?value)
                                (symbol (str (name ?value) "-lower"))]
                               [(list 'String/.contains
