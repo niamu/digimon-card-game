@@ -66,6 +66,7 @@
           (string/replace #"(進化|进化|진화)\s?:" "【$1】")
           (string/replace #"[〔［\[](進化|进化|진화)[］〕\]]" "【$1】")
           (string/replace "】:" "】")
+          (string/replace "」 :" "」")
           (string/replace #"(Burst Digivolve):" "[$1]")
           (string/replace #"(Digivolve):" "[$1]")
           (string/replace #"《(진화):(.*?)》" "【$1】$2")

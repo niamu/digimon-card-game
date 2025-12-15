@@ -294,6 +294,23 @@
     #{"card/zh-Hans_BT2-013_P1"
       "card/ja_BT2-013_P1"
       "card/en_BT2-013_P1"}}]
+  ["BT14-081"
+   {3
+    #{"card/en_BT14-081_P0"
+      "card/ko_BT14-081_P0"
+      "card/zh-Hans_BT14-081_P1"
+      "card/zh-Hans_BT14-081_P2"
+      "card/en_BT14-081_P5"
+      "card/en_BT14-081_P2"
+      "card/ko_BT14-081_P1"
+      "card/ja_BT14-081_P1"
+      "card/en_BT14-081_P4"
+      "card/ja_BT14-081_P0"
+      "card/en_BT14-081_P1"
+      "card/zh-Hans_BT14-081_P0"
+      "card/en_BT14-081_P3"
+      "card/ko_BT14-081_P2"
+      "card/ja_BT14-081_P2"}}]
   ["BT1-010"
    {1
     #{"card/zh-Hans_BT1-010_P1"
@@ -650,22 +667,6 @@
       "card/ko_ST15-08_P0"
       "card/ja_ST15-08_P0"
       "card/zh-Hans_ST15-08_P0"}}]
-  ["BT14-081"
-   {3
-    #{"card/en_BT14-081_P0"
-      "card/ko_BT14-081_P0"
-      "card/zh-Hans_BT14-081_P1"
-      "card/zh-Hans_BT14-081_P2"
-      "card/en_BT14-081_P5"
-      "card/en_BT14-081_P2"
-      "card/ko_BT14-081_P1"
-      "card/ja_BT14-081_P1"
-      "card/en_BT14-081_P4"
-      "card/ja_BT14-081_P0"
-      "card/en_BT14-081_P1"
-      "card/zh-Hans_BT14-081_P0"
-      "card/en_BT14-081_P3"
-      "card/ja_BT14-081_P2"}}]
   ["BT3-002"
    {2
     #{"card/ko_BT3-002_P1"
@@ -756,11 +757,6 @@
     #{"card/en_LM-044_P0"
       "card/ja_LM-044_P0"
       "card/zh-Hans_LM-044_P0"}}]
-  ["ST22-05"
-   {5
-    #{"card/zh-Hans_ST22-05_P0"
-      "card/en_ST22-05_P0"
-      "card/ja_ST22-05_P0"}}]
   ["BT4-015"
    {1
     #{"card/zh-Hans_BT4-015_P1"

@@ -2789,7 +2789,7 @@
                                      "1张记述有《保存》的数码宝贝卡牌")))))}
  "BT12-038"
  {"ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (-> card
              (assoc :card/color
                     [{:color/id "color/BT12-038_index0"
@@ -3206,13 +3206,19 @@
                   :color/color :red}]))}
  "BT13-040"
  {"ko" (fn [card]
-         (assoc card :card/color
-                [{:color/id "color/BT13-040_index0"
-                  :color/index 0
-                  :color/color :yellow}
-                 {:color/id "color/BT13-040_index1"
-                  :color/index 1
-                  :color/color :blue}]))}
+         (-> card
+             (assoc :card/color
+                    [{:color/id "color/BT13-040_index0"
+                      :color/index 0
+                      :color/color :yellow}
+                     {:color/id "color/BT13-040_index1"
+                      :color/index 1
+                      :color/color :blue}])
+             (update :card/effect
+                     (fn [s]
+                       (cond-> s
+                         (not (string/includes? s "《블로커》"))
+                         (string/replace "코스트 3" "코스트 3《블로커》"))))))}
  "BT13-053"
  {"en" (fn [card]
          (assoc card :card/type "Holy Beast/Deva"))}
@@ -3261,7 +3267,7 @@
               (assoc card :card/level 3))}
  "BT14-041"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image
-                  :as card}]
+                 :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/DTCG/BT14-041_02.png"))
@@ -3284,6 +3290,15 @@
                       (if (string/ends-with? source "BT14-060_P1.png")
                         (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/BT14-074_P1.png")
                         source))))}
+ "BT14-066"
+ {"ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/BT14-066_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id "color/BT14-066_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
  "BT14-074"
  {"en" (fn [card]
          (update-in card [:card/image :image/source]
@@ -3414,7 +3429,7 @@
            (= parallel-id 2)
            (assoc :card/block-icon 3)))
   "ko" (fn [{{:image/keys [source]} :card/image
-             :as card}]
+            :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/234/042/c9f5f6813b5da2e8184fe6d886d026e4.png"))
@@ -3425,8 +3440,8 @@
                 (= parallel-id 1)
                 (assoc :card/block-icon 3)))
   "ko" (fn [{:card/keys [parallel-id]
-             {:image/keys [source]} :card/image
-             :as card}]
+            {:image/keys [source]} :card/image
+            :as card}]
          (cond-> card
            (or (= parallel-id 0)
                (= source
@@ -3437,7 +3452,15 @@
               (update card
                       :card/effect
                       (fn [s]
-                        (string/replace s (re-pattern "^进化〕") "【进化】"))))}
+                        (string/replace s (re-pattern "^进化〕") "【进化】"))))
+  "ko" (fn [card]
+         (assoc card :card/color
+                [{:color/id "color/BT16-076_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id "color/BT16-076_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT16-082"
  {"en" (fn [card]
          (assoc card :card/form "Rookie"))}
@@ -3548,7 +3571,7 @@
                 (= parallel-id 2)
                 (assoc :card/block-icon 3)))
   "ko" (fn [{{:image/keys [source]} :card/image
-             :as card}]
+            :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/408/043/4d3c421971cc16b9c32c555a3644811e.png"))
@@ -3845,7 +3868,7 @@
            (= parallel-id 3)
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                  :as card}]
+                 :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1763702092787BT19-037_ST22.png"))
@@ -3865,29 +3888,61 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
                          :card/form
                          :card/level))}
+ "BT20-003"
+ {"ko" (fn [card]
+         (assoc card :card/category :digi-egg))}
+ "BT20-064"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-064_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/BT20-064_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT20-070"
  {"zh-Hans" (fn [card]
-              (assoc card :card/rarity "C"))}
+              (assoc card :card/rarity "C"))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-070_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/BT20-070_index1"
+                  :color/index 1
+                  :color/color :red}]))}
+ "BT20-071"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-071_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/BT20-071_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-087"
@@ -4362,7 +4417,16 @@
                    (and s
                         (cond->> s
                           (not (re-find (re-pattern "^.?Digivolve") s))
-                          (str "[Digivolve] 0 from [Viximon]"))))))}
+                          (str "[Digivolve] 0 from [Viximon]"))))))
+  "ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/EX4-024_index0"
+                  :color/index 0
+                  :color/color :yellow}
+                 {:color/id    "color/EX4-024_index1"
+                  :color/index 1
+                  :color/color :blue}]))}
  "EX4-026"
  {"en" (fn [card]
          (update card :card/effect
@@ -6186,10 +6250,13 @@
   "en" (fn [card]
          (dissoc card :card/attribute))
   "ko" (fn [card]
-         (assoc card :card/color
-                [{:color/id "color/P-133_index0"
-                  :color/index 0
-                  :color/color :green}]))}
+         (assoc card
+                :card/color [{:color/id "color/P-133_index0"
+                              :color/index 0
+                              :color/color :green}]
+                :card/type "리버레이터"
+                :card/security-effect
+                "【시큐리티】이 카드를 코스트를 지불하지 않고 등장시킨다."))}
  "P-134"
  {"ko" (fn [card]
          (assoc card :card/color

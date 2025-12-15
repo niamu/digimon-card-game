@@ -153,11 +153,12 @@
                  :else (text-content e)))
              (:content element))
         string/join
+        (string/replace "１" "1")
         (string/replace "ofthis" "of this")
         (string/replace "\u3000" " ")
         (string/replace #"\h+" " ")
         (string/replace "\r" "")
-        (string/replace #"\n+" "\n")
+        (string/replace #"\n+\s*" "\n")
         string/trim)))
 
 (defn- bytes->buffered-image

@@ -33,7 +33,7 @@
   [field cards]
   (let [tr-map (->> cards
                     (reduce (fn [accl {:card/keys [number language]
-                                      :as card}]
+                                       :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -234,7 +234,7 @@
                               number)))
          (filter (fn [{:card/keys [icons]}]
                    (some (fn [{icon-type :icon/type
-                              :icon/keys [index]}]
+                               :icon/keys [index]}]
                            (and (= :digixros icon-type)
                                 (zero? index)))
                          icons)))
