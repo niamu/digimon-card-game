@@ -242,9 +242,8 @@
      :db/valueType :db.type/long
      :db/cardinality :db.cardinality/one}
     {:db/ident :limitation/paired-card-numbers
-     :db/valueType :db.type/tuple
-     :db/tupleType :db.type/string
-     :db/cardinality :db.cardinality/one}]
+     :db/valueType :db.type/string
+     :db/cardinality :db.cardinality/many}]
    ;; Icon
    [{:db/ident :icon/id
      :db/valueType :db.type/string
