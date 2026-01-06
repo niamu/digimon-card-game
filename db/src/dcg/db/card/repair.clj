@@ -43,8 +43,10 @@
           (string/replace "【진화시】" "【진화 시】")
           (string/replace #"(?i)once per turn" "Once Per Turn")
           (string/replace "Opponent's Turns" "Opponent's Turn")
+          (string/replace "[Both Turns]" "[All Turns]")
           (string/replace #"(デジクロス\s?[\-\+][0-9]+):" "【$1】")
           (string/replace #"(DigiXros\s?[\-\+][0-9]+)\s?:" "<$1>")
+          (string/replace #"\n(DigiXros\s?[\-\+][0-9]+)\s" "\n<$1> ")
           (string/replace #"(数码合体\s?[\-\+][0-9]+)\s?[:：]" "≪$1≫")
           (string/replace #"【(≪数码合体.*?(\s.*)?)】" "$1")
           (string/replace #"(디지크로스\s?[\-\+][0-9]+)\s?:" "≪$1≫")
@@ -96,6 +98,8 @@
           (string/replace #"\.+" ".")
           (string/replace "＜ルール＞" "〈ルール〉")
           (string/replace "＜Rule＞" "⟨Rule⟩")
+          (string/replace "명칭 :" "명칭:")
+          (string/replace "<链接>" "〈链接〉")
           ;; https://world.digimoncard.com/rule/card_text/
           (string/replace "X-Antibody" "X Antibody")))
 

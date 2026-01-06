@@ -147,7 +147,8 @@
                                    [error-index error]
                                    (some->> error-indexes
                                             (filter (fn [[_ s]]
-                                                      (string/includes? v s)))
+                                                      (and (string? v)
+                                                           (string/includes? v s))))
                                             first)
                                    correction (and error-index
                                                    (nth corrections
@@ -194,10 +195,14 @@
                         rule-rev
                         (update :card/effect
                                 (fn [s]
-                                  (if (or (string/includes? after "〈ルール〉")
-                                          (string/includes? after "⟨Rule⟩")
-                                          (string/includes? after "\u3008规则\u3009")
-                                          (string/includes? after "〈룰〉"))
+                                  (if (or (and (string/includes? after "〈ルール〉")
+                                               (not (string/includes? s "〈ルール〉")))
+                                          (and (string/includes? after "⟨Rule⟩")
+                                               (not (string/includes? s "⟨Rule⟩")))
+                                          (and (string/includes? after "\u3008规则\u3009")
+                                               (not (string/includes? s "\u3008规则\u3009")))
+                                          (and (string/includes? after "〈룰〉")
+                                               (not (string/includes? s "〈룰〉"))))
                                     (-> s
                                         (string/replace #"\s*\(Rule\)" "⟨Rule⟩")
                                         (string/replace "<规则>" "\u3008规则\u3009")
@@ -205,7 +210,9 @@
                                         (string/replace before "")
                                         string/trim
                                         (str "\n" after))
-                                    (string/replace s before after))))
+                                    (cond-> s
+                                      (not (string/includes? s after))
+                                      (string/replace before after)))))
                         (seq card-faqs)
                         (assoc :card/faqs
                                (map-indexed (fn [idx faq]

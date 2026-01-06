@@ -445,6 +445,18 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=11549",
            :genre "확장팩",
            :date #inst "2024-03-15T00:00:00.000-00:00"}
+ #:release{:name "스페셜 리미티드 카드 팩 vol.1 [LMK-1.0]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/45363",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/363/045/bac5eb45f5ea2fd69b9bf93980ba1df7.jpg",
+           :language "ko",
+           :id "release_ko_45363",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=45492",
+           :genre "관련상품",
+           :date #inst "2025-12-19T00:00:00.000-00:00"}
  #:release{:name "디지몬 카드 게임 오피셜 카드 슬리브 2025 Ver.1.0",
            :product-uri
            #uri "https://digimoncard.co.kr/products/40424",
@@ -464,14 +476,4 @@
            :id "release_ko_42548",
            :card-image-language "ko",
            :genre "관련상품",
-           :date #inst "2025-07-01T00:00:00.000-00:00"}
- #:release{:name "스페셜 리미티드 카드 팩 vol.1 [LMK-1.0]",
-           :product-uri
-           #uri "https://digimoncard.co.kr/products/45363",
-           :image-uri
-           #uri "https://digimoncard.co.kr/files/extravar_upload/135/363/045/bac5eb45f5ea2fd69b9bf93980ba1df7.jpg",
-           :language "ko",
-           :id "release_ko_45363",
-           :card-image-language "ko",
-           :genre "관련상품",
-           :date #inst "2025-12-19T00:00:00.000-00:00"})
+           :date #inst "2025-07-01T00:00:00.000-00:00"})

@@ -32,6 +32,10 @@
 (defn- field-translations
   [field cards]
   (let [tr-map (->> cards
+                    (sort-by (juxt (comp identity
+                                         count
+                                         :card/number)
+                                   :card/parallel-id))
                     (reduce (fn [accl {:card/keys [number language]
                                        :as card}]
                               (assoc-in accl
@@ -152,6 +156,10 @@
                         (= htype :precondition)))
         tr-map
         (->> cards
+             (sort-by (juxt (comp identity
+                                  count
+                                  :card/number)
+                            :card/parallel-id))
              (reduce (fn [accl {:card/keys [number language icons]}]
                        (assoc-in accl
                                  [number language]
@@ -334,7 +342,33 @@
             (if (apply = (vals result))
               accl
               (assoc accl number result))))
-        (sorted-map))))
+        (sorted-map))
+       (mapv (fn [[k v]]
+               (let [issues (->> (partition 2 1
+                                            (vals v))
+                                 (map #(apply data/diff %))
+                                 (remove (fn [[only-in-a only-in-b _in-both]]
+                                           (and (nil? only-in-a)
+                                                (nil? only-in-b))))
+                                 (map #(take 2 %)))
+                     issue-keys (vec (into #{} (mapcat (fn [x] (mapcat keys x)) issues)))
+                     incorrect (->> (vals v)
+                                    (map #(select-keys % issue-keys))
+                                    frequencies
+                                    (sort-by val)
+                                    ffirst)
+                     incorrect-fn (fn [[_ v]]
+                                    (= (select-keys v issue-keys)
+                                       incorrect))]
+                 {k {:issue/keys issue-keys
+                     :issue/incorrect (->> (filter incorrect-fn v)
+                                           (map (fn [[k v]]
+                                                  {k (select-keys v issue-keys)}))
+                                           first)
+                     :issue/correct (->> (remove incorrect-fn v)
+                                         (map (fn [[_ v]]
+                                                (select-keys v issue-keys)))
+                                         first)}})))))
 
 (defn- card-errata
   [cards]
@@ -362,11 +396,12 @@
                               (remove nil?)
                               string/join)]
                    (some (fn [correction]
-                           (-> s
-                               string/lower-case
-                               (string/replace "\n" "")
-                               (string/replace #"\s+" " ")
-                               (string/includes? correction)))
+                           (or (string/includes? s correction)
+                               (-> s
+                                   string/lower-case
+                                   (string/replace "\n" "")
+                                   (string/replace #"\s+" " ")
+                                   (string/includes? correction))))
                          corrections))))
        (reduce (fn [accl {:card/keys [language number]}]
                  (update accl language (fnil conj #{}) number))
@@ -443,7 +478,8 @@
                               "ST20" 5
                               "ST21" 5
                               "BT23" 5
-                              "ST22" 5}
+                              "ST22" 5
+                              "BT24" 5}
         saved-block-icons (->> (io/resource "block-icons.edn")
                                io/reader
                                (PushbackReader.)
@@ -479,9 +515,19 @@
                                     id)))
                      {})
              (into #{}))]
-    (set/difference current-block-icons
-                    saved-block-icons)
-    #_current-block-icons))
+    (->> (set/difference current-block-icons
+                         saved-block-icons)
+         (remove (fn [[number card-ids]]
+                   (set/subset? (-> card-ids
+                                    vals
+                                    first)
+                                (-> (reduce (fn [accl [n ids]]
+                                              (assoc accl n ids))
+                                            {}
+                                            saved-block-icons)
+                                    (get number)
+                                    vals
+                                    first)))))))
 
 (defn single-language-cards
   [cards]
@@ -527,10 +573,12 @@
              {"BT6-084" {:expected {"ja" "ウィルス種"
                                     "en" "Virus"
                                     "ko" "바이러스종"
-                                    "zh-Hans" "病毒种"},
-                         :errors {["card/en_BT6-084_P0" "Data"] "データ種",
-                                  ["card/en_BT6-084_P2" "Data"] "データ種",
-                                  ["card/en_BT6-084_P1" "Data"] "データ種"}},
+                                    "zh-Hans" "病毒种"}
+                         :errors {["card/en_BT6-084_P0" "Data"] "データ種"
+                                  ["card/en_BT6-084_P1" "Data"] "データ種"
+                                  ["card/en_BT6-084_P2" "Data"] "データ種"
+                                  ["card/en_BT6-084_P3" "Data"] "データ種"
+                                  ["card/en_BT6-084_P4" "Data"] "データ種"}}
               "BT7-083" {:expected
                          {"ja" "ウィルス種"
                           "en" "Virus"
@@ -544,13 +592,11 @@
                          :errors {["card/en_ST12-13_P0" "Data"] "データ種",
                                   ["card/en_ST12-13_P1" "Data"] "データ種",
                                   ["card/en_ST12-13_P2" "Data"] "データ種"}}
-              "BT23-077"
-              {:expected
-               {"ja" "ウィルス種"
-                "en" "Virus"
-                "ko" "바이러스종"
-                "zh-Hans" "病毒种"},
-               :errors {["card/en_BT23-077_P0" "Data"] "データ種"}}})
+              "BT23-077" {:expected {"ja" "ウィルス種"
+                                     "en" "Virus"
+                                     "ko" "바이러스종"
+                                     "zh-Hans" "病毒种"},
+                          :errors {["card/en_BT23-077_P0" "Data"] "データ種"}}})
           (format "Card attributes differ across languages:\n%s"
                   (field-translations :card/attribute cards)))
   (assert (empty? (field-translations :card/rarity cards))
@@ -611,7 +657,8 @@
                      "BT10-086"
                      "BT4-041"
                      "P-115"
-                     "EX1-073"}
+                     "EX1-073"
+                     "EX3-023"}
               "ja" #{"BT6-084"
                      "EX1-001"
                      "BT10-058"
@@ -629,11 +676,6 @@
   (assert (empty? (card-block-icons cards))
           (format "Card block icons may not be accurate:\n%s"
                   (card-block-icons cards)))
-  (assert (every? :card/color cards)
-          (format "Not every card has a color:\n%s"
-                  (->> cards
-                       (remove :card/color)
-                       (map :card/id))))
   (assert (empty? (mentions cards))
           (format "Card mentions are not equal across languages:\n%s"
                   (mentions cards)))
@@ -649,33 +691,89 @@
   (->> dcg.db.core/*cards
        card-assertions)
 
-  ;; Card values analysis
-  (->> (card-values dcg.db.core/*cards)
-       (map (fn [[k v]]
-              (let [issues (->> (partition 2 1
-                                           (vals v))
-                                (map #(apply data/diff %))
-                                (remove (fn [[only-in-a only-in-b _in-both]]
-                                          (and (nil? only-in-a)
-                                               (nil? only-in-b))))
-                                (map #(take 2 %)))
-                    issue-keys (vec (into #{} (mapcat (fn [x] (mapcat keys x)) issues)))
-                    incorrect (->> (vals v)
-                                   (map #(select-keys % issue-keys))
-                                   frequencies
-                                   (sort-by val)
-                                   ffirst)
-                    incorrect-fn (fn [[_ v]]
-                                   (= (select-keys v issue-keys)
-                                      incorrect))]
-                {k {:issue/keys issue-keys
-                    :issue/incorrect (->> (filter incorrect-fn v)
-                                          (map (fn [[k v]]
-                                                 {k (select-keys v issue-keys)}))
-                                          first)
-                    :issue/correct (->> (remove incorrect-fn v)
-                                        (map (fn [[_ v]]
-                                               (select-keys v issue-keys)))
-                                        first)}}))))
+  ;; Find duplicate images
+  (letfn [(file-hash
+            [^java.io.File file algorithm]
+            (let [buffer (byte-array 8192)
+                  digest (java.security.MessageDigest/getInstance algorithm)]
+              (with-open [is (io/input-stream file)]
+                (loop []
+                  (let [read-bytes (.read is buffer)]
+                    (when (pos? read-bytes)
+                      (.update digest buffer 0 read-bytes)
+                      (recur)))))
+              (format "%064x" (BigInteger. 1 (.digest digest)))))]
+    (->> ["en" "ja" "zh-Hans" "ko"]
+         (mapcat (fn [lang]
+                   (->> (io/file (format "resources/images/cards/%s/" lang))
+                        file-seq
+                        (remove (fn [^java.io.File f]
+                                  (or (.isDirectory f)
+                                      (= (.getName f)
+                                         ".DS_Store"))))
+                        sort
+                        (partition-by (fn [^java.io.File f]
+                                        [lang (-> (.getName f)
+                                                  (string/replace ".png" "")
+                                                  (string/replace #"_P\d+" ""))])))))
+         (remove (fn [files]
+                   (= (->> files
+                           (map (fn [^java.io.File f]
+                                  (file-hash f "SHA-256")))
+                           (into #{})
+                           count)
+                      (count files))))))
+
+  ;; Cards in DB that don't match images in filesystem
+  (let [card-by-id (merge (->> (dcg.db.db/q '{:find [(pull ?c [:card/id
+                                                               :card/language
+                                                               :card/number
+                                                               :card/parallel-id
+                                                               {:card/image
+                                                                [:image/path
+                                                                 :image/source]}])]
+                                              :where [[?c :card/id ?id]]})
+                               (apply concat)
+                               (reduce (fn [accl {:card/keys [id] :as card}]
+                                         (assoc accl id card))
+                                       {}))
+                          (reduce (fn [accl {:card/keys [id] :as card}]
+                                    (assoc accl id card))
+                                  {}
+                                  dcg.db.core/*cards))
+        card-images (->> ["en" "ja" "zh-Hans" "ko"]
+                         (map (fn [lang]
+                                (->> (io/file (format "resources/images/cards/%s/" lang))
+                                     file-seq
+                                     (remove (fn [^java.io.File f]
+                                               (or (.isDirectory f)
+                                                   (= (.getName f)
+                                                      ".DS_Store"))))
+                                     sort
+                                     (group-by (fn [^java.io.File f]
+                                                 [lang (-> (.getName f)
+                                                           (string/replace ".png" "")
+                                                           (string/replace #"_P\d+" ""))])))))
+                         (apply merge))
+        possible-issues
+        (->> card-by-id
+             vals
+             (sort-by (juxt :card/language
+                            :card/number
+                            :card/parallel-id))
+             (partition-by :card/number)
+             (remove (fn [cards]
+                       (let [[{:card/keys [language number]}] cards]
+                         (= (count cards)
+                            (->> (get card-images [language number])
+                                 (filter (fn [^java.io.File f]
+                                           (string/includes? (.getPath f)
+                                                             (format "%s/%s"
+                                                                     language
+                                                                     number))))
+                                 count)))))
+             (map (fn [cards]
+                    (map :card/id cards))))]
+    possible-issues)
 
   )

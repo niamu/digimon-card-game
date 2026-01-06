@@ -27,9 +27,9 @@
                                      :retry-handler (fn [_ try-count _]
                                                       (if (> try-count 2)
                                                         (logging/error
-                                                          (format "Failed downloading: %s after %d attempts"
-                                                                  url
-                                                                  try-count))
+                                                         (format "Failed downloading: %s after %d attempts"
+                                                                 url
+                                                                 try-count))
                                                         true))
                                      :throw-exceptions? false}))]
     (if (= (:status response) 200)
@@ -49,10 +49,10 @@
                                          (fn [_ try-count _]
                                            (if (> try-count 2)
                                              (do (logging/error
-                                                   (format "Failed POST: %s %s after %d attempts"
-                                                           url
-                                                           (pr-str options)
-                                                           try-count))
+                                                  (format "Failed POST: %s %s after %d attempts"
+                                                          url
+                                                          (pr-str options)
+                                                          try-count))
                                                  false)
                                              true))
                                          :form-params form-params)
@@ -68,23 +68,34 @@
 (defonce http-get*
   (memoize (fn [url options]
              (logging/debug (format "Downloading: %s %s" url (pr-str options)))
-             (-> (client/get url
-                             (-> options
-                                 (assoc :cookie-policy :standard
-                                        :throw-exceptions false
-                                        :connection-manager connection-manager
-                                        :retry-handler
-                                        (fn [_ try-count _]
-                                          (if (> try-count 2)
-                                            (do (logging/error
-                                                  (format "Failed GET: %s %s after %d attempts"
-                                                          url
-                                                          (pr-str options)
-                                                          try-count))
-                                                false)
-                                            true)))
-                                 (assoc-in [:headers "User-Agent"] user-agent)))
-                 :body))))
+             (letfn [(fetch [url options]
+                       (let [result (client/get
+                                     url
+                                     (-> options
+                                         (assoc :cookie-policy :standard
+                                                :throw-exceptions false
+                                                :connection-manager connection-manager
+                                                :retry-handler
+                                                (fn [_ try-count _]
+                                                  (if (> try-count 2)
+                                                    (do (logging/error
+                                                         (format "Failed GET: %s %s after %d attempts"
+                                                                 url
+                                                                 (pr-str options)
+                                                                 try-count))
+                                                        false)
+                                                    true)))
+                                         (assoc-in [:headers "User-Agent"] user-agent)))]
+                         (if (or (= (:status result) 200)
+                                 (and (= (get-in result [:headers "Content-Type"])
+                                         "application/xml")
+                                      (= (get-in result [:headers "Server"])
+                                         "tencent-cos")))
+                           (:body result)
+                           (do (logging/debug "Retrying in 60 seconds...")
+                               (Thread/sleep 60000)
+                               (fetch url options)))))]
+               (fetch url options)))))
 
 (defn http-get
   ([url]
@@ -122,9 +133,9 @@
                                       :retry-handler (fn [_ try-count _]
                                                        (if (> try-count 2)
                                                          (logging/error
-                                                           (format "Failed getting header: %s after %d attempts"
-                                                                   url
-                                                                   try-count))
+                                                          (format "Failed getting header: %s after %d attempts"
+                                                                  url
+                                                                  try-count))
                                                          true))
                                       :throw-exceptions? false}))
                  :headers

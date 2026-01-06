@@ -152,7 +152,9 @@
                                             (= parallel-id
                                                (:card/parallel-id prev-card)))
                                        (inc parallel-id)
-                                       (seq existing-card-numbers)
+                                       (and (seq existing-card-numbers)
+                                            (not (contains? #{"en" "ja"}
+                                                            language)))
                                        (-> existing-card-numbers
                                            last
                                            (get :card/parallel-id 0)
@@ -189,27 +191,42 @@
 
 (defn- reindex-parallel-ids
   [cards]
-  (map-indexed (fn [idx {:card/keys [language number] :as card}]
-                 (-> card
-                     (assoc :card/id (format "card/%s_%s_P%s"
-                                             language
-                                             number
-                                             (str idx)))
-                     (assoc :card/parallel-id idx)
-                     (assoc-in [:card/image :image/id]
-                               (format
-                                "/images/cards/%s/%s.png"
-                                language
-                                (cond-> number
-                                  (not= idx 0)
-                                  (str "_P" idx))))
-                     (assoc-in [:card/image :image/path]
-                               (format
-                                "/images/cards/%s/%s.png"
-                                language
-                                (cond-> number
-                                  (not= idx 0)
-                                  (str "_P" idx))))))
+  (map-indexed (fn [idx {:card/keys [language number parallel-id]
+                        {:image/keys [source]} :card/image
+                        :as card}]
+                 (if (or (and (= language "en")
+                              (= number "BT1-010")
+                              (> parallel-id 2))
+                         (and (= language "en")
+                              (= number "BT1-085")
+                              (> parallel-id 1))
+                         (and (= language "en")
+                              (= number "BT5-086")
+                              (> parallel-id 5))
+                         (and (= language "ja")
+                              (= number "BT7-056")
+                              (> parallel-id 4)))
+                   card
+                   (-> card
+                       (assoc :card/id (format "card/%s_%s_P%s"
+                                               language
+                                               number
+                                               (str idx)))
+                       (assoc :card/parallel-id idx)
+                       (assoc-in [:card/image :image/id]
+                                 (format
+                                  "/images/cards/%s/%s.png"
+                                  language
+                                  (cond-> number
+                                    (not= idx 0)
+                                    (str "_P" idx))))
+                       (assoc-in [:card/image :image/path]
+                                 (format
+                                  "/images/cards/%s/%s.png"
+                                  language
+                                  (cond-> number
+                                    (not= idx 0)
+                                    (str "_P" idx)))))))
                cards))
 
 (defn consolidate-duplicate-images
@@ -217,43 +234,92 @@
   (->> cards
        (sort-by :card/id)
        (partition-by :card/number)
-       (mapcat (fn [cards-for-number]
-                 (let [sources (map (comp :image/source
-                                          :card/image)
-                                    cards-for-number)]
-                   (if (= (count sources)
-                          (count (set sources)))
-                     cards-for-number
-                     (->> cards-for-number
-                          (group-by (comp :image/source
-                                          :card/image))
-                          vals
-                          (mapcat
-                           (fn [cards-per-source]
-                             (if (> (count cards-per-source) 1)
-                               [(reduce
-                                 (fn [accl {:card/keys [notes releases]}]
-                                   (-> accl
-                                       (update :card/notes
-                                               (fnil (fn [s]
-                                                       (if (and (string? s)
-                                                                (string/includes? s notes))
-                                                         s
-                                                         (str s "\n" notes))) ""))
-                                       (update :card/releases
-                                               (fn [existing-releases]
-                                                 (->> (set existing-releases)
-                                                      (set/union (set releases))
-                                                      (sort-by :release/id)
-                                                      (into []))))))
-                                 (first cards-per-source)
-                                 (rest cards-per-source))]
-                               cards-per-source)))
-                          (sort-by (juxt :card/id
-                                         (comp str
-                                               :image/source
-                                               :card/image)))
-                          reindex-parallel-ids)))))))
+       (mapcat
+        (fn [cards-for-number]
+          (let [sources (map (comp :image/source
+                                   :card/image)
+                             cards-for-number)]
+            (if (= (count sources)
+                   (count (set sources)))
+              (cond-> cards-for-number
+                (contains? #{"P-007"
+                             "P-011"
+                             "P-012"
+                             "P-017"
+                             "P-035"
+                             "P-039"
+                             "P-040"
+                             "P-047"
+                             "P-048"
+                             "BT3-061"
+                             "BT4-025"
+                             "BT4-062"
+                             "BT4-079"
+                             "BT4-096"
+                             "BT4-097"
+                             "BT4-111"
+                             "BT4-115"
+                             "BT5-001"
+                             "BT5-087"
+                             "BT5-088"
+                             "BT5-092"
+                             "BT5-105"
+                             "BT5-111"
+                             "BT5-112"
+                             "BT8-012"
+                             "BT8-032"
+                             "BT8-053"
+                             "BT8-058"
+                             "BT8-112"
+                             "BT10-101"
+                             "BT10-103"
+                             "BT13-018"
+                             "BT15-042"
+                             "BT15-053"
+                             "BT15-067"
+                             "BT17-090"
+                             "BT20-064"
+                             "EX4-024"}
+                           (-> cards-for-number
+                               first
+                               (get :card/number)))
+                (->> (sort-by (juxt :card/id
+                                    (comp str
+                                          :image/source
+                                          :card/image)))
+                     reindex-parallel-ids))
+              (->> cards-for-number
+                   (group-by (comp :image/source
+                                   :card/image))
+                   vals
+                   (mapcat
+                    (fn [cards-per-source]
+                      (if (> (count cards-per-source) 1)
+                        [(reduce
+                          (fn [accl {:card/keys [notes releases]}]
+                            (-> accl
+                                (update :card/notes
+                                        (fnil
+                                         (fn [s]
+                                           (if (and (string? s)
+                                                    (string/includes? s notes))
+                                             s
+                                             (str s "\n" notes)))
+                                         ""))
+                                (update :card/releases
+                                        (fn [existing-releases]
+                                          (->> (set existing-releases)
+                                               (set/union (set releases))
+                                               (sort-by :release/id)
+                                               (into []))))))
+                          (first cards-per-source)
+                          (rest cards-per-source))]
+                        cards-per-source)))
+                   (sort-by (juxt :card/id
+                                  (comp str
+                                        :image/source
+                                        :card/image)))
+                   reindex-parallel-ids)))))))
 
 (defn image-processing
   [cards]
@@ -489,6 +555,11 @@
                             (get info-bottom "セキュリティ効果")
                             (get info-bottom "시큐리티 효과")
                             (get info-bottom "하단 텍스트"))
+        source (URI. (str origin image-source))
+        source (URI. (str (.getScheme source)
+                          "://"
+                          (.getHost source)
+                          (.getPath source)))
         repair-fn (-> repair/text-fixes-by-number-by-language
                       (get-in [number language]))]
     (cond-> {:card/id card-id
@@ -535,7 +606,7 @@
                                     first
                                     :content)))
              :card/image {:image/language language
-                          :image/source (URI. (str origin image-source))}}
+                          :image/source source}}
       rarity (assoc :card/rarity rarity)
       play-cost (assoc (if (or (= category "オプション")
                                (= category "Option")
@@ -623,6 +694,321 @@
                                          (some->> href
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))]
+    (concat (doall (pmap (partial card release) cards-dom-tree))
+            (mapcat (fn [href]
+                      (pmap (partial card release)
+                            (->> (utils/http-get href
+                                                 http-opts)
+                                 repair/html-encoding-errors
+                                 hickory/parse
+                                 hickory/as-hickory
+                                 (select/select card-detail-selector))))
+                    additional-pages))))
+
+(defmethod cards-in-release "en"
+  [{:release/keys [cardlist-uri http-opts] :as release}]
+  (let [page (->> (utils/http-get (str cardlist-uri)
+                                  http-opts)
+                  repair/html-encoding-errors
+                  hickory/parse
+                  hickory/as-hickory)
+        card-detail-selector (select/descendant
+                              (select/id "article")
+                              (select/class "image_lists")
+                              (select/class "popupCol"))
+        cards-dom-tree (select/select card-detail-selector page)
+        additional-pages (->> page
+                              (select/select (select/descendant
+                                              (select/id "article")
+                                              (select/class "paging")
+                                              (select/class "page-link")))
+                              (map (fn [{{href :href} :attrs}] href))
+                              set
+                              (sort-by (fn [href]
+                                         (some->> href
+                                                  (re-find #"[0-9]+$")
+                                                  parse-long))))
+        card (fn [{:release/keys [language cardlist-uri]
+                  :as release} dom-tree]
+               (let [origin (str (.getScheme ^URI cardlist-uri) "://"
+                                 (.getHost ^URI cardlist-uri))
+                     header (->> (select/select
+                                  (select/descendant
+                                   (select/and (select/tag "ul")
+                                               (select/class "cardTitleList"))
+                                   (select/tag "li"))
+                                  dom-tree)
+                                 (map card-utils/text-content))
+                     number (some->> dom-tree
+                                     (select/select
+                                      (select/descendant
+                                       (select/and (select/tag "ul")
+                                                   (select/class "cardTitleList"))
+                                       (select/class "cardNo")))
+                                     first
+                                     card-utils/text-content)
+                     category (or (some->> dom-tree
+                                           (select/select
+                                            (select/descendant
+                                             (select/and (select/tag "ul")
+                                                         (select/class "cardTitleList"))
+                                             (select/class "cardType")))
+                                           first
+                                           card-utils/text-content)
+                                  "Unknown")
+                     alternate-art? (contains? (set header) "Alternative Art")
+                     rarity (string/replace
+                             (or (some->> dom-tree
+                                          (select/select
+                                           (select/descendant
+                                            (select/and (select/tag "ul")
+                                                        (select/class "cardTitleList"))
+                                            (select/class "cardRarity")))
+                                          first
+                                          card-utils/text-content)
+                                 "P")
+                             "Ｕ" "U")
+                     dl (->> dom-tree
+                             (select/select (select/descendant
+                                             (select/tag "dl")
+                                             (select/or (select/tag "dt")
+                                                        (select/tag "dd"))))
+                             (partition-all 2)
+                             (reduce (fn [accl [dt dd]]
+                                       (assoc accl
+                                              (->> dt
+                                                   card-utils/text-content
+                                                   card-utils/normalize-string)
+                                              dd))
+                                     {}))
+                     colors (->> (get dl "Color")
+                                 (select/select (select/tag "span"))
+                                 (mapcat (fn [el]
+                                           (let [color
+                                                 (-> (get-in el [:attrs :class] "")
+                                                     (string/replace "cardColor_" ""))]
+                                             (if (= color "all")
+                                               ["red" "blue" "yellow"
+                                                "green" "purple" "black"
+                                                "white"]
+                                               [color]))))
+                                 (remove string/blank?)
+                                 (map-indexed (fn [i color]
+                                                {:color/id (format "color/%s_index%d"
+                                                                   number i)
+                                                 :color/index i
+                                                 :color/color (keyword color)}))
+                                 (into []))
+                     play-cost (some->> (get dl "Cost")
+                                        card-utils/text-content
+                                        card-utils/normalize-string
+                                        parse-long)
+                     dp (some->> (get dl "DP")
+                                 card-utils/text-content
+                                 card-utils/normalize-string
+                                 parse-long)
+                     form (some->> (get dl "Form")
+                                   card-utils/text-content
+                                   card-utils/normalize-string)
+                     attribute (some->> (get dl "Attribute")
+                                        card-utils/text-content
+                                        card-utils/normalize-string)
+                     type (some->> (get dl "Type")
+                                   card-utils/text-content
+                                   card-utils/normalize-string)
+                     level (some->> dom-tree
+                                    (select/select
+                                     (select/descendant
+                                      (select/and (select/tag "ul")
+                                                  (select/class "cardTitleList"))
+                                      (select/class "cardLv")))
+                                    first
+                                    card-utils/text-content
+                                    (re-find #"[0-9]+")
+                                    parse-long)
+                     image-source (-> (select/select (select/descendant (select/tag "img"))
+                                                     dom-tree)
+                                      first
+                                      (get-in [:attrs :src])
+                                      (string/replace "//" "/")
+                                      (string/replace #"^\.\." ""))
+                     parallel-id (or (some-> (or (re-find #"_P([0-9]+)\."
+                                                          image-source)
+                                                 (re-find #"_P([0-9]+)\."
+                                                          (get-in dom-tree [:attrs :id])))
+                                             second
+                                             parse-long)
+                                     0)
+                     card-id (format "card/%s_%s_P%s"
+                                     language
+                                     number
+                                     (str parallel-id))
+                     effect (some->> dom-tree
+                                     (select/select
+                                      (select/descendant
+                                       (select/has-child
+                                        (select/find-in-text #"^\s*Card Text 1\s*$"))
+                                       (select/tag "dd")))
+                                     seq
+                                     (map (comp card-utils/normalize-string
+                                                card-utils/text-content))
+                                     (string/join "\n")
+                                     card-utils/normalize-string
+                                     repair/text-fixes)
+                     lower-text (some->> dom-tree
+                                         (select/select
+                                          (select/descendant
+                                           (select/has-child
+                                            (select/find-in-text #"^\s*Card Text 2\s*$"))
+                                           (select/tag "dd")))
+                                         seq
+                                         (map (comp card-utils/normalize-string
+                                                    card-utils/text-content))
+                                         (string/join "\n")
+                                         card-utils/normalize-string
+                                         repair/text-fixes)
+                     digivolution-requirements
+                     (->> [(dl "Digivolve Cost 1")
+                           (dl "Digivolve Cost 2")]
+                          (remove nil?)
+                          (map-indexed
+                           (fn [i c]
+                             (let [s (-> c
+                                         card-utils/text-content
+                                         card-utils/normalize-string)
+                                   colors (->> c
+                                               (select/select
+                                                (select/tag "span"))
+                                               (mapcat (fn [el]
+                                                         (let [color (-> (get-in el [:attrs :class] "")
+                                                                         (string/replace "cardColor_" ""))]
+                                                           (if (= color "all")
+                                                             ["red" "blue" "yellow"
+                                                              "green" "purple" "black"
+                                                              "white"]
+                                                             [color]))))
+                                               (remove nil?)
+                                               (map keyword)
+                                               set)
+                                   category (some->> (string/lower-case s)
+                                                     (re-find #"(?i)(.*?)から\d+")
+                                                     second)
+                                   form (when (and category
+                                                   (some (fn [f]
+                                                           (string/ends-with? category f))
+                                                         #{"Stnd." "Sup." "Ult." "God"}))
+                                          (case (subs category
+                                                      (dec (count category)))
+                                            "Stnd." :standard
+                                            "Sup." :super
+                                            "Ult." :ultimate
+                                            "God" :god))
+                                   level (some->> (string/lower-case s)
+                                                  (re-find #"(?i).*lv\.?(\d+).*")
+                                                  second
+                                                  parse-long)
+                                   cost (some->> (string/lower-case s)
+                                                 (re-find #"(?i).*(?<!lv\.?)(\d+)")
+                                                 second
+                                                 parse-long)
+                                   category
+                                   (cond
+                                     (and category
+                                          (string/ends-with?
+                                           category "Tamer")) :tamer
+                                     (or level
+                                         form)                :digimon
+                                     :else                    nil)]
+                               (cond-> {:digivolve/id (format "digivolve/%s_index%d"
+                                                              number i)
+                                        :digivolve/category category
+                                        :digivolve/index i
+                                        :digivolve/cost cost
+                                        :digivolve/color colors}
+                                 level (assoc :digivolve/level level)
+                                 form (assoc :digivolve/form form))))))
+                     notes (->> dom-tree
+                                (select/select
+                                 (select/descendant
+                                  (select/has-child
+                                   (select/find-in-text #"Notes"))
+                                  (select/tag "dd")))
+                                first
+                                :content
+                                (filter string?)
+                                (map (comp string/trim
+                                           #(string/replace % "\u25B9" "")
+                                           #(string/replace % #"\uFF3B|\u3010" " [")
+                                           #(string/replace % #"\uFF3D|\u3011" "]")))
+                                (remove string/blank?)
+                                (string/join "\n"))
+                     source (URI. (str origin image-source))
+                     source (URI. (str (.getScheme source)
+                                       "://"
+                                       (.getHost source)
+                                       (.getPath source)))
+                     repair-fn (-> repair/text-fixes-by-number-by-language
+                                   (get-in [number language]))]
+                 (cond-> {:card/id card-id
+                          :card/release (dissoc release :release/http-opts)
+                          :card/language language
+                          :card/number number
+                          :card/parallel-id parallel-id
+                          :card/category (case category
+                                           "Digi-Egg" :digi-egg
+                                           "Digimon"  :digimon
+                                           "Tamer"    :tamer
+                                           "Option"   :option
+                                           nil)
+                          :card/color colors
+                          :card/name (->> (select/select
+                                           (select/descendant
+                                            (select/and (select/tag "div")
+                                                        (select/class "cardTitle")))
+                                           dom-tree)
+                                          first
+                                          ((comp card-utils/normalize-string
+                                                 string/trim
+                                                 (fn [s]
+                                                   (-> s
+                                                       (string/replace #"\s+" " ")
+                                                       (string/replace
+                                                        (re-pattern
+                                                         (format "%s\\s*(%s)?\\s*"
+                                                                 number
+                                                                 rarity))
+                                                        "")))
+                                                 first
+                                                 :content)))
+                          :card/notes notes
+                          :card/image {:image/language language
+                                       :image/source source}}
+                   rarity (assoc :card/rarity rarity)
+                   play-cost (assoc (if (= category "Option")
+                                      :card/use-cost
+                                      :card/play-cost) play-cost)
+                   (seq digivolution-requirements) (assoc :card/digivolution-requirements
+                                                          digivolution-requirements)
+                   level (assoc :card/level level)
+                   dp (assoc :card/dp dp)
+                   form (assoc :card/form form)
+                   attribute (assoc :card/attribute attribute)
+                   type (assoc :card/type type)
+                   effect (assoc :card/effect effect)
+                   (and lower-text
+                        (not (string/starts-with? lower-text
+                                                  "[Security]")))
+                   (assoc :card/inherited-effect lower-text)
+                   (and lower-text
+                        (string/starts-with? lower-text
+                                             "[Security]"))
+                   (assoc :card/security-effect lower-text)
+                   notes (assoc :card/notes notes)
+                   :pack-type (as-> #__ card
+                                (if-let [pt (pack-type release card)]
+                                  (assoc card :card/pack-type pt)
+                                  card))
+                   repair-fn repair-fn)))]
     (concat (doall (pmap (partial card release) cards-dom-tree))
             (mapcat (fn [href]
                       (pmap (partial card release)
@@ -792,11 +1178,12 @@
                                                      (re-find #"(?i)(.*?)から\d+")
                                                      second)
                                    form (when (and category
-                                                   (some (fn [f]
-                                                           (string/ends-with? category f))
-                                                         #{"並" "超" "極" "神"}))
-                                          (case (subs category
-                                                      (dec (count category)))
+                                                   (or (some (fn [f]
+                                                               (string/ends-with? category f))
+                                                             #{"並" "超" "極" "神"})))
+                                          (case (-> category
+                                                    (subs (dec (count category)))
+                                                    string/trim)
                                             "並" :standard
                                             "超" :super
                                             "極" :ultimate
@@ -840,6 +1227,11 @@
                                            #(string/replace % #"\uFF3D|\u3011" "]")))
                                 (remove string/blank?)
                                 (string/join "\n"))
+                     source (URI. (str origin image-source))
+                     source (URI. (str (.getScheme source)
+                                       "://"
+                                       (.getHost source)
+                                       (.getPath source)))
                      repair-fn (-> repair/text-fixes-by-number-by-language
                                    (get-in [number language]))]
                  (cond-> {:card/id card-id
@@ -875,13 +1267,14 @@
                                                  :content)))
                           :card/notes notes
                           :card/image {:image/language language
-                                       :image/source (URI. (str origin image-source))}}
+                                       :image/source source}}
                    rarity (assoc :card/rarity rarity)
                    play-cost (assoc (if (= category "オプション")
                                       :card/use-cost
                                       :card/play-cost) play-cost)
-                   (seq digivolution-requirements) (assoc :card/digivolution-requirements
-                                                          digivolution-requirements)
+                   (seq digivolution-requirements)
+                   (assoc :card/digivolution-requirements
+                          digivolution-requirements)
                    level (assoc :card/level level)
                    dp (assoc :card/dp dp)
                    form (assoc :card/form form)
@@ -1018,10 +1411,6 @@
                                     (if-let [pt (pack-type release card)]
                                       (assoc card :card/pack-type pt)
                                       card))
-                       repair-fn (as-> #__ card
-                                   (try (repair-fn card)
-                                        (catch Exception e
-                                          (logging/error card e)
-                                          (throw e)))))))))
+                       repair-fn repair-fn)))))
          (remove nil?)
          doall)))

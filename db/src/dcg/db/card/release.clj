@@ -148,8 +148,12 @@
                          #_(string/replace "BTK-1.0" "BTK-10")
                          (string/replace #"([aA-zZ])\[" "$1 [")
                          string/trim)
-        uri (or (some->> (get-in dom-tree [:attrs :data-url])
-                         (str url "/products/"))
+        uri (or (when-let [data-url (get-in dom-tree [:attrs :data-url])]
+                  (cond->> data-url
+                    (not (string/starts-with? data-url "/products/"))
+                    (str "/products/")
+                    (not (string/starts-with? data-url "http"))
+                    (str url)))
                 (some-> (select/select (select/descendant
                                         (select/class "btncol")
                                         (select/tag "a"))
@@ -278,8 +282,11 @@
                              genre
                              title)
              :release/image-uri (URI. (cond->> img
-                                        (not (string/starts-with? img "http"))
-                                        (str url "/cardlist/")))
+                                        (and (not (string/starts-with? img "http"))
+                                             (not (string/starts-with? img "/")))
+                                        (str url "/cardlist/")
+                                        (string/starts-with? img "/")
+                                        (str url)))
              :release/cardlist-uri (URI. (cond->> href
                                            (not (string/starts-with? href "http"))
                                            (str url "/cardlist/")))
@@ -388,7 +395,7 @@
                           (get {"Others" 99} genre 1))
                         :release/genre))
          (reduce (fn [accl {:release/keys [language cardlist-uri]
-                           :as release}]
+                            :as release}]
                    (conj accl
                          (if (contains? (->> accl
                                              (map (juxt :release/language

@@ -16,12 +16,18 @@
                                "[Main] Your opponent can't play Digimon by effects until the end of their next turn. Delete all of your opponent's Digimon with 6000 DP or less."))
    "BT8-110" (fn [s]
                (string/replace s "[Security]You" "[Security] You"))
+   "BT9-067" (fn [s]
+               (string/replace s ",and" ", and"))
    "BT10-093" (fn [s]
                 (string/replace s
-                                "[Your turn] [Once per turn]"
-                                "[Your Turn][Once Per Turn]"))
+                                "[Your turn] [Once per turn] When you would play 1 level 4 or higher Digimon card with [Bagra Army] in its traits, by placing up to 3 purple Digimon cards from under your Tamers in the digivolution cards of the Digimon card played, reduce the memory cost of that Digimon by 2 for each card placed."
+                                "[Your Turn][Once Per Turn] When you would play a level 4 or higher Digimon card with [Bagra Army] in its traits, by placing up to 3 purple Digimon cards from under your Tamers in the played Digimon card's digivolution cards, reduce the play cost of that Digimon by 2 for each card placed."))
+   "BT14-002" (fn [s]
+                (string/replace s "<Jamming>" "＜Jamming＞"))
    "BT14-023" (fn [s]
                 (string/replace s "(Once Per Turn)" "[Once Per Turn]"))
+   "BT14-091" (fn [s]
+                (string/replace s "Then if" "Then, if"))
    "EX3-001" (fn [s]
                (string/replace s
                                "[All Turns] [Once Per Turn] When this Digimon with [Dramon] or [Examon] in its name becomes unsuspended, this Digimon gets +1000 for the turn."
@@ -30,10 +36,28 @@
                (string/replace s
                                "You may DNA digivolve this Digimon and one of your other Digimon may DNA digivolve into a Digimon card in your hand for the cost."
                                "You may DNA digivolve this Digimon and one of your other Digimon in play into a Digimon card in your hand for its DNA digivolve cost."))
+   "EX3-014" (fn [s]
+               (-> s
+                   (string/replace "[saur], or [Ceratopsian]"
+                                   "[saur] or [Ceratopsian]")
+                   (string/replace "3000 or less"
+                                   "3000 DP or less")))
+   "EX3-024" (fn [s]
+               (-> s
+                   (string/replace "[Start of Opponent's Main Phase] You may suspend 1 of your Digimon with [Dramon] or [Examon] in its name to force 1 of your opponent's Digimon to attack.\n[Start of Opponent's Main Phase] You may suspend 1 of your Digimon with [Dramon] or [Examon] in its name to force 1 of your opponent's Digimon to attack."
+                                   "[Start of Opponent's Main Phase] You may suspend 1 of your Digimon with [Dramon] or [Examon] in its name to force 1 of your opponent's Digimon to attack.")
+                   (string/replace "[Start of Opponent's Main Phase] By suspending 1 of your Digimon with [Dramon] or [Examon] in its name, your opponent attacks with 1 of their Digimon.\n[Start of Opponent's Main Phase] By suspending 1 of your Digimon with [Dramon] or [Examon] in its name, your opponent attacks with 1 of their Digimon."
+                                   "[Start of Opponent's Main Phase] By suspending 1 of your Digimon with [Dramon] or [Examon] in its name, your opponent attacks with 1 of their Digimon.")))
    "EX3-030" (fn [s]
                (string/replace s "[Inherited Effect]" ""))
    "EX3-057" (fn [s]
-               (string/replace s "3000 or" "3000 DP or"))
+               (-> s
+                   (string/replace "If no Digimon is deleted by this effect, trash the top 2 cards of both players' decks"
+                                   "If no Digimon was deleted by this effect, both players trash the top 2 cards of their decks.")))
+   "EX3-063" (fn [s]
+               (-> s
+                   (string/replace "[When Digivolving] If DNA digivolving, your opponent chooses 1 of their Digimon. Delete all of their other Digimon. Then, ＜Blitz＞."
+                                   "[When Digivolving] If DNA digivolving, your opponent chooses 1 of their Digimon and deletes the rest. Then, ＜Blitz＞.")))
    "LM-013" (fn [s]
               (string/replace s "…at" "…At"))
    "ST16-11" (fn [s]
@@ -247,18 +271,30 @@
                                           (string/replace "’" "'")
                                           (string/replace #"^Start of Your Main Phase\]"
                                                           "[Start of Your Main Phase]")
-                                          (string/replace #"^Before\n*\s*" "")
-                                          (string/replace #"^After\n*\s*" "")
                                           (string/replace "⟨" "＜")
                                           (string/replace "⟩" "＞")))
+                         filter-content
+                         (fn [element]
+                           (update element :content
+                                   (fn [content]
+                                     (->> content
+                                          (remove
+                                           (fn [el]
+                                             (and (map? el)
+                                                  (or (= (:tag el) :b)
+                                                      (= (get-in el [:attrs
+                                                                     :class])
+                                                         "txtExBold")))))))))
                          error (->> div
                                     (select/select (select/class "beforeCol"))
                                     (map (comp text-fixes
-                                               card-utils/text-content)))
+                                               card-utils/text-content
+                                               filter-content)))
                          fixed (->> div
                                     (select/select (select/class "afterCol"))
                                     (map (comp text-fixes
-                                               card-utils/text-content)))
+                                               card-utils/text-content
+                                               filter-content)))
                          notes (->> (select/select (select/tag :dd) div)
                                     (map card-utils/text-content)
                                     (string/join "\n"))]

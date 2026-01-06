@@ -118,6 +118,7 @@
                                                    (some-> (:card/type card)
                                                            (string/split #"/"))))))
                          set)
+        en-mentions (disj en-mentions "Security")
         card-groups
         (->> cards
              (sort-by (juxt (comp (fn [releases]
