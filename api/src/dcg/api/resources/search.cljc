@@ -101,7 +101,7 @@
 (defmethod datom :cost
   ([attribute operator value]
    (datom nil attribute operator value))
-  ([not? attribute operator [_ v]]
+  ([not? attribute operator [_ v :as value]]
    (let [valid? (boolean (parse-long v))
          v (or (parse-long v) v)
          ?value (gensym "?cost")]
@@ -112,19 +112,18 @@
                       (conj (cond->> [(list (or operator '=) ?value v)]
                               (boolean not?)
                               (list 'not))))
-         {:note (#?(:clj format
-                    :cljs gstring/format) "the play/use cost %s %s \"%s\""
-                                          (cond-> " is"
-                                            (boolean not?) (str " not"))
-                                          (case (and operator (name operator))
-                                            "<" "less than"
-                                            "<=" "less than or equal to"
-                                            ">" "greater than"
-                                            ">=" "greater than or equal to"
-                                            "equal to")
-                                          v)
-          :instaparse.gll/start-index nil
-          :instaparse.gll/end-index nil})
+         (assoc (meta value)
+                :note (#?(:clj format
+                          :cljs gstring/format) "the play/use cost %s %s \"%s\""
+                       (cond-> "is"
+                         (boolean not?) (str " not"))
+                       (case (and operator (name operator))
+                         "<" "less than"
+                         "<=" "less than or equal to"
+                         ">" "greater than"
+                         ">=" "greater than or equal to"
+                         "equal to")
+                       v)))
        (with-meta {:errors [(#?(:clj format
                                 :cljs gstring/format)
                              "\"%s\" is not a valid %s."
