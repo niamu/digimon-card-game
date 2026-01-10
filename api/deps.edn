@@ -1,6 +1,6 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure                   {:mvn/version "1.12.1"}
-        org.clojure/clojurescript             {:mvn/version "1.12.42"}
+ :deps {org.clojure/clojure                   {:mvn/version "1.12.4"}
+        org.clojure/clojurescript             {:mvn/version "1.12.134"}
         com.datomic/peer                      {:mvn/version "1.0.7387"}
         com.taoensso/timbre                   {:mvn/version "6.6.1"}
         com.taoensso/timbre-slf4j             {:mvn/version "6.6.1"}

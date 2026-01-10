@@ -3,4 +3,6 @@
  :output-dir "target/js/out"
  :optimizations :advanced
  :pretty-print false
+ :lite-mode false ; not ready yet
+ :elide-to-string true
  :language-out :es-next}
