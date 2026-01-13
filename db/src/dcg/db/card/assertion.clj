@@ -37,7 +37,7 @@
                                          :card/number)
                                    :card/parallel-id))
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
