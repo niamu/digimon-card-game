@@ -1079,7 +1079,8 @@
                   :or {max-per-page 60
                        page 1
                        default-language "en"}}]]
-     (let [parse-tree (->> (parser q)
+     (let [q (or q "")
+           parse-tree (->> (parser q)
                            (transform transform-map))
            parse-tree (cond-> parse-tree
                         (not (seq (filter (comp :language? meta) parse-tree)))
@@ -1100,12 +1101,8 @@
                           (remove nil?))
            db-results (when (seq parse-tree)
                         (query-db parse-tree query))
-           total (count db-results)]
-       {:query/total total
-        :query/cards (nth (partition-all max-per-page db-results)
-                          (dec page)
-                          [])
-        :query/summary (if (<= total max-per-page)
+           total (count db-results)
+           summary (if (<= total max-per-page)
                          (pprint/cl-format nil
                                            "~:D card~:P"
                                            total)
@@ -1120,17 +1117,7 @@
                                                 (mod total max-per-page))
                                              (* page max-per-page))
                                            total))
-        :query/pagination
-        {:pagination/pages (max (-> (/ total max-per-page)
-                                    math/ceil
-                                    math/round)
-                                1)
-         :pagination/prev (when (> page 1)
-                            true)
-         :pagination/next (when (< page (/ total max-per-page))
-                            true)}
-        :query/errors errors
-        :query/fragments (case (count fragments)
+           fragments (case (count fragments)
                            0 ""
                            (1 2) (str " where " (string/join " and " fragments))
                            (loop [accl " where "
@@ -1143,7 +1130,26 @@
                                            (when-not (= remaining fragments)
                                              ", ")
                                            (first remaining))
-                                      (next remaining)))))})))
+                                      (next remaining)))))
+           cards (nth (partition-all max-per-page db-results)
+                          (dec page)
+                          [])]
+       {:query/pagination
+        {:pagination/page page
+         :pagination/total total
+         :pagination/cards cards
+         :pagination/summary summary
+         :pagination/errors errors
+         :pagination/fragments fragments
+         :pagination/max-per-page max-per-page
+         :pagination/pages (max (-> (/ total max-per-page)
+                                    math/ceil
+                                    math/round)
+                                1)
+         :pagination/prev (when (> page 1)
+                            true)
+         :pagination/next (when (< page (/ total max-per-page))
+                            true)}})))
 
 (defn query-highlight
   [s]
@@ -1223,8 +1229,8 @@
                    media-type))
       :handle-ok (fn [{{{{:keys [q page]
                           :or {page 1}} :query} :parameters} :request
-                       {:query/keys [cards errors summary fragments total]
-                        {:pagination/keys [pages prev next]} :query/pagination}
+                       {{:pagination/keys [cards errors summary fragments total
+                                           pages prev next]} :query/pagination}
                        ::query}]
                    (let [q (string/trim q)
                          cards (->> cards
