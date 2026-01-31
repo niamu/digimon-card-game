@@ -279,6 +279,8 @@
                          (update :cards concat cards))))
                  {:translations {"DeathX" "デクス"
                                  "Familiar" "使い魔"
+                                 "Aqua" "水棲"
+                                 "Sea Animal" "水棲"
                                  "Animal" "獣"
                                  "Justimon" "ジャスティモン"
                                  "Sovereign" "獣"

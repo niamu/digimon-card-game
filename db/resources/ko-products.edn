@@ -476,4 +476,14 @@
            :id "release_ko_42548",
            :card-image-language "ko",
            :genre "관련상품",
-           :date #inst "2025-07-01T00:00:00.000-00:00"})
+           :date #inst "2025-07-01T00:00:00.000-00:00"}
+ #:release{:name "팩 크로스 에볼루션 [BTK-19]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/45771",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/771/045/3c641e821cbc8886fb39320be371a432.jpg",
+           :language "ko",
+           :id "release_ko_45771",
+           :card-image-language "ko",
+           :genre "확장팩",
+           :date #inst "2026-01-23T00:00:00.000-00:00"})

@@ -4014,7 +4014,7 @@
            (= parallel-id 2)
            (assoc :card/block-icon 3)))
   "ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/234/042/c9f5f6813b5da2e8184fe6d886d026e4.png"))
@@ -4025,8 +4025,8 @@
                 (= parallel-id 1)
                 (assoc :card/block-icon 3)))
   "ko" (fn [{:card/keys [parallel-id]
-            {:image/keys [source]} :card/image
-            :as card}]
+             {:image/keys [source]} :card/image
+             :as card}]
          (cond-> card
            (or (= parallel-id 0)
                (= source
@@ -4504,11 +4504,25 @@
            (= parallel-id 3)
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                  :as card}]
+                 :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1763702092787BT19-037_ST22.png"))
                 (assoc :card/block-icon 5)))}
+ "BT19-065"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   ". ≪디지크로스 -1≫"
+                                   ".\n≪디지크로스 -1≫"))))}
+ "BT19-068"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   ". ≪디지크로스 -2≫"
+                                   ".\n≪디지크로스 -2≫"))))}
  "BT19-074"
  {"en" (fn [{:card/keys [inherited-effect] :as card}]
          (cond-> (assoc card :card/form "Mega")
@@ -4524,26 +4538,39 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-082"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level))}
+                         :card/form
+                         :card/level))}
+ "BT19-101"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT19-101_index0"
+                  :color/index 0
+                  :color/color :red}
+                 {:color/id    "color/BT19-101_index1"
+                  :color/index 1
+                  :color/color :purple}
+                 {:color/id    "color/BT19-101_index2"
+                  :color/index 2
+                  :color/color :black}]))}
  "BT20-003"
  {"ko" (fn [card]
          (assoc card :card/category :digi-egg))}
@@ -4632,14 +4659,14 @@
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-088"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                          :card/form
-                          :card/level
-                          :card/dp))}
+                         :card/form
+                         :card/level
+                         :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -5963,7 +5990,7 @@
            (= parallel-id 2)
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                  :as card}]
+                 :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1763702092788EX8-037_ST22.png"))
@@ -6132,6 +6159,23 @@
            (nil? inherited-effect)
            (assoc :card/inherited-effect
                   "＜Overflow (-4)＞ (As this card moves from the field or under a card to an area other than those, lose 4 memory.)")))}
+ "EX11-001"
+ {"zh-Hans" (fn [card]
+              (assoc card :card/form "幼年期"))}
+ "EX11-015"
+ {"zh-Hans" (fn [{{:image/keys [source]} :card/image
+                 :as card}]
+              (cond-> card
+                (= source
+                   (java.net.URI. "https://source.windoent.com/dtcg/Picture/1769758284171EX11-015_EX11EM.png"))
+                (assoc :card/block-icon 5)))}
+ "EX11-044"
+ {"en" (fn [{{:image/keys [source]} :card/image
+            :as card}]
+         (cond-> card
+           (= source
+              (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/EX11-044_P1.png"))
+           (assoc :card/block-icon 5)))}
  "LM-005"
  {"ko" (fn [card]
          (assoc card :card/inherited-effect
@@ -7216,7 +7260,36 @@
   "ko"      (fn [card]
               (assoc card :card/rarity "SR"))}
  "P-039"
- {"zh-Hans" (fn [card]
+ {"en"      (fn [{{:image/keys [source]} :card/image :as card}]
+              (cond-> card
+                (= source
+                   (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-039_P4.png"))
+                (-> (assoc :card/id "card/en_P-039_P2"
+                           :card/parallel-id 2
+                           :card/notes "RESURGENCE BOOSTER [RB01]")
+                    (assoc-in [:card/image :image/id]
+                              "image/en_P-039_P2")
+                    (assoc-in [:card/image :image/path]
+                              "/images/cards/en/P-039_P2.png"))
+                (= source
+                   (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-039_P2.png"))
+                (-> (assoc :card/id "card/en_P-039_P3"
+                           :card/parallel-id 3
+                           :card/notes "RESURGENCE BOOSTER [RB01]")
+                    (assoc-in [:card/image :image/id]
+                              "image/en_P-039_P3")
+                    (assoc-in [:card/image :image/path]
+                              "/images/cards/en/P-039_P3.png"))
+                (= source
+                   (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-039_P5.png"))
+                (-> (assoc :card/id "card/en_P-039_P4"
+                           :card/parallel-id 4
+                           :card/notes "PREMIUM CARD COLLECTION Memory Boost! Set")
+                    (assoc-in [:card/image :image/id]
+                              "image/en_P-039_P4")
+                    (assoc-in [:card/image :image/path]
+                              "/images/cards/en/P-039_P4.png"))))
+  "zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
   "ko"      (fn [card]
               (assoc card :card/rarity "SR"))}

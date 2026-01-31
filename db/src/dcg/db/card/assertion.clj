@@ -37,7 +37,7 @@
                                          :card/number)
                                    :card/parallel-id))
                     (reduce (fn [accl {:card/keys [number language]
-                                      :as card}]
+                                       :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -479,7 +479,8 @@
                               "ST21" 5
                               "BT23" 5
                               "ST22" 5
-                              "BT24" 5}
+                              "BT24" 5
+                              "EX11" 5}
         saved-block-icons (->> (io/resource "block-icons.edn")
                                io/reader
                                (PushbackReader.)
@@ -527,7 +528,8 @@
                                             saved-block-icons)
                                     (get number)
                                     vals
-                                    first)))))))
+                                    first))))
+         (into {}))))
 
 (defn single-language-cards
   [cards]

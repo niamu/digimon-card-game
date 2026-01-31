@@ -195,6 +195,9 @@
                         {:image/keys [source]} :card/image
                         :as card}]
                  (if (or (and (= language "en")
+                              (= number "P-039")
+                              (> parallel-id 1))
+                         (and (= language "en")
                               (= number "BT1-010")
                               (> parallel-id 2))
                          (and (= language "en")
@@ -729,7 +732,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri]
-                  :as release} dom-tree]
+                   :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -1044,7 +1047,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri]
-                  :as release} dom-tree]
+                   :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -1322,9 +1325,9 @@
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                           dp rareDegree entryConsumeValue envolutionConsumeTwo
-                           cardLevel effect envolutionEffect safeEffect
-                           imageCover getWayStr cardGroup]}]
+                            dp rareDegree entryConsumeValue envolutionConsumeTwo
+                            cardLevel effect envolutionEffect safeEffect
+                            imageCover getWayStr cardGroup]}]
                  (when imageCover
                    (let [number (if (= model "-")
                                   (str (string/replace cardGroup "-" "")
