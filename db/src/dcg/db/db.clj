@@ -333,7 +333,7 @@
   []
   (let [panoramas (with-open [in (-> (io/resource "panorama.edn")
                                      io/reader)]
-                    (clojure.edn/read (PushbackReader. in)))]
+                    (edn/read (PushbackReader. in)))]
     (doseq [panorama panoramas
             :let [columns (count (first panorama))
                   ids (vec (flatten panorama))

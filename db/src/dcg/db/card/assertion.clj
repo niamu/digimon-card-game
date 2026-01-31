@@ -37,7 +37,7 @@
                                          :card/number)
                                    :card/parallel-id))
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -777,5 +777,44 @@
              (map (fn [cards]
                     (map :card/id cards))))]
     possible-issues)
+
+  ;; Find missing panoramas
+  (let [panoramas (with-open [in (-> (io/resource "panorama.edn")
+                                     io/reader)]
+                    (edn/read (PushbackReader. in)))
+        numbers-by-language
+        (->> panoramas
+             flatten
+             (map (fn [id]
+                    (-> id
+                        (string/replace "card/" "")
+                        (string/split #"_"))))
+             (reduce (fn [accl [language number parallel-id]]
+                       (update accl
+                               language
+                               (fnil conj #{})
+                               [number parallel-id]))
+                     {}))
+        [most-panoramas & rest-panoramas]
+        (->> numbers-by-language
+             (sort-by (comp count val) >))]
+    (-> (reduce (fn [accl [language numbers]]
+                  (let [[only-in-most only-in-least
+                         _] (data/diff (last most-panoramas)
+                                       numbers)]
+                    (-> accl
+                        (update (first most-panoramas)
+                                (fnil (comp #(into #{} %) concat) [])
+                                only-in-least)
+                        (update language
+                                (fnil (comp #(into #{} %) concat) [])
+                                only-in-most))))
+                {}
+                rest-panoramas)
+        (update-vals #(sort-by (juxt (comp (juxt count
+                                                 identity)
+                                           first)
+                                     second)
+                               %))))
 
   )
