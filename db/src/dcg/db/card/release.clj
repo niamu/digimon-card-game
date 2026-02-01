@@ -86,6 +86,7 @@
                                            href
                                            (case language
                                              "ja" "/card"
+                                             "en" "/card"
                                              "ko" "=cardlist"
                                              "/cardlist/")))))))
                         seq
@@ -143,6 +144,7 @@
                          (string/replace "\uFF65" "\u30FB")
                          (string/replace #"(.*?BOOSTER(?!\s*\[))?" "")
                          (string/replace #"(.*?ースター(?!\s*【))?" "")
+                         (string/replace #"(부스터\s*팩)?" "")
                          (string/replace #"(.*?부스터)?" "")
                          (string/replace #"(.*?덱)?" "")
                          #_(string/replace "BTK-1.0" "BTK-10")
@@ -165,7 +167,9 @@
                             href
                             (str url "/products/" href)))))
         uri-path (when uri
-                   (string/replace (.getPath (URI. uri)) "/products/" ""))
+                   (-> (.getPath (URI. uri))
+                       (string/replace "/products/" "")
+                       (string/replace #"\/$" "")))
         cardlist-uri (some-> (select/select
                               (select/descendant
                                (select/and
@@ -176,6 +180,7 @@
                                                 href
                                                 (case language
                                                   "ja" "/card"
+                                                  "en" "/card"
                                                   "ko" "=cardlist"
                                                   "/cardlist/"))))))
                               dom-tree)
@@ -326,26 +331,41 @@
                                                    (select/tag "a")))
                                (map (partial release origin)))
         merged
-        (->> (reduce (fn [accl r]
-                       (if-let [p (some->> products
-                                           (filter (fn [p]
-                                                     (and
-                                                      (not (string/starts-with?
-                                                            (:release/name r)
-                                                            "Promotion"))
-                                                      (= (:release/cardlist-uri r)
-                                                         (:release/cardlist-uri p)))))
-                                           last)]
-                         (conj accl
-                               (-> (merge (dissoc p :release/id) r)
-                                   download-thumbnail!
-                                   (merge (dissoc p :release/id))
-                                   (cond-> #__
-                                     (:release/image-uri p)
-                                     download-image!)))
-                         (conj accl (download-thumbnail! r))))
-                     []
-                     cardlist-releases)
+        (->> (reduce
+              (fn [accl r]
+                (if-let [p (some->> products
+                                    (filter
+                                     (fn [p]
+                                       (and (not (string/starts-with? (:release/name r)
+                                                                      "Promotion"))
+                                            (or (and (:release/cardlist-uri r)
+                                                     (:release/cardlist-uri p)
+                                                     (= (:release/cardlist-uri r)
+                                                        (:release/cardlist-uri p)))
+                                                (and (some-> (:release/cardlist-uri r)
+                                                             (.getQuery))
+                                                     (some-> (:release/cardlist-uri p)
+                                                             (.getQuery))
+                                                     (= (-> (:release/cardlist-uri r)
+                                                            (.getQuery))
+                                                        (-> (:release/cardlist-uri p)
+                                                            (.getQuery))))))))
+                                    (sort-by (comp (fn [genre]
+                                                     (case genre
+                                                       "Booster Pack" 99
+                                                       0))
+                                                   :release/genre))
+                                    last)]
+                  (conj accl
+                        (-> (merge (dissoc p :release/id) r)
+                            download-thumbnail!
+                            (merge (dissoc p :release/id))
+                            (cond-> #__
+                              (:release/image-uri p)
+                              download-image!)))
+                  (conj accl (download-thumbnail! r))))
+              []
+              cardlist-releases)
              (map (fn [{:release/keys [name language] :as release}]
                     (assoc release :release/name
                            (if-let [code (->> name
@@ -395,7 +415,7 @@
                           (get {"Others" 99} genre 1))
                         :release/genre))
          (reduce (fn [accl {:release/keys [language cardlist-uri]
-                            :as release}]
+                           :as release}]
                    (conj accl
                          (if (contains? (->> accl
                                              (map (juxt :release/language
@@ -405,7 +425,11 @@
                                          cardlist-uri])
                            (dissoc release :release/cardlist-uri)
                            release)))
-                 []))))
+                 [])
+         (map (fn [{:release/keys [genre] :as release}]
+                (cond-> release
+                  (nil? genre)
+                  (assoc :release/genre "Others")))))))
 
 (defmethod releases "ko"
   [{:origin/keys [url] :as origin}]
@@ -466,8 +490,11 @@
         (->> (reduce (fn [accl r]
                        (if-let [p (some->> products
                                            (filter (fn [p]
-                                                     (= (:release/cardlist-uri r)
-                                                        (:release/cardlist-uri p))))
+                                                     (or (= (:release/cardlist-uri r)
+                                                            (:release/cardlist-uri p))
+                                                         (string/ends-with?
+                                                          (:release/name r)
+                                                          (:release/name p)))))
                                            last)]
                          (conj accl
                                (-> (merge (dissoc p :release/id) r)

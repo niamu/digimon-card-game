@@ -64,18 +64,6 @@
            :product-uri #uri "https://digimoncard.co.kr/products/5176",
            :image-uri
            #uri "https://digimoncard.co.kr/files/extravar_upload/135/176/005/6fe977e28afaf290caf423f340966c3e.jpg"}
- #:release{:name "팩 엘리멘트 석세서 [BTK-18]",
-           :product-uri
-           #uri "https://digimoncard.co.kr/products/45014",
-           :image-uri
-           #uri "https://digimoncard.co.kr/files/extravar_upload/135/014/045/dbe4bd7ab6cd17ceb2aba0fcd10b0a58.jpg",
-           :language "ko",
-           :id "release_ko_45014",
-           :card-image-language "ko",
-           :cardlist-uri
-           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=45019",
-           :genre "확장팩",
-           :date #inst "2025-11-19T00:00:00.000-00:00"}
  #:release{:name "디지몬 리버레이터 [EXK-07]",
            :product-uri
            #uri "https://digimoncard.co.kr/products/44927",
@@ -112,30 +100,6 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=43956",
            :genre "구축완료 덱",
            :date #inst "2025-09-19T00:00:00.000-00:00"}
- #:release{:name "팩 시크릿 크라이시스 [BTK-17]",
-           :product-uri
-           #uri "https://digimoncard.co.kr/products/43669",
-           :image-uri
-           #uri "https://digimoncard.co.kr/files/extravar_upload/135/669/043/a530507af492ba4b80f2e165a43e7a99.jpg",
-           :language "ko",
-           :id "release_ko_43669",
-           :card-image-language "ko",
-           :cardlist-uri
-           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=43359",
-           :genre "확장팩",
-           :date #inst "2025-08-22T00:00:00.000-00:00"}
- #:release{:name "팩 BEGINNING OBSERVER [BTK-16]",
-           :product-uri
-           #uri "https://digimoncard.co.kr/products/42465",
-           :image-uri
-           #uri "https://digimoncard.co.kr/files/extravar_upload/135/465/042/14f7b5eedc0695384cd5915d8a15f5c0.jpg",
-           :language "ko",
-           :id "release_ko_42465",
-           :card-image-language "ko",
-           :cardlist-uri
-           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=42178",
-           :genre "확장팩",
-           :date #inst "2025-06-20T00:00:00.000-00:00"}
  #:release{:name "더블 타이푼 [STK-17]",
            :product-uri
            #uri "https://digimoncard.co.kr/products/41929",
@@ -148,18 +112,6 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=41934",
            :genre "구축완료 덱",
            :date #inst "2025-05-16T00:00:00.000-00:00"}
- #:release{:name "팩 익시드 아포칼립스 [BTK-15]",
-           :product-uri
-           #uri "https://digimoncard.co.kr/products/41858",
-           :image-uri
-           #uri "https://digimoncard.co.kr/files/extravar_upload/135/858/041/4d80cc666b5942c270bbdfd352440391.jpg",
-           :language "ko",
-           :id "release_ko_41858",
-           :card-image-language "ko",
-           :cardlist-uri
-           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=41534",
-           :genre "확장팩",
-           :date #inst "2025-04-18T00:00:00.000-00:00"}
  #:release{:name "부스터 팩 그레이트 레전드 [BTK-04]",
            :date #inst "2023-06-16T00:00:00.000-00:00",
            :genre "확장팩",
@@ -180,18 +132,6 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=40815",
            :genre "확장팩",
            :date #inst "2025-03-19T00:00:00.000-00:00"}
- #:release{:name "팩 BLAST ACE [BTK-14]",
-           :product-uri
-           #uri "https://digimoncard.co.kr/products/40429",
-           :image-uri
-           #uri "https://digimoncard.co.kr/files/extravar_upload/135/429/040/2e9543a0ff36950b538e816fa8cc8942.jpg",
-           :language "ko",
-           :id "release_ko_40429",
-           :card-image-language "ko",
-           :cardlist-uri
-           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=40497",
-           :genre "확장팩",
-           :date #inst "2025-02-19T00:00:00.000-00:00"}
  #:release{:name "라이징 윈드 [RBK-01]",
            :product-uri
            #uri "https://digimoncard.co.kr/products/39794",
@@ -228,18 +168,6 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=39492",
            :genre "구축완료 덱",
            :date #inst "2024-12-13T00:00:00.000-00:00"}
- #:release{:name "팩 vs 로얄 나이츠 [BTK-13]",
-           :product-uri
-           #uri "https://digimoncard.co.kr/products/39026",
-           :image-uri
-           #uri "https://digimoncard.co.kr/files/extravar_upload/135/026/039/5dcff0f29379743e0b6f7392283ac1d4.jpg",
-           :language "ko",
-           :id "release_ko_39026",
-           :card-image-language "ko",
-           :cardlist-uri
-           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=39056",
-           :genre "확장팩",
-           :date #inst "2024-11-20T00:00:00.000-00:00"}
  #:release{:name "얼터너티브 비잉 [EXK-04]",
            :product-uri
            #uri "https://digimoncard.co.kr/products/38404",
@@ -457,6 +385,78 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=45492",
            :genre "관련상품",
            :date #inst "2025-12-19T00:00:00.000-00:00"}
+ #:release{:name "엘리멘트 석세서 [BTK-18]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/45014",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/014/045/dbe4bd7ab6cd17ceb2aba0fcd10b0a58.jpg",
+           :language "ko",
+           :id "release_ko_45014",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=45019",
+           :genre "확장팩",
+           :date #inst "2025-11-19T00:00:00.000-00:00"}
+ #:release{:name "시크릿 크라이시스 [BTK-17]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/43669",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/669/043/a530507af492ba4b80f2e165a43e7a99.jpg",
+           :language "ko",
+           :id "release_ko_43669",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=43359",
+           :genre "확장팩",
+           :date #inst "2025-08-22T00:00:00.000-00:00"}
+ #:release{:name "BEGINNING OBSERVER [BTK-16]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/42465",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/465/042/14f7b5eedc0695384cd5915d8a15f5c0.jpg",
+           :language "ko",
+           :id "release_ko_42465",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=42178",
+           :genre "확장팩",
+           :date #inst "2025-06-20T00:00:00.000-00:00"}
+ #:release{:name "익시드 아포칼립스 [BTK-15]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/41858",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/858/041/4d80cc666b5942c270bbdfd352440391.jpg",
+           :language "ko",
+           :id "release_ko_41858",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=41534",
+           :genre "확장팩",
+           :date #inst "2025-04-18T00:00:00.000-00:00"}
+ #:release{:name "BLAST ACE [BTK-14]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/40429",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/429/040/2e9543a0ff36950b538e816fa8cc8942.jpg",
+           :language "ko",
+           :id "release_ko_40429",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=40497",
+           :genre "확장팩",
+           :date #inst "2025-02-19T00:00:00.000-00:00"}
+ #:release{:name "vs 로얄 나이츠 [BTK-13]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/39026",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/026/039/5dcff0f29379743e0b6f7392283ac1d4.jpg",
+           :language "ko",
+           :id "release_ko_39026",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=39056",
+           :genre "확장팩",
+           :date #inst "2024-11-20T00:00:00.000-00:00"}
  #:release{:name "디지몬 카드 게임 오피셜 카드 슬리브 2025 Ver.1.0",
            :product-uri
            #uri "https://digimoncard.co.kr/products/40424",
@@ -477,7 +477,7 @@
            :card-image-language "ko",
            :genre "관련상품",
            :date #inst "2025-07-01T00:00:00.000-00:00"}
- #:release{:name "팩 크로스 에볼루션 [BTK-19]",
+ #:release{:name "크로스 에볼루션 [BTK-19]",
            :product-uri
            #uri "https://digimoncard.co.kr/products/45771",
            :image-uri

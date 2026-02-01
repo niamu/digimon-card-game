@@ -519,7 +519,9 @@
 (comment
   (d/delete-database client {:db-name "cards"})
 
-  (doseq [id []]
-    (d/transact conn {:tx-data [[:db/retractEntity [:card/id id]]]}))
+  (doseq [id (->> (q '{:find [?rid]
+                       :where [[?r :release/id ?rid]]})
+                  (apply concat))]
+    (d/transact conn {:tx-data [[:db/retractEntity [:release/id id]]]}))
 
   )

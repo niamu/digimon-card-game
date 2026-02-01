@@ -37,7 +37,7 @@
                                          :card/number)
                                    :card/parallel-id))
                     (reduce (fn [accl {:card/keys [number language]
-                                      :as card}]
+                                       :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -560,6 +560,22 @@
                [])
        sort))
 
+(defn releases
+  [cards]
+  (->> cards
+       (mapcat :card/releases)
+       (into #{})
+       (remove (fn [{:release/keys [genre product-uri image thumbnail]
+                    :as release}]
+                 (or (and image thumbnail)
+                     (string/includes? (str product-uri)
+                                       "/goods/")
+                     (and genre
+                          (string/starts-with? (:release/name release)
+                                               genre))
+                     (= genre "Others")
+                     (= genre "プロモーションカード"))))))
+
 (defn card-assertions
   [cards]
   (assert (empty? (card-values cards))
@@ -687,6 +703,9 @@
   (assert (empty? (single-language-cards cards))
           (format "Single language cards exist which need manual review:\n%s"
                   (single-language-cards cards)))
+  (assert (empty? (releases cards))
+          (format "Malformed releases:\n%s"
+                  (releases cards)))
   cards)
 
 (comment
