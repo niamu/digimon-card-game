@@ -480,7 +480,8 @@
                               "BT23" 5
                               "ST22" 5
                               "BT24" 5
-                              "EX11" 5}
+                              "EX11" 5
+                              "AD1" 5}
         saved-block-icons (->> (io/resource "block-icons.edn")
                                io/reader
                                (PushbackReader.)
@@ -683,6 +684,7 @@
                      "BT7-083"
                      "BT9-073"
                      "BT7-005"
+                     "EX11-025"
                      "BT10-092"
                      "BT7-055"
                      "BT11-099"

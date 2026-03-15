@@ -16,6 +16,7 @@
           (string/includes? text "Overflow")
           (string/includes? text "溢出")
           (string/includes? text "오버플로우")) :overflow
+      (string/includes? text "Your Turn") :timing
       (or (re-matches #".リンク." text)
           (re-matches #".Link." text)
           (re-matches #".链接." text)

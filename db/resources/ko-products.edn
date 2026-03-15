@@ -457,6 +457,18 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=39056",
            :genre "확장팩",
            :date #inst "2024-11-20T00:00:00.000-00:00"}
+ #:release{:name "CHAIN OF LIBERATION [EXK-08]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/46583",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/583/046/2370c4db3df1faf08d6e17ade48502f9.jpg",
+           :language "ko",
+           :id "release_ko_46583",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=46212",
+           :genre "확장팩",
+           :date #inst "2026-02-25T00:00:00.000-00:00"}
  #:release{:name "디지몬 카드 게임 오피셜 카드 슬리브 2025 Ver.1.0",
            :product-uri
            #uri "https://digimoncard.co.kr/products/40424",

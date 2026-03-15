@@ -41,7 +41,7 @@ struct Template {
     requirements_count: i32,
 }
 
-const DIGIVOLVE_TEMPLATES: [Template; 19] = [
+const DIGIVOLVE_TEMPLATES: [Template; 20] = [
     Template {
         path: "resources/images/templates/digivolution-requirements/v1_1.png",
         version: 1,
@@ -134,6 +134,11 @@ const DIGIVOLVE_TEMPLATES: [Template; 19] = [
     },
     Template {
         path: "resources/images/templates/digivolution-requirements/v3_2_11.png",
+        version: 3,
+        requirements_count: 2,
+    },
+    Template {
+        path: "resources/images/templates/digivolution-requirements/v3_2_12.png",
         version: 3,
         requirements_count: 2,
     },
