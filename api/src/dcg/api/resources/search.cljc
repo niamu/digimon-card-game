@@ -596,7 +596,7 @@
   ([attribute operator value]
    (datom nil attribute operator value))
   ([not? attribute operator [_ v :as value]]
-   (let [valid-rarities (->> ["C" "U" "R" "SR" "SEC" "P"]
+   (let [valid-rarities (->> ["C" "U" "R" "SR" "UR" "SEC" "P"]
                              (into #{}))
          ?value (gensym "?rarity")
          valid? (valid-rarities (string/upper-case v))]
@@ -1006,7 +1006,8 @@
                ["U"   1]
                ["R"   2]
                ["SR"  3]
-               ["SEC" 4]])
+               ["UR"  4]
+               ["SEC" 5]])
       [[?r ?rank]]]]
     [(digivolve-form-rank ?r ?rank)
      [(ground [[:standard 0]

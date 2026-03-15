@@ -7,11 +7,21 @@
    [dcg.api.utils :as utils]
    [dcg.api.resources.bulk-data :as bulk-data]
    [dcg.api.resources.errors :as errors]
-   [dcg.api.router :as router])
+   [dcg.api.router :as router]
+   [taoensso.timbre :as timbre]
+   [taoensso.timbre.appenders.community.rotor :as rotor])
   (:import
    [java.io File]
    [org.eclipse.jetty.server.handler.gzip GzipHandler])
   (:gen-class))
+
+(defn init-logging!
+  []
+  (timbre/merge-config!
+   {:appenders
+    {:println {:enabled? false}
+     :rotor (rotor/rotor-appender {:path "logs/api.heroicc.log"
+                                   :max-size (* 10 1024)})}}))
 
 (defn wrap-cors
   [handler]
@@ -43,6 +53,13 @@
     (handler (-> request
                  (assoc ::default-language (utils/default-language request))))))
 
+(defn log-requests
+  [handler]
+  (fn [{{:strs [user-agent]} :headers :as request}]
+    (when-not (string/starts-with? user-agent "ELB-HealthChecker")
+      (timbre/report request))
+    (handler request)))
+
 (def handler
   (-> (#'router/route-handler)
       (defaults/wrap-defaults (-> defaults/secure-site-defaults
@@ -52,7 +69,8 @@
                                             {:error-response (errors/error403)})
                                   (assoc-in [:security :ssl-redirect] false)))
       wrap-default-language
-      wrap-cors))
+      wrap-cors
+      log-requests))
 
 (defn- add-gzip-handler
   [server]
