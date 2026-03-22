@@ -415,7 +415,7 @@
                           (get {"Others" 99} genre 1))
                         :release/genre))
          (reduce (fn [accl {:release/keys [language cardlist-uri]
-                           :as release}]
+                            :as release}]
                    (conj accl
                          (if (contains? (->> accl
                                              (map (juxt :release/language
@@ -542,12 +542,12 @@
                             (download-image! product))))]
     (concat merged missing)))
 
-(defn- within-6-months?
+(defn- within-2-months?
   [^Instant inst]
   (let [now (Instant/now)]
-    (<= (.toEpochMilli (.minus now 180 ChronoUnit/DAYS))
+    (<= (.toEpochMilli (.minus now 60 ChronoUnit/DAYS))
         (.toEpochMilli (.toInstant inst))
-        (.toEpochMilli (.plus now 180 ChronoUnit/DAYS)))))
+        (.toEpochMilli (.plus now 60 ChronoUnit/DAYS)))))
 
 (defmethod releases "zh-Hans"
   [{:origin/keys [url language card-image-language]}]
@@ -602,7 +602,7 @@
                                 (download-image!
                                  ;; NOTE: China likes to use placeholder images
                                  ;; that we need to replace them over time.
-                                 {:override? (within-6-months? date)}))))))))
+                                 {:override? (within-2-months? date)}))))))))
         releases-url (-> (new URI
                               (.getScheme origin-uri)
                               (string/replace (.getHost origin-uri)

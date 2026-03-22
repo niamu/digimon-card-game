@@ -498,4 +498,14 @@
            :id "release_ko_45771",
            :card-image-language "ko",
            :genre "확장팩",
-           :date #inst "2026-01-23T00:00:00.000-00:00"})
+           :date #inst "2026-01-23T00:00:00.000-00:00"}
+ #:release{:name "OVER THE X [BTK-20]",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/46831",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/831/046/a0f218e4a48cb08a400b1660f53fae7c.jpg",
+           :language "ko",
+           :id "release_ko_46831",
+           :card-image-language "ko",
+           :genre "확장팩",
+           :date #inst "2026-03-20T00:00:00.000-00:00"})

@@ -3774,7 +3774,7 @@
  {"en" (fn [card]
          (assoc card :card/rarity "R"))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                  :as card}]
+                 :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/DTCG/BT14-041_02.png"))
@@ -4513,7 +4513,7 @@
            (= parallel-id 3)
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1763702092787BT19-037_ST22.png"))
@@ -4586,6 +4586,13 @@
  "BT20-003"
  {"ko" (fn [card]
          (assoc card :card/category :digi-egg))}
+ "BT20-017"
+ {"ko" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   "《디코이《레드》/《블랙》》"
+                                   "《디코이〈레드〉/〈블랙〉》"))))}
  "BT20-020"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image :as card}]
               (cond-> card
@@ -4633,9 +4640,35 @@
                                      :color/index 1
                                      :color/color :red}]
                        :card/parallel-id 4)))}
+ "BT20-045"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-045_index0"
+                  :color/index 0
+                  :color/color :green}
+                 {:color/id    "color/BT20-045_index1"
+                  :color/index 1
+                  :color/color :red}
+                 {:color/id    "color/BT20-045_index2"
+                  :color/index 2
+                  :color/color :blue}]))}
  "BT20-055"
  {"en" (fn [card]
          (assoc card :card/play-cost 11))}
+ "BT20-060"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-060_index0"
+                  :color/index 0
+                  :color/color :black}
+                 {:color/id    "color/BT20-060_index1"
+                  :color/index 1
+                  :color/color :yellow}
+                 {:color/id    "color/BT20-060_index2"
+                  :color/index 2
+                  :color/color :red}]))}
  "BT20-064"
  {"ko" (fn [card]
          (assoc card
@@ -4668,9 +4701,38 @@
                  {:color/id    "color/BT20-071_index1"
                   :color/index 1
                   :color/color :red}]))}
+ "BT20-072"
+ {"ja" (fn [{:card/keys [inherited-effect effect] :as card}]
+         (cond-> card
+           (not inherited-effect)
+           (assoc :card/inherited-effect
+                  "【消滅時】自分のトラッシュから、特徴に「ゴースト型」を持つLv.4以下のデジモンカード1枚をコストを支払わずに登場できる。")
+           (not effect)
+           (assoc :card/effect
+                  "≪エグゼキュート≫\n【消滅時】自分のトラッシュから、特徴に「ゴースト型」を持つLv.4以下のデジモンカード1枚をコストを支払わずに登場できる。")))}
+ "BT20-077"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-077_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/BT20-077_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "BT20-079"
  {"en" (fn [card]
          (assoc card :card/play-cost 12))}
+ "BT20-081"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-081_index0"
+                  :color/index 0
+                  :color/color :purple}
+                 {:color/id    "color/BT20-081_index1"
+                  :color/index 1
+                  :color/color :yellow}]))}
  "BT20-085"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT20-086"
@@ -4722,6 +4784,19 @@
            (not inherited-effect)
            (assoc :card/inherited-effect
                   "≪オーバーフロー《-4》≫（バトルエリアかカードの下から、それ以外の場所に送られる場合、メモリー-4）")))}
+ "BT20-102"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id    "color/BT20-102_index0"
+                  :color/index 0
+                  :color/color :blue}
+                 {:color/id    "color/BT20-102_index1"
+                  :color/index 1
+                  :color/color :white}
+                 {:color/id    "color/BT20-102_index2"
+                  :color/index 2
+                  :color/color :red}]))}
  "BT21-029"
  {"en" (fn [card]
          (assoc card :card/play-cost 12))}
@@ -4782,6 +4857,12 @@
  {"en" (fn [card]
          (assoc card :card/effect
                 "[Digivolve] Lv.2 w/[CS] trait: Cost 0\n[Your Turn] [Once Per Turn] When effects place Digimon cards with the [CS] trait in this Digimon's digivolution cards, 1 of your opponent's Digimon gets -3000 DP for the turn."))}
+ "BT22-064"
+ {"ja" (fn [{:card/keys [effect] :as card}]
+         (cond-> card
+           (not effect)
+           (assoc :card/effect
+                  "【進化】「インフェルモン」/特徴に「CS」を持つLv.5:コスト3\n≪連携≫\n【進化時】【アタック時】「ディアボロモン」（デジモン・14コスト・Lv.6・白・究極体・不明・種族不明・DP3000）トークン1体をコストを支払わずに登場できる。\n【お互いのターン】［ターンに1回］特徴に「種族不明」を持つ他の自分のデジモンが登場したとき、最も登場コストの低い相手のデジモン1体を消滅させる。")))}
  "BT22-066"
  {"en" (fn [{:card/keys [inherited-effect] :as card}]
          (cond-> card
@@ -4791,6 +4872,15 @@
  "BT22-069"
  {"en" (fn [card]
          (assoc card :card/rarity "R"))}
+ "BT22-073"
+ {"ja" (fn [{:card/keys [effect inherited-effect] :as card}]
+         (cond-> card
+           (not effect)
+           (assoc :card/effect
+                  "【進化】特徴に「ナイトクロウ」/「ライトファング」/「CS」を持つLv.4:コスト3\n≪ジャミング≫\n【進化時】≪1ドロー≫し、自分の手札1枚を破棄する。その後、このデジモンにLv.の同じカードが2枚以上重ねられているなら、相手のターン終了まで、相手のデジモン/テイマー1体はレストできない。")
+           (not inherited-effect)
+           (assoc :card/inherited-effect
+                  "【お互いのターン】［ターンに1回］特徴に「ナイトクロウ」/「ライトファング」/「銀河型」を持つこのデジモンが消滅するとき、このデジモンの進化元から、Lv.の同じカード2枚を破棄することで、消滅しない。")))}
  "BT22-078"
  {"en" (fn [card]
          (update card
@@ -5553,7 +5643,12 @@
                                        "or [Lopmon] in digivolution"
                                        "or [Lopmon] in its digivolution")))))}
  "EX5-001"
- {"en" (fn [card]
+ {"ja" (fn [{:card/keys [inherited-effect] :as card}]
+         (cond-> card
+           (not inherited-effect)
+           (assoc :card/inherited-effect
+                  "【自分のターン】［ターンに1回］このデジモンに重ねられているカードが効果でこのデジモンの進化元に置かれたとき、このデジモンを手札のデジモンカードに支払う進化コスト-1で進化できる。")))
+  "en" (fn [card]
          (dissoc card :card/effect))}
  "EX5-002"
  {"en" (fn [card]
@@ -5803,7 +5898,7 @@
                       :color/color :yellow}])))}
  "EX6-043"
  {"ko" (fn [{{:image/keys [source]} :card/image
-             :as card}]
+            :as card}]
          (cond-> card
            (or (= source
                   (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/944/042/13e8d7c21d3fe83cb8433bd6f376e910.png"))
@@ -6053,7 +6148,7 @@
            (= parallel-id 2)
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1763702092788EX8-037_ST22.png"))
@@ -6438,6 +6533,9 @@
  "LM-045"
  {"en" (fn [card]
          (dissoc card :card/form))}
+ "RB1-001"
+ {"en" (fn [card]
+         (assoc card :card/category :digi-egg))}
  "RB1-006"
  {"en" (fn [card]
          (assoc card :card/rarity "R"))
@@ -6722,6 +6820,13 @@
  "ST10-04"
  {"en" (fn [card]
          (assoc card :card/rarity "SR"))}
+ "ST10-06"
+ {"en" (fn [card]
+         (update card :card/effect
+                 (fn [s]
+                   (string/replace s
+                                   "＜DNA Digivolve＞"
+                                   "[DNA Digivolve] "))))}
  "ST10-12"
  {"en" (fn [card]
          (update card :card/inherited-effect
@@ -7178,6 +7283,12 @@
  "ST22-01"
  {"zh-Hans" (fn [card]
               (dissoc card :card/attribute))}
+ "ST22-06"
+ {"ja" (fn [{:card/keys [effect] :as card}]
+         (cond-> card
+           (not effect)
+           (assoc :card/effect
+                  "【進化】「サクヤモン」:コスト1\n【登場時】【進化時】自分の手札かテイマーの下から、特徴に「陰陽術」/「プラグイン」を持つオプションカード1枚をコストを支払わずに使用できる。\n【お互いのターン】［ターンに1回］自分がオプションカードを使用したときか、自分のセキュリティが減ったとき、最もDPの低い相手のデジモン1体をセキュリティの下に置くことで、相手のセキュリティを上から1枚破棄する。")))}
  "ST22-09"
  {"en" (fn [card]
          (update card
@@ -7396,7 +7507,25 @@
   "ko"      (fn [card]
               (assoc card :card/rarity "SR"))}
  "P-040"
- {"zh-Hans" (fn [card]
+ {"en" (fn [{{:image/keys [source]} :card/image :as card}]
+         (cond-> card
+           (= source
+              (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-040_P1.png"))
+           (assoc :card/notes
+                  "Box Promotion Pack -Next Adventure-")
+           (= source
+              (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-040_P4.png"))
+           (assoc :card/notes
+                  "AB-02: Adventure Box 2")
+           (= source
+              (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-040_P5.png"))
+           (assoc :card/notes
+                  "RB-01: Resurgence Booster")
+           (= source
+              (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/P-040_P6.png"))
+           (assoc :card/notes
+                  "PREMIUM CARD COLLECTION Memory Boost! Set")))
+  "zh-Hans" (fn [card]
               (assoc card :card/rarity "SR"))
   "ko"      (fn [card]
               (assoc card :card/rarity "SR"))}
@@ -8279,7 +8408,12 @@
                  (fn [s]
                    (string/replace s
                                    "＜Link＞ [Appmon] trait: Cost 1 (Plug this card from the hand or battle area sideways into the specified Digimon in the battle area.)\n[When Linking] ＜Draw 1＞\n+2000 DP"
-                                   "+2000 DP"))))}
+                                   "+2000 DP"))))
+  "zh-Hans" (fn [{:card/keys [inherited-effect] :as card}]
+              (cond-> card
+                (not inherited-effect)
+                (assoc :card/inherited-effect
+                       "〈链接〉特征“应用兽”:费用1（从手牌/战斗区中,将此卡牌以横向状态插入战斗区中指定的数码宝贝中）\nDP+2000\n\n【链接时】《抽1张卡》")))}
  "P-191"
  {"zh-Hans" (fn [{:card/keys [inherited-effect] :as card}]
               (cond-> (assoc card :card/level 6)
@@ -8289,6 +8423,9 @@
  "P-194"
  {"zh-Hans" (fn [card]
               (assoc card :card/level 4))}
+ "P-195"
+ {"en" (fn [card]
+         (assoc card :card/type "TS"))}
  "P-201"
  {"zh-Hans" (fn [card]
               (assoc card :card/level 3))}
@@ -8304,6 +8441,12 @@
                 (not security-effect)
                 (assoc :card/security-effect
                        "【安防】可以从我方的手牌/废弃区中,不支付费用登场1张登场费用不高于3的数码宝贝卡牌。此后,此卡牌加入手牌。")))}
+ "P-209"
+ {"ja" (fn [{:card/keys [effect] :as card}]
+         (cond-> card
+           (not effect)
+           (assoc :card/effect
+                  "【進化】特徴に「鬼人型」/「TS」を持つLv.5:コスト3\n≪連携≫\n【登場時】【進化時】自分の手札1枚を破棄することで、相手のデジモン/テイマー1体をレストさせる。その後、相手のターン終了まで、相手のデジモン/テイマー1体はアクティブにならない。\n【お互いのターン】［ターンに1回］自分の手札が破棄されたとき、自分のトラッシュから、特徴に「鬼人型」/「タイタン族」を持つLv.4以下のカード1枚をコストを支払わずに登場できる。\n〈ルール〉特徴:タイプ「鬼人型」を持つ。")))}
  "P-217"
  {"en" (fn [card]
          (assoc card :card/type "App Driver/Appmon"))}
