@@ -204,8 +204,8 @@
          (assoc card :card/name "Symphony No. 1 <Polyphony>"))}
  "BT1-110"
  {"ko" (fn [{:card/keys [language number]
-             {:image/keys [source]} :card/image
-             :as card}]
+            {:image/keys [source]} :card/image
+            :as card}]
          (cond-> card
            (= source (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/488/001/041bb4f6ddaf7187fd54b44b9aaa7924.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -275,7 +275,9 @@
                 :card/rarity "R"))}
  "BT2-020"
  {"zh-Hans" (fn [card]
-              (assoc card :card/attribute "病毒种"))}
+              (assoc card :card/attribute "病毒种"))
+  "ko" (fn [card]
+         (assoc card :card/dp 11000))}
  "BT2-025"
  {"en" (fn [card]
          (assoc card
@@ -399,8 +401,8 @@
                    (string/replace s "get-4000" "get -4000"))))}
  "BT2-108"
  {"ko" (fn [{:card/keys [language number]
-             {:image/keys [source]} :card/image
-             :as card}]
+            {:image/keys [source]} :card/image
+            :as card}]
          (cond-> card
            (= source (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/647/001/7cee9521114828f5673f617b0dfb19f1.png"))
            (assoc :card/id (format "card/%s_%s_P%d"
@@ -1618,7 +1620,11 @@
                           (str "【进化】“犰狳兽” 起2")))))}
  "BT8-024"
  {"en" (fn [card]
-         (assoc card :card/rarity "C"))}
+         (assoc card :card/rarity "C"))
+  "ko" (fn [card]
+         (assoc card
+                :card/attribute "백신종"
+                :card/form "성숙기"))}
  "BT8-025"
  {"en" (fn [card]
          (assoc card :card/color
@@ -3312,7 +3318,7 @@
                                      "1张记述有《保存》的数码宝贝卡牌")))))}
  "BT12-038"
  {"ko" (fn [{{:image/keys [source]} :card/image
-             :as card}]
+            :as card}]
          (-> card
              (assoc :card/color
                     [{:color/id "color/BT12-038_index0"
@@ -3774,7 +3780,7 @@
  {"en" (fn [card]
          (assoc card :card/rarity "R"))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/DTCG/BT14-041_02.png"))
@@ -4547,8 +4553,8 @@
                         source))))}
  "BT19-081"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-082"
  {"en" (fn [card]
          (-> card
@@ -4556,20 +4562,20 @@
              (dissoc :card/dp)))}
  "BT19-083"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-084"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-085"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-087"
  {"en" (fn [card] (dissoc card :card/dp))}
  "BT19-088"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level))}
+                          :card/form
+                          :card/level))}
  "BT19-101"
  {"ko" (fn [card]
          (assoc card
@@ -4750,9 +4756,9 @@
              (assoc :card/play-cost 3)))}
  "BT20-089"
  {"en" (fn [card] (dissoc card
-                         :card/form
-                         :card/level
-                         :card/dp))}
+                          :card/form
+                          :card/level
+                          :card/dp))}
  "BT20-090"
  {"ja" (fn [card]
          (-> card
@@ -4928,7 +4934,7 @@
                (= parallel-id 1))
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (or (= source
                        (java.net.URI. "https://source.windoent.com/dtcg/Picture/1759213349873BT23-045.png"))
@@ -4940,7 +4946,7 @@
          (assoc card :card/attribute "Data"))}
  "BT23-101"
  {"zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1759213349890BT23-101_P2.png"))
@@ -4985,26 +4991,26 @@
                                                 :white}})))))}
  "BT24-079"
  {"ja" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.com/images/cardlist/card/BT24-079.png"))
            (assoc :card/block-icon 5)))
   "en" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://world.digimoncard.com/images/cardlist/card/BT24-079.png"))
            (assoc :card/block-icon 5)))
   "zh-Hans" (fn [{{:image/keys [source]} :card/image
-                 :as card}]
+                  :as card}]
               (cond-> card
                 (= source
                    (java.net.URI. "https://source.windoent.com/dtcg/Picture/1766737090966BT24-079.png"))
                 (assoc :card/block-icon 5)))}
  "BT24-101"
  {"ja" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (= source
               (java.net.URI. "https://digimoncard.com/images/cardlist/card/BT24-101_P2.png"))
@@ -5898,7 +5904,7 @@
                       :color/color :yellow}])))}
  "EX6-043"
  {"ko" (fn [{{:image/keys [source]} :card/image
-            :as card}]
+             :as card}]
          (cond-> card
            (or (= source
                   (java.net.URI. "https://digimoncard.co.kr/files/attach/images/139/944/042/13e8d7c21d3fe83cb8433bd6f376e910.png"))
@@ -8307,6 +8313,16 @@
                 "【자신의 메인 페이즈 개시 시】상대의 디지몬이 있다면, 메모리 +1. 【서로의 턴】특징 「광물형」/「광석형」을 가진 자신의 디지몬의 진화원이 효과로 파기되었을 때, 이 테이머를 레스트시키는 것으로, 자신의 트래시에서 특징 「광물형」/「광석형」을 가진 카드 1장을 그 디지몬의 진화원 아래에 놓는다."
                 :card/security-effect
                 "【시큐리티】이 카드를 코스트를 지불하지 않고 등장시킨다."))}
+ "P-172"
+ {"ko" (fn [card]
+         (assoc card
+                :card/color
+                [{:color/id "color/P-172_index0"
+                  :color/index 0
+                  :color/color :yellow}
+                 {:color/id "color/P-172_index1"
+                  :color/index 1
+                  :color/color :red}]))}
  "P-176"
  {"ja" (fn [card]
          (assoc card :card/color

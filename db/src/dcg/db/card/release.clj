@@ -279,13 +279,17 @@
                     (re-find #"category=(\d+)")
                     second
                     parse-long)
-        genre (string/replace (string/trim genre)
-                              "Promotion card"
-                              "Promotion Card")]
+        release-name (if (string/blank? title)
+                       genre
+                       title)
+        release-name (case release-name
+                       "Promo Cards (P-Numbered)" "Promotion Card"
+                       release-name)
+        genre (case release-name
+                "Promotion Card" release-name
+                (string/trim genre))]
     (cond-> {:release/id (format "release_%s_%s" language id)
-             :release/name (if (string/blank? title)
-                             genre
-                             title)
+             :release/name release-name
              :release/image-uri (URI. (cond->> img
                                         (and (not (string/starts-with? img "http"))
                                              (not (string/starts-with? img "/")))
@@ -415,7 +419,7 @@
                           (get {"Others" 99} genre 1))
                         :release/genre))
          (reduce (fn [accl {:release/keys [language cardlist-uri]
-                            :as release}]
+                           :as release}]
                    (conj accl
                          (if (contains? (->> accl
                                              (map (juxt :release/language
