@@ -272,7 +272,7 @@
                      :where '[[?c :card/id _]]})
         cards-by-number (group-by :card/number cards)]
     (->> cards
-         (map (fn [{:card/keys [id language number parallel-id] :as card}]
+         (map (fn [{:card/keys [id language number] :as card}]
                 (let [alt-arts
                       (->> (get cards-by-number number)
                            (remove (fn [card]
@@ -308,8 +308,8 @@
                                    :where '[[?c :card/number ?number]]}
                                   number)
            card (get-in (reduce (fn [accl {:card/keys [language
-                                                      parallel-id]
-                                          :as card}]
+                                                       parallel-id]
+                                           :as card}]
                                   (assoc-in accl
                                             [language parallel-id]
                                             card))
@@ -346,13 +346,13 @@
                                 {:language (s/conform ::routes/language language)
                                  :card-id (s/conform ::routes/card-id card-id)}}))
    :etag (fn [{{media-type :media-type} :representation
-              ::keys [card]}]
+               ::keys [card]}]
            (str (utils/sha card)
                 "--"
                 media-type))
    :handle-ok
    (fn [{card ::card
-        ::keys [alt-arts international-arts]}]
+         ::keys [alt-arts international-arts]}]
      (process-card card alt-arts international-arts))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body

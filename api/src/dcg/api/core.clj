@@ -103,4 +103,4 @@
   [& _args]
   (let [port 3000]
     (db/import!)
-    (start-server!)))
+    (start-server! port)))
