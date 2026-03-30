@@ -21,7 +21,7 @@
    {:appenders
     {:println {:enabled? false}
      :rotor (rotor/rotor-appender {:path "logs/api.heroicc.log"
-                                   :max-size (* 10 1024)})}}))
+                                   :max-size (* 10 1024 1024)})}}))
 
 (defn wrap-cors
   [handler]
