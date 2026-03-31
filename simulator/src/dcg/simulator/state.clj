@@ -15,7 +15,7 @@
    [dcg.simulator.random :as random])
   (:import
    [java.time Instant]
-   [java.util Random]))
+   [java.util SplittableRandom]))
 
 (defonce state
   (atom {::queue clojure.lang.PersistentQueue/EMPTY
@@ -53,7 +53,7 @@
           cards))
 
 (defn initialize-player
-  [^Random r {::player/keys [deck-code id] :as player}]
+  [^SplittableRandom r {::player/keys [deck-code id] :as player}]
   (let [{:deck/keys [digi-eggs deck language]
          :or {language "en"}} (codec-decode/decode deck-code)
         assign-uuid-to-card (fn [card] (assoc card ::card/uuid (random/uuid r)))
@@ -127,11 +127,11 @@
                                :min-count 2) players)
           (s/valid? ::game/constraint-code constraint-code)]
     :post [(s/valid? ::simulator/game %)]}
-   (let [r (Random. (.getMostSignificantBits game-id))
+   (let [r (SplittableRandom. (.getMostSignificantBits game-id))
          players (->> players
-                      (random/shuffle r)
+                      (random/shuffle (.split r))
                       (mapv (fn [player]
-                              (initialize-player r player))))
+                              (initialize-player (.split r) player))))
          turn-index 0
          player-id (::player/id (nth players turn-index))
          cards-by-uuid (->> players
