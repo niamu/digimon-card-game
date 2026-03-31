@@ -524,4 +524,36 @@
                   (apply concat))]
     (d/transact conn {:tx-data [[:db/retractEntity [:release/id id]]]}))
 
+  (->> (q '{:find [(pull ?c [:card/id
+                             {:card/digivolution-requirements
+                              [:digivolve/id
+                               :digivolve/category
+                               :digivolve/color
+                               :digivolve/cost
+                               :digivolve/form
+                               :digivolve/level
+                               :digivolve/index]}]) (count ?dr)]
+            :where [[?c :card/digivolution-requirements ?dr]
+                    [?c :card/language "ja"]]})
+       (filter (fn [[{:card/keys [digivolution-requirements]
+                     :as card} dr]]
+                 (and (> dr 1)
+                      #_(->> digivolution-requirements
+                             (map (fn [{:digivolve/keys [cost color]}]
+                                    [cost color]))
+                             (apply =))
+                      (->> digivolution-requirements
+                           last
+                           :digivolve/level
+                           nil?)
+                      (->> digivolution-requirements
+                           last
+                           :digivolve/form
+                           nil?)
+                      (->> digivolution-requirements
+                           last
+                           :digivolve/category
+                           (not= :tamer)))))
+       (map first))
+
   )
