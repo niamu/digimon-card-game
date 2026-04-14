@@ -111,7 +111,11 @@
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/panorama
      :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/one}]
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :card/dual
+     :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/one
+     :db/isComponent true}]
    ;; Supplemental Rarity
    [{:db/ident :supplemental-rarity/id
      :db/valueType :db.type/string

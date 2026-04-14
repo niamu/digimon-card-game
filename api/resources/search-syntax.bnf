@@ -34,7 +34,8 @@ attribute =
     #"(?i)digivolve-form" |
     #"(?i)digivolve-color" |
     #"(?i)rarity-stars" |
-    #"(?i)rarity-stamp"
+    #"(?i)rarity-stamp" |
+    #"(?i)dual"
 
 has = not? <"has:"> value
 text = not? <"text:"> value
