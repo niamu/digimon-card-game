@@ -1,4 +1,4 @@
-(ns dcg.codec-test
+(ns dcg.codec.core-test
   (:require
    [clojure.spec.alpha :as s]
    [clojure.test.check :as tc]
@@ -190,7 +190,7 @@
   (t/testing "Deck encoding of v5 deck is stable"
     (t/is (= (with-redefs [dcg.codec.common/version 5]
                (encode/encode (assoc deck-with-sideboard-and-icon
-                                     :deck/language "zh")))
+                                     :deck/language "zh-Hans")))
              (str "DCGUsC_h4udAoEDAZydAUEAAYudAYQACQMKAQEBMQSLnQKBAxABi50DhQMIA"
                   "wUCAwECAwGLnQOBAhgEnJ0BRgMCAwECAwABAiABCUJBQ0stMDAxX19fX19fX"
                   "19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX"
