@@ -31,6 +31,11 @@
 (def parser
   (insta/parser (load-grammar)))
 
+(defn- regex?
+  [v]
+  (instance? #?(:clj java.util.regex.Pattern
+                :cljs js/RegExp) v))
+
 (def ^:private allowable-strings
   (reduce (fn [accl {:db/keys [ident valueType]}]
             (cond-> accl
@@ -51,39 +56,52 @@
   ([attribute operator value]
    (datom nil attribute operator value))
   ([not? attribute operator [_ v :as value]]
-   (let [valid-value? (allowable-strings attribute)
+   (let [valid-value? (when (string? v)
+                        (allowable-strings attribute))
          valid-operator? (or (nil? operator)
                              (= operator '=))
          ?value (gensym (str "?"
                              (namespace attribute)
                              "-"
                              (name attribute)))
-         valid? (and valid-value?
-                     valid-operator?)]
+         valid? (or (and valid-value?
+                         valid-operator?)
+                    (regex? v))]
      (if valid?
-       (with-meta [['?card attribute ?value]
-                   [(list 'String/.toLowerCase ?value)
-                    (symbol (str (name ?value) "-lower"))]
-                   (cond->> [(list (if (= operator '=)
-                                     'String/.equals
-                                     'String/.contains)
-                                   (symbol (str (name ?value) "-lower"))
-                                   (string/lower-case v))]
-                     (boolean not?)
-                     (list 'not))]
+       (with-meta (cond-> [['?card attribute ?value]]
+                    (regex? v)
+                    (conj [(list 're-find v ?value)])
+                    (string? v)
+                    (conj [(list 'String/.toLowerCase ?value)
+                           (symbol (str (name ?value) "-lower"))]
+                          (cond->> [(list (if (= operator '=)
+                                            'String/.equals
+                                            'String/.contains)
+                                          (symbol (str (name ?value) "-lower"))
+                                          (string/lower-case v))]
+                            (boolean not?)
+                            (list 'not))))
          (assoc (meta value)
-                :note (#?(:clj format
-                          :cljs gstring/format) "the %s %s \"%s\""
-                       (name attribute)
-                       (if (boolean not?)
-                         (str "does not "
-                              (if (= operator '=)
-                                "equal"
-                                "include"))
-                         (if (= operator '=)
-                           "equals"
-                           "includes"))
-                       v)))
+                :note (if (regex? v)
+                        (#?(:clj format
+                            :cljs gstring/format) "the %s %s the pattern /%s/"
+                         (name attribute)
+                         (if (boolean not?)
+                           "does not match"
+                           "matches")
+                         v)
+                        (#?(:clj format
+                            :cljs gstring/format) "the %s %s \"%s\""
+                         (name attribute)
+                         (if (boolean not?)
+                           (str "does not "
+                                (if (= operator '=)
+                                  "equal"
+                                  "include"))
+                           (if (= operator '=)
+                             "equals"
+                             "includes"))
+                         v))))
        (with-meta {:errors (cond-> []
                              (not valid-value?)
                              (conj (#?(:clj format
@@ -102,36 +120,58 @@
   ([attribute operator value]
    (datom nil attribute operator value))
   ([not? attribute operator [_ v :as value]]
-   (let [valid? (boolean (parse-long v))
-         v (or (parse-long v) v)
+   (let [valid? (or (and (string? v)
+                         (boolean (parse-long v)))
+                    (regex? v))
+         v (or (when (string? v)
+                 (parse-long v))
+               v)
          ?value (gensym "?cost")
+         ?s (gensym "?cost-string")
          ?dual (gensym "?dual")]
      (if valid?
-       (with-meta (-> [(list 'or-join
-                             ['?card ?value]
-                             ['?card :card/play-cost ?value]
-                             ['?card :card/use-cost ?value]
-                             (list 'and
-                                   ['?card :card/dual ?dual]
-                                   [?dual :card/play-cost ?value])
-                             (list 'and
-                                   ['?card :card/dual ?dual]
-                                   [?dual :card/use-cost ?value]))]
-                      (conj (cond->> [(list (or operator '=) ?value v)]
-                              (boolean not?)
-                              (list 'not))))
+       (with-meta (cond-> [(list 'or-join
+                                 ['?card ?value]
+                                 ['?card :card/play-cost ?value]
+                                 ['?card :card/use-cost ?value]
+                                 (list 'and
+                                       ['?card :card/dual ?dual]
+                                       [?dual :card/play-cost ?value])
+                                 (list 'and
+                                       ['?card :card/dual ?dual]
+                                       [?dual :card/use-cost ?value]))]
+                    (regex? v)
+                    (conj [(list 'str ?value) ?s]
+                          [(list 're-find
+                                 (if (boolean not?)
+                                   (re-pattern (str "[^" v "]"))
+                                   v)
+                                 ?s)])
+                    (not (regex? v))
+                    (conj (cond->> [(list (or operator '=) ?value v)]
+                            (boolean not?)
+                            (list 'not))))
          (assoc (meta value)
-                :note (#?(:clj format
-                          :cljs gstring/format) "the play/use cost %s %s \"%s\""
-                       (cond-> "is"
-                         (boolean not?) (str " not"))
-                       (case (and operator (name operator))
-                         "<" "less than"
-                         "<=" "less than or equal to"
-                         ">" "greater than"
-                         ">=" "greater than or equal to"
-                         "equal to")
-                       v)))
+                :note (if (regex? v)
+                        (#?(:clj format
+                            :cljs gstring/format) "the play/use cost %s the pattern %s"
+                         (if (boolean not?)
+                           "does not match"
+                           "matches")
+                         (str "/" v "/"))
+                        (#?(:clj format
+                            :cljs gstring/format) "the play/use cost %s %s %s"
+                         (cond-> "is"
+                           (boolean not?) (str " not"))
+                         (case (and operator (name operator))
+                           "<" "less than"
+                           "<=" "less than or equal to"
+                           ">" "greater than"
+                           ">=" "greater than or equal to"
+                           "equal to")
+                         (if (string? v)
+                           (str "\"" v "\"")
+                           (str "#" v "#"))))))
        (with-meta {:errors [(#?(:clj format
                                 :cljs gstring/format)
                              "\"%s\" is not a valid %s."
@@ -158,50 +198,64 @@
               'String/.contains)]
      (if valid-operator?
        (with-meta (if (boolean not?)
-                    [(list 'not-join ['?card]
-                           (list 'or-join
-                                 ['?card ?value]
-                                 ['?card :card/name ?value]
-                                 (list 'and
-                                       ['?card :card/dual ?dual]
-                                       [?dual :card/name ?value])
-                                 (list 'and
-                                       ['?card :card/rules ?rule]
-                                       [?rule :rule/type ?rule-type]
-                                       [?rule :rule/value ?value]
-                                       [(list 'contains?
-                                              #{:card/name} ?rule-type)]))
-                           [(list 'String/.toLowerCase ?value) ?value-lower]
-                           [(list op ?value-lower
-                                  (string/lower-case v))])]
-                    [(list 'or-join
-                           ['?card ?value]
-                           ['?card :card/name ?value]
-                           (list 'and
-                                 ['?card :card/dual ?dual]
-                                 [?dual :card/name ?value])
-                           (list 'and
-                                 ['?card :card/rules ?rule]
-                                 [?rule :rule/type ?rule-type]
-                                 [?rule :rule/value ?value]
-                                 [(list 'contains?
-                                        #{:card/name} ?rule-type)]))
-                     [(list 'String/.toLowerCase ?value) ?value-lower]
-                     [(list op ?value-lower
-                            (string/lower-case v))]])
+                    [(cond-> (list 'not-join ['?card]
+                                   (list 'or-join
+                                         ['?card ?value]
+                                         ['?card :card/name ?value]
+                                         (list 'and
+                                               ['?card :card/dual ?dual]
+                                               [?dual :card/name ?value])
+                                         (list 'and
+                                               ['?card :card/rules ?rule]
+                                               [?rule :rule/type ?rule-type]
+                                               [?rule :rule/value ?value]
+                                               [(list 'contains?
+                                                      #{:card/name} ?rule-type)])))
+                       (string? v)
+                       (concat (list [(list 'String/.toLowerCase ?value) ?value-lower]
+                                     [(list op ?value-lower
+                                            (string/lower-case v))]))
+                       (regex? v)
+                       (concat (list [(list 're-find v ?value)])))]
+                    (cond-> [(list 'or-join
+                                   ['?card ?value]
+                                   ['?card :card/name ?value]
+                                   (list 'and
+                                         ['?card :card/dual ?dual]
+                                         [?dual :card/name ?value])
+                                   (list 'and
+                                         ['?card :card/rules ?rule]
+                                         [?rule :rule/type ?rule-type]
+                                         [?rule :rule/value ?value]
+                                         [(list 'contains?
+                                                #{:card/name} ?rule-type)]))]
+                      (string? v)
+                      (conj [(list 'String/.toLowerCase ?value) ?value-lower]
+                            [(list op ?value-lower
+                                   (string/lower-case v))])
+                      (regex? v)
+                      (conj [(list 're-find v ?value)])))
          (assoc (meta value)
-                :note (#?(:clj format
-                          :cljs gstring/format) "the %s %s \"%s\""
-                       (name attribute)
-                       (if (boolean not?)
-                         (str "does not "
-                              (if (= operator '=)
-                                "is exactly"
-                                "include"))
-                         (if (= operator '=)
-                           "is exactly"
-                           "includes"))
-                       v)))
+                :note (if (string? v)
+                        (#?(:clj format
+                            :cljs gstring/format) "the %s %s \"%s\""
+                         (name attribute)
+                         (if (boolean not?)
+                           (str "does not "
+                                (if (= operator '=)
+                                  "is exactly"
+                                  "include"))
+                           (if (= operator '=)
+                             "is exactly"
+                             "includes"))
+                         v)
+                        (#?(:clj format
+                            :cljs gstring/format) "the %s %s the pattern %s"
+                         (name attribute)
+                         (if (boolean not?)
+                           "does not match"
+                           "matches")
+                         (str "/" v "/")))))
        (with-meta {:errors
                    (cond-> []
                      (not valid-operator?)
@@ -230,50 +284,64 @@
               'String/.contains)]
      (if valid-operator?
        (with-meta (if (boolean not?)
-                    [(list 'not-join ['?card]
-                           (list 'or-join
-                                 ['?card ?value]
-                                 ['?card :card/number ?value]
-                                 (list 'and
-                                       ['?card :card/dual ?dual]
-                                       [?dual :card/number ?value])
-                                 (list 'and
-                                       ['?card :card/rules ?rule]
-                                       [?rule :rule/type ?rule-type]
-                                       [?rule :rule/value ?value]
-                                       [(list 'contains?
-                                              #{:card/number} ?rule-type)]))
-                           [(list 'String/.toLowerCase ?value) ?value-lower]
-                           [(list op ?value-lower
-                                  (string/lower-case v))])]
-                    [(list 'or-join
-                           ['?card ?value]
-                           ['?card :card/number ?value]
-                           (list 'and
-                                 ['?card :card/dual ?dual]
-                                 [?dual :card/number ?value])
-                           (list 'and
-                                 ['?card :card/rules ?rule]
-                                 [?rule :rule/type ?rule-type]
-                                 [?rule :rule/value ?value]
-                                 [(list 'contains?
-                                        #{:card/number} ?rule-type)]))
-                     [(list 'String/.toLowerCase ?value) ?value-lower]
-                     [(list op ?value-lower
-                            (string/lower-case v))]])
+                    [(cond-> (list 'not-join ['?card]
+                                   (list 'or-join
+                                         ['?card ?value]
+                                         ['?card :card/number ?value]
+                                         (list 'and
+                                               ['?card :card/dual ?dual]
+                                               [?dual :card/number ?value])
+                                         (list 'and
+                                               ['?card :card/rules ?rule]
+                                               [?rule :rule/type ?rule-type]
+                                               [?rule :rule/value ?value]
+                                               [(list 'contains?
+                                                      #{:card/number} ?rule-type)])))
+                       (string? v)
+                       (concat (list [(list 'String/.toLowerCase ?value) ?value-lower]
+                                     [(list op ?value-lower
+                                            (string/lower-case v))]))
+                       (regex? v)
+                       (concat (list [(list 're-find v ?value)])))]
+                    (cond-> [(list 'or-join
+                                   ['?card ?value]
+                                   ['?card :card/number ?value]
+                                   (list 'and
+                                         ['?card :card/dual ?dual]
+                                         [?dual :card/number ?value])
+                                   (list 'and
+                                         ['?card :card/rules ?rule]
+                                         [?rule :rule/type ?rule-type]
+                                         [?rule :rule/value ?value]
+                                         [(list 'contains?
+                                                #{:card/number} ?rule-type)]))]
+                      (string? v)
+                      (conj [(list 'String/.toLowerCase ?value) ?value-lower]
+                            [(list op ?value-lower
+                                   (string/lower-case v))])
+                      (regex? v)
+                      (conj [(list 're-find v ?value)])))
          (assoc (meta value)
-                :note (#?(:clj format
-                          :cljs gstring/format) "the %s %s \"%s\""
-                       (name attribute)
-                       (if (boolean not?)
-                         (str "does not "
-                              (if (= operator '=)
-                                "equal"
-                                "include"))
-                         (if (= operator '=)
-                           "equals"
-                           "includes"))
-                       v)))
+                :note (if (string? v)
+                        (#?(:clj format
+                            :cljs gstring/format) "the %s %s \"%s\""
+                         (name attribute)
+                         (if (boolean not?)
+                           (str "does not "
+                                (if (= operator '=)
+                                  "equal"
+                                  "include"))
+                           (if (= operator '=)
+                             "equals"
+                             "includes"))
+                         v)
+                        (#?(:clj format
+                            :cljs gstring/format) "the %s %s the pattern %s"
+                         (name attribute)
+                         (if (boolean not?)
+                           "does not match"
+                           "matches")
+                         (str "/" v "/")))))
        (with-meta {:errors
                    (cond-> []
                      (not valid-operator?)
@@ -287,7 +355,11 @@
   ([attribute operator value]
    (datom nil attribute operator value))
   ([not? attribute operator [_ v :as value]]
-   (let [valid-value? (allowable-strings attribute)
+   (let [valid-stamps (->> ["SP"]
+                           (into #{}))
+         valid-value? (if (string? v)
+                        (valid-stamps (string/upper-case v))
+                        (regex? v))
          valid-operator? (or (nil? operator)
                              (= operator '=))
          valid? (and valid-value?
@@ -295,24 +367,36 @@
          ?value (gensym (str "?"
                              (namespace attribute)
                              "-"
-                             (name attribute)))]
+                             (name attribute)))
+         ?stamp-value (gensym "?stamp-value")]
      (if valid?
-       (with-meta (if (boolean not?)
-                    [(list 'not-join
-                           ['?card]
-                           ['?card :card/supplemental-rarity
-                            (symbol (str (name ?value) "-not"))]
-                           [(symbol (str (name ?value) "-not"))
-                            attribute (string/upper-case v)])]
-                    [['?card :card/supplemental-rarity ?value]
-                     [?value attribute (string/upper-case v)]])
+       (with-meta (cond-> [['?card :card/supplemental-rarity ?value]]
+                    (regex? v)
+                    (conj [?value attribute ?stamp-value]
+                          [(list 're-find v ?stamp-value)])
+                    (string? v)
+                    (conj [?value attribute (string/upper-case v)])
+                    (boolean not?)
+                    (as-> #__ datoms
+                      [(reduce (fn [accl datom]
+                                 (concat accl [datom]))
+                               (list 'not-join
+                                     ['?card])
+                               datoms)]))
          (assoc (meta value)
                 :note (#?(:clj format
-                          :cljs gstring/format) "the rarity stamp %s \"%s\""
-                       (cond-> "is"
-                         (boolean not?)
-                         (str " not"))
-                       v)))
+                          :cljs gstring/format) "the rarity stamp %s %s"
+                       (if (regex? v)
+                         (str (if (boolean not?)
+                                "does not match"
+                                "matches")
+                              " the pattern")
+                         (cond-> "is"
+                           (boolean not?)
+                           (str " not")))
+                       (if (regex? v)
+                         (str "/" v "/")
+                         (str "\"" v "\"")))))
        (with-meta {:errors
                    (cond-> []
                      (not valid-operator?)
@@ -332,62 +416,83 @@
    (let [valid-categories (->> [:tamer :option :digi-egg :digimon]
                                (map name)
                                (into #{}))
-         valid-value? (valid-categories (string/lower-case v))
+         valid-value? (when (string? v)
+                        (valid-categories (string/lower-case v)))
          valid-operator? (or (nil? operator)
                              (= operator '=))
-         valid? (and valid-value?
-                     valid-operator?)
+         valid? (or (and valid-value?
+                         valid-operator?)
+                    (regex? v))
          v (cond-> v
-             valid?
-             (-> string/lower-case
-                 keyword))
+             (and valid?
+                  (and (string? v))) (-> string/lower-case
+                                         keyword))
          digivolve? (= (namespace attribute)
                        "digivolve")
          ?value (gensym (str "?"
                              (namespace attribute)
                              "-"
                              (name attribute)))
+         ?category-value (gensym "?category")
+         ?category-name (gensym "?category-name")
          ?dual (gensym "?dual")]
      (if valid?
        (with-meta (if digivolve?
-                    [['?card :card/digivolution-requirements ?value]
-                     (if (boolean not?)
+                    (cond-> [['?card :card/digivolution-requirements ?value]]
+                      (regex? v)
+                      (conj [?value attribute ?category-value]
+                            [(list 'name ?category-value) ?category-name]
+                            [(list 're-find v ?category-name)])
+                      (not (regex? v))
+                      (conj [?value attribute v])
+                      (boolean not?)
+                      (as-> #__ datoms
+                        [(reduce (fn [accl datom]
+                                   (concat accl [datom]))
+                                 (list 'not-join
+                                       ['?card])
+                                 datoms)]))
+                    [(cond->> (list 'or-join
+                                    ['?card]
+                                    (if (regex? v)
+                                      (list 'and
+                                            ['?card attribute ?value]
+                                            [(list 'name ?value) ?category-name]
+                                            [(list 're-find v ?category-name)])
+                                      ['?card attribute v])
+                                    (if (regex? v)
+                                      (list 'and
+                                            ['?card :card/dual ?dual]
+                                            [?dual attribute ?value]
+                                            [(list 'name ?value) ?category-name]
+                                            [(list 're-find v ?category-name)])
+                                      (list 'and
+                                            ['?card :card/dual ?dual]
+                                            [?dual attribute v])))
+                       (boolean not?)
                        (list 'not-join
-                             ['?card]
-                             ['?card :card/digivolution-requirements
-                              (symbol (str (name ?value) "-not"))]
-                             [(symbol (str (name ?value) "-not"))
-                              attribute v])
-                       [?value attribute v])]
-                    (if (boolean not?)
-                      [(list 'not-join ['?card]
-                             (list 'or-join
-                                   ['?card]
-                                   ['?card attribute v]
-                                   (list 'and
-                                         ['?card :card/dual ?dual]
-                                         [?dual attribute v])))]
-                      [(list 'or-join
-                             ['?card]
-                             ['?card attribute v]
-                             (list 'and
-                                   ['?card :card/dual ?dual]
-                                   [?dual attribute v]))]))
+                             ['?card]))])
          (assoc (meta value)
                 :note (#?(:clj format
-                          :cljs gstring/format) "%s \"%s\""
-                       (if digivolve?
-                         (if (boolean not?)
-                           "it does not digivolve from the category"
-                           "it digivolves from the category")
-                         (str "the "
-                              (string/replace (name attribute)
-                                              "-" " ")
-                              (cond-> " is"
-                                (boolean not?) (str " not"))))
-                       (case v
-                         :digi-egg "Digi-Egg"
-                         (-> v name string/capitalize)))))
+                          :cljs gstring/format) "%s %s"
+                       (str (if digivolve?
+                              (if (boolean not?)
+                                "it does not digivolve from"
+                                "it digivolves from")
+                              (str "the "
+                                   (string/replace (name attribute)
+                                                   "-" " ")
+                                   (cond-> " is"
+                                     (boolean not?) (str " not"))))
+                            (when (regex? v)
+                              " a pattern match of"))
+                       (if (regex? v)
+                         (str "/" v "/")
+                         (str "\""
+                              (case v
+                                :digi-egg "Digi-Egg"
+                                (-> v name string/capitalize))
+                              "\"")))))
        (with-meta {:errors
                    (cond-> []
                      (not valid-value?)
@@ -416,64 +521,92 @@
    (let [valid-colors (->> [:yellow :black :blue :green :white :purple :red]
                            (map name)
                            (into #{}))
-         valid-value? (valid-colors (string/lower-case v))
+         valid-value? (when (string? v)
+                        (valid-colors (string/lower-case v)))
          valid-operator? (or (nil? operator)
                              (= operator '=))
-         valid? (and valid-value?
-                     valid-operator?)
+         valid? (or (and valid-value?
+                         valid-operator?)
+                    (regex? v))
          v (cond-> v
-             valid? (-> string/lower-case
-                        keyword))
+             (and valid?
+                  (and (string? v))) (-> string/lower-case
+                                         keyword))
          digivolve? (= (namespace attribute)
                        "digivolve")
          ?value (gensym (str "?"
                              (namespace attribute)
                              "-"
                              (name attribute)))
+         ?color-value (gensym "?color-value")
+         ?color-name (gensym "?color-name")
          ?dual (gensym "?dual")
          ?dual-color (gensym "?dual-color")]
      (if valid?
        (with-meta (if digivolve?
-                    [['?card :card/digivolution-requirements ?value]
-                     (if (boolean not?)
-                       (list 'not-join
-                             ['?card]
-                             ['?card :card/digivolution-requirements
-                              (symbol (str (name ?value) "-not"))]
-                             [(symbol (str (name ?value) "-not"))
-                              attribute
-                              v])
-                       [?value attribute v])]
+                    (cond-> [['?card :card/digivolution-requirements ?value]]
+                      (regex? v)
+                      (conj [?value attribute ?color-value]
+                            [(list 'name ?color-value) ?color-name]
+                            [(list 're-find v ?color-name)])
+                      (not (regex? v))
+                      (conj [?value attribute v])
+                      (boolean not?)
+                      (as-> #__ datoms
+                        [(reduce (fn [accl datom]
+                                   (concat accl [datom]))
+                                 (list 'not-join
+                                       ['?card])
+                                 datoms)]))
                     [(cond->> (list 'or-join
                                     ['?card]
-                                    (list 'and
-                                          ['?card attribute ?value]
-                                          [?value :color/color v])
-                                    (list 'and
-                                          ['?card :card/dual ?dual]
-                                          [?dual attribute ?dual-color]
-                                          [?dual-color :color/color v]))
+                                    (if (regex? v)
+                                      (list 'and
+                                            ['?card attribute ?value]
+                                            [?value :color/color ?color-value]
+                                            [(list 'name ?color-value) ?color-name]
+                                            [(list 're-find v ?color-name)])
+                                      (list 'and
+                                            ['?card attribute ?value]
+                                            [?value :color/color v]))
+                                    (if (regex? v)
+                                      (list 'and
+                                            ['?card :card/dual ?dual]
+                                            [?dual attribute ?dual-color]
+                                            [?dual-color :color/color ?color-value]
+                                            [(list 'name ?color-value) ?color-name]
+                                            [(list 're-find v ?color-name)])
+                                      (list 'and
+                                            ['?card :card/dual ?dual]
+                                            [?dual attribute ?dual-color]
+                                            [?dual-color :color/color v])))
                        (boolean not?)
                        (list 'not-join
                              ['?card]))])
          (assoc (meta value)
                 :note (#?(:clj format
-                          :cljs gstring/format) "%s \"%s\""
-                       (if digivolve?
-                         (if (boolean not?)
-                           "it does not digivolve from the colour"
-                           "it digivolves from the colour")
-                         (str "the colour"
-                              (cond-> " is"
-                                (boolean not?) (str " not"))))
-                       (name v))))
+                          :cljs gstring/format) "%s %s"
+                       (str (if digivolve?
+                              (if (boolean not?)
+                                "it does not digivolve from the colour"
+                                "it digivolves from the colour")
+                              (str "the colour"
+                                   (cond-> " is"
+                                     (boolean not?) (str " not"))))
+                            (when (regex? v)
+                              " pattern"))
+                       (if (regex? v)
+                         (str "/" v "/")
+                         (str "\"" (name v) "\"")))))
        (with-meta {:errors
                    (cond-> []
                      (not valid-value?)
                      (conj (#?(:clj format
                                :cljs gstring/format)
-                            "\"%s\" is not a valid %s."
-                            v
+                            "%s is not a valid %s."
+                            (if (regex? v)
+                              (str "/" v "/")
+                              (str "\"" v "\""))
                             (cond->> (name attribute)
                               digivolve? (str "digivolve-"))))
                      (not valid-operator?)
@@ -499,8 +632,12 @@
   ([attribute operator value]
    (datom nil attribute operator value))
   ([not? attribute operator [_ v :as value]]
-   (let [valid? (boolean (parse-long v))
-         v (or (parse-long v) v)
+   (let [valid? (or (when (string? v)
+                      (boolean (parse-long v)))
+                    (regex? v))
+         v (or (when (string? v)
+                 (parse-long v))
+               v)
          digivolve? (= (namespace attribute)
                        "digivolve")
          supplemental-rarity? (= (namespace attribute)
@@ -510,29 +647,41 @@
                              "-"
                              (name attribute)))
          ?value-value (symbol (str (name ?value) "-value"))
-         ?dual (gensym "?dual")]
+         ?s (gensym "?value-string")
+         ?dual (gensym "?dual")
+         ?dual-value (gensym "?dual-value")]
      (if valid?
        (with-meta (cond-> (if (and (not digivolve?)
                                    (not supplemental-rarity?))
-                            [(if (boolean not?)
-                               (list 'and
-                                     (list 'not-join
-                                           ['?card]
-                                           ['?card attribute ?value]
-                                           (list 'not [(list (or operator '=) ?value v)]))
-                                     (list 'not-join
-                                           ['?card]
-                                           ['?card :card/dual ?dual]
-                                           [?dual attribute ?value]
-                                           (list 'not [(list (or operator '=) ?value v)])))
-                               (list 'and
-                                     (list 'or-join
-                                           ['?card ?value]
-                                           ['?card attribute ?value]
-                                           (list 'and
-                                                 ['?card :card/dual ?dual]
-                                                 [?dual attribute ?value]))
-                                     [(list (or operator '=) ?value v)]))]
+                            (if (boolean not?)
+                              [(cond-> (list 'not-join
+                                             ['?card]
+                                             ['?card attribute ?value])
+                                 (regex? v)
+                                 (concat (list [(list 'str ?value) ?s]
+                                               [(list 're-find v ?s)]))
+                                 (number? v)
+                                 (concat (list [(list (or operator '=) ?value v)])))
+                               (cond-> (list 'not-join
+                                             ['?card]
+                                             ['?card :card/dual ?dual]
+                                             [?dual attribute ?value])
+                                 (regex? v)
+                                 (concat (list [(list 'str ?value) ?s]
+                                               [(list 're-find v ?s)]))
+                                 (number? v)
+                                 (concat (list [(list (or operator '=) ?value v)])))]
+                              (cond-> [(list 'or-join
+                                             ['?card ?value]
+                                             ['?card attribute ?value]
+                                             (list 'and
+                                                   ['?card :card/dual ?dual]
+                                                   [?dual attribute ?value]))]
+                                (regex? v)
+                                (conj [(list 'str ?value) ?s]
+                                      [(list 're-find v ?s)])
+                                (number? v)
+                                (conj [(list (or operator '=) ?value v)])))
                             [])
                     digivolve?
                     (conj (when-not (boolean not?)
@@ -542,14 +691,9 @@
                           (if (boolean not?)
                             (list 'not-join
                                   ['?card]
-                                  ['?card :card/digivolution-requirements
-                                   (symbol (str (name ?value) "-not"))]
-                                  [(symbol (str (name ?value) "-not"))
-                                   attribute
-                                   (symbol (str (name ?value-value) "-not"))]
-                                  [(list (or operator '=)
-                                         (symbol (str (name ?value-value) "-not"))
-                                         v)])
+                                  ['?card :card/digivolution-requirements ?value]
+                                  [?value attribute ?value-value]
+                                  [(list (or operator '=) ?value-value v)])
                             [(list (or operator '=) ?value-value v)]))
                     supplemental-rarity?
                     (conj (when-not (boolean not?)
@@ -559,18 +703,13 @@
                           (if (boolean not?)
                             (list 'not-join
                                   ['?card]
-                                  ['?card :card/supplemental-rarity
-                                   (symbol (str (name ?value) "-not"))]
-                                  [(symbol (str (name ?value) "-not"))
-                                   attribute
-                                   (symbol (str (name ?value-value) "-not"))]
-                                  [(list (or operator '=)
-                                         (symbol (str (name ?value-value) "-not"))
-                                         v)])
+                                  ['?card :card/supplemental-rarity ?value]
+                                  [?value attribute ?value-value]
+                                  [(list (or operator '=) ?value-value v)])
                             [(list (or operator '=) ?value-value v)])))
          (assoc (meta value)
                 :note (#?(:clj format
-                          :cljs gstring/format) "%s %s {%d}"
+                          :cljs gstring/format) "%s %s %s"
                        (if digivolve?
                          (str (if (boolean not?)
                                 "it does not digivolve from a "
@@ -586,8 +725,12 @@
                          "<=" "less than or equal to"
                          ">" "greater than"
                          ">=" "greater than or equal to"
-                         "equal to")
-                       v)))
+                         (if (regex? v)
+                           "a match for the pattern"
+                           "equal to"))
+                       (if (regex? v)
+                         (str "/" v "/")
+                         (str "#" v "#")))))
        (with-meta {:errors [(#?(:clj format
                                 :cljs gstring/format)
                              "\"%s\" is not a valid %s."
@@ -608,27 +751,44 @@
          valid-languages (->> ["any" "ja" "en" "zh-Hans" "ko"]
                               (map string/lower-case)
                               (into #{}))
-         valid-value? (valid-languages (string/lower-case v))
+         valid-value? (when (string? v)
+                        (valid-languages (string/lower-case v)))
          valid-operator? (or (nil? operator)
                              (= operator '=))
-         valid? (and valid-value?
-                     valid-operator?)]
+         valid? (or (and valid-value?
+                         valid-operator?)
+                    (regex? v))
+         ?language (gensym "?language")]
      (if valid?
-       (with-meta [(cond->> ['?card attribute (->> (string/lower-case v)
-                                                   (language-map))]
-                     (boolean not?)
-                     (list 'not))]
+       (with-meta (cond-> (if (regex? v)
+                            [['?card attribute ?language]
+                             [(list 're-find v ?language)]]
+                            [['?card attribute (->> (string/lower-case v)
+                                                    (language-map))]])
+                    (boolean not?)
+                    (as-> #__ datoms
+                      [(reduce (fn [accl datom]
+                                 (concat accl [datom]))
+                               (list 'not-join
+                                     ['?card])
+                               datoms)]))
          (assoc (meta value)
                 :language? true
                 :note (#?(:clj format
-                          :cljs gstring/format) "the language %s \"%s\""
-                       (cond-> "is"
-                         (boolean not?)
-                         (str " not"))
-                       (-> (string/lower-case v)
-                           (language-map)
-                           name
-                           (string/replace #"^_$" "any")))))
+                          :cljs gstring/format) "the language %s %s"
+                       (str (cond-> "is"
+                              (boolean not?)
+                              (str " not"))
+                            (when (regex? v)
+                              " a pattern match for"))
+                       (if (regex? v)
+                         (str "/" v "/")
+                         (str "\""
+                              (-> (string/lower-case v)
+                                  (language-map)
+                                  name
+                                  (string/replace #"^_$" "any"))
+                              "\"")))))
        (with-meta {:errors
                    (cond-> []
                      (not valid-value?)
@@ -649,31 +809,51 @@
    (let [valid-rarities (->> ["C" "U" "R" "SR" "UR" "SEC" "P"]
                              (into #{}))
          ?value (gensym "?rarity")
-         valid? (valid-rarities (string/upper-case v))]
+         ?rarity-name (gensym "?rarity-name")
+         ?rarity-rank (gensym "?rarity-rank")
+         ?rarity-rank-tr (gensym "?rarity-rank-tr")
+         valid? (or (when (string? v)
+                      (valid-rarities (string/upper-case v)))
+                    (regex? v))]
      (if valid?
-       (with-meta [['?card attribute ?value]
-                   (list 'rarity-rank ?value
-                         (symbol (str (name ?value) "-rank")))
-                   (list 'rarity-rank (string/upper-case v)
-                         (symbol (str (name ?value) "-rank-tr")))
-                   (cond->> [(list (or operator '=)
-                                   (symbol (str (name ?value) "-rank"))
-                                   (symbol (str (name ?value) "-rank-tr")))]
-                     (boolean not?)
-                     (list 'not))]
+       (with-meta (if (regex? v)
+                    (cond-> [['?card attribute ?value]
+                             [(list 'name ?value) ?rarity-name]
+                             [(list 're-find v ?rarity-name)]]
+                      (boolean not?)
+                      (as-> #__ datoms
+                        [(reduce (fn [accl datom]
+                                   (concat accl [datom]))
+                                 (list 'not-join
+                                       ['?card])
+                                 datoms)]))
+                    [['?card attribute ?value]
+                     (list 'rarity-rank ?value
+                           ?rarity-rank)
+                     (list 'rarity-rank (string/upper-case v)
+                           ?rarity-rank-tr)
+                     (cond->> [(list (or operator '=)
+                                     ?rarity-rank
+                                     ?rarity-rank-tr)]
+                       (boolean not?)
+                       (list 'not))])
          (assoc (meta value)
                 :note (#?(:clj format
-                          :cljs gstring/format) "the rarity %s %s \"%s\""
+                          :cljs gstring/format) "the rarity %s %s %s"
                        (cond-> "is"
                          (boolean not?)
                          (str " not"))
-                       (case (some-> operator name)
-                         "<" "less than"
-                         "<=" "less than or equal to"
-                         ">" "greater than"
-                         ">=" "greater than or equal to"
-                         "equal to")
-                       (string/upper-case v))))
+                       (if (regex? v)
+                         "a pattern match for"
+                         (case (some-> operator name)
+                           "<" "less than"
+                           "<=" "less than or equal to"
+                           ">" "greater than"
+                           ">=" "greater than or equal to"
+                           "equal to"))
+                       (if (regex? v)
+                         (str "/" v "/")
+                         (str "\"" (string/upper-case v) "\"")))))
        (with-meta {:errors [(#?(:clj format
                                 :cljs gstring/format)
                              "\"%s\" is not a valid rarity." v)]}
@@ -686,61 +866,109 @@
    (let [valid-forms (->> [:standard :super :ultimate :god]
                           (map name)
                           (into #{}))
-         valid? (valid-forms (string/lower-case v))
+         valid? (or (when (string? v)
+                      (valid-forms (string/lower-case v)))
+                    (regex? v))
          v (cond-> v
-             valid?
+             (and valid?
+                  (string? v))
              (-> string/lower-case
                  keyword))
          ?value (gensym (str "?"
                              (namespace attribute)
                              "-"
                              (name attribute)))
+         ?form-name (gensym "?form-name")
+         ?form-rank (gensym "?form-rank")
+         ?form-rank-tr (gensym "?form-rank-tr")
          ?value-value (symbol (str (name ?value) "-value"))]
      (if valid?
-       (with-meta [['?card :card/digivolution-requirements ?value]
-                   [?value attribute ?value-value]
-                   (list 'digivolve-form-rank
-                         ?value-value
-                         (symbol (str (name ?value) "-rank")))
-                   (list 'digivolve-form-rank
-                         v
-                         (symbol (str (name ?value) "-rank-tr")))
-                   (if (boolean not?)
-                     (list 'not-join
-                           ['?card (symbol (str (name ?value) "-rank-tr"))]
-                           ['?card :card/digivolution-requirements
-                            (symbol (str (name ?value) "-not"))]
-                           [(symbol (str (name ?value) "-not"))
-                            attribute
-                            (symbol (str (name ?value-value) "-not"))]
-                           (list 'digivolve-form-rank
-                                 (symbol (str (name ?value-value) "-not"))
-                                 (symbol (str (name ?value-value) "-rank")))
-                           [(list (or operator '=)
-                                  (symbol (str (name ?value-value) "-rank"))
-                                  (symbol (str (name ?value) "-rank-tr")))])
-                     [(list (or operator '=)
-                            (symbol (str (name ?value) "-rank"))
-                            (symbol (str (name ?value) "-rank-tr")))])]
+       (with-meta (if (regex? v)
+                    (cond-> [['?card :card/digivolution-requirements ?value]
+                             [?value attribute ?value-value]
+                             [(list 'name ?value-value) ?form-name]
+                             [(list 're-find v ?form-name)]]
+                      (boolean not?)
+                      (as-> #__ datoms
+                        [(reduce (fn [accl datom]
+                                   (concat accl [datom]))
+                                 (list 'not-join
+                                       ['?card])
+                                 datoms)]))
+                    [['?card :card/digivolution-requirements ?value]
+                     [?value attribute ?value-value]
+                     (list 'digivolve-form-rank ?value-value ?form-rank)
+                     (list 'digivolve-form-rank v ?form-rank-tr)
+                     (if (boolean not?)
+                       (list 'not-join
+                             ['?card ?form-rank-tr]
+                             ['?card :card/digivolution-requirements ?value]
+                             [?value attribute ?value-value]
+                             (list 'digivolve-form-rank ?value-value ?form-rank)
+                             [(list (or operator '=) ?form-rank ?form-rank-tr)])
+                       [(list (or operator '=) ?form-rank ?form-rank-tr)])])
          (assoc (meta value)
                 :note (#?(:clj format
-                          :cljs gstring/format) "it %s from a form %s \"%s\""
+                          :cljs gstring/format) "it %s from a form %s %s"
                        (if (boolean not?)
                          "does not digivolve"
                          "digivolves")
-                       (case (some-> operator name)
-                         "<" "less than"
-                         "<=" "less than or equal to"
-                         ">" "greater than"
-                         ">=" "greater than or equal to"
-                         "equal to")
-                       (string/capitalize (name v)))))
+                       (if (regex? v)
+                         "matching the pattern of"
+                         (case (some-> operator name)
+                           "<" "less than"
+                           "<=" "less than or equal to"
+                           ">" "greater than"
+                           ">=" "greater than or equal to"
+                           "equal to"))
+                       (if (regex? v)
+                         (str "/" v "/")
+                         (str "\""
+                              (string/capitalize (name v))
+                              "\"")))))
        (with-meta {:errors [(#?(:clj format
                                 :cljs gstring/format)
                              "\"%s\" is not a valid %s."
                              v
                              (str "digivolve-" (name attribute)))]}
          {:error? true})))))
+
+(defmethod datom :release
+  ([attribute operator value]
+   (datom nil attribute operator value))
+  ([not? attribute operator [_ v :as value]]
+   (let [?release (gensym "?releases")
+         ?release-name (gensym "?release-name")
+         ?value-lower (symbol (str (name ?release) "-lower"))]
+     (with-meta (cond-> [['?card :card/releases ?release]
+                         [?release :release/name ?release-name]]
+                  (regex? v)
+                  (conj [(list 're-find v ?release-name)])
+                  (string? v)
+                  (conj [(list 'String/.toLowerCase ?release-name) ?value-lower]
+                        [(list 'String/.contains
+                               ?value-lower
+                               (string/lower-case v))])
+                  (boolean not?)
+                  (as-> #__ datoms
+                    [(reduce (fn [accl datom]
+                               (concat accl [datom]))
+                             (list 'not-join
+                                   ['?card])
+                             datoms)]))
+       (assoc (meta value)
+              :note (#?(:clj format
+                        :cljs gstring/format) "the card release %s %s"
+                     (if (regex? v)
+                       (if (boolean not?)
+                         "does not match the pattern"
+                         "matches the pattern")
+                       (if (boolean not?)
+                         "does not include"
+                         "includes"))
+                     (if (regex? v)
+                       (str "/" v "/")
+                       (str "\"" v "\""))))))))
 
 (def transform-map
   {:attribute (fn [a]
@@ -760,7 +988,8 @@
                                                                    ""))
                     (#{"text"
                        "traits"
-                       "cost"} a) (keyword a)
+                       "cost"
+                       "release"} a) (keyword a)
                     :else (keyword "card" a))))
    :operator (fn
                ([])
@@ -768,6 +997,8 @@
                 (symbol operator)))
    :quoted (fn [s]
              (subs s 1 (dec (count s))))
+   :regex (fn [s]
+            (re-pattern (subs s 1 (dec (count s)))))
    :datom datom
    :not-string (fn [s]
                  (let [?value (gensym "?card-name-or-number")
@@ -946,61 +1177,58 @@
               (traits nil value))
              ([not? [_ v :as value]]
               (let [?value (gensym "?traits")
-                    ?value-lower (symbol (str (name ?value) "-lower"))
+                    ?value-lower (gensym "?value-lower")
                     ?rule (gensym "?rule")
                     ?rule-type (symbol (str (name ?rule) "-type"))]
-                (with-meta (if (boolean not?)
-                             [(list 'not-join ['?card]
-                                    (list 'or-join
+                (with-meta (cond-> [(list 'or-join
                                           ['?card ?value]
                                           ['?card :card/attribute ?value]
                                           ['?card :card/form ?value]
                                           ['?card :card/type ?value]
-                                          (list 'and
-                                                ['?card :card/rules ?rule]
+                                          (list 'and ['?card :card/rules ?rule]
                                                 [?rule :rule/type ?rule-type]
                                                 [?rule :rule/value ?value]
                                                 [(list 'contains?
                                                        #{:card/attribute
                                                          :card/form
-                                                         :card/type} ?rule-type)]))
-                                    [(list 'String/.toLowerCase ?value) ?value-lower]
-                                    [(list 'String/.contains ?value-lower
-                                           (string/lower-case v))])]
-                             [(list 'or-join
-                                    ['?card ?value]
-                                    ['?card :card/attribute ?value]
-                                    ['?card :card/form ?value]
-                                    ['?card :card/type ?value]
-                                    (list 'and ['?card :card/rules ?rule]
-                                          [?rule :rule/type ?rule-type]
-                                          [?rule :rule/value ?value]
-                                          [(list 'contains?
-                                                 #{:card/attribute
-                                                   :card/form
-                                                   :card/type} ?rule-type)]))
-                              [(list 'String/.toLowerCase ?value) ?value-lower]
-                              [(list 'String/.contains ?value-lower
-                                     (string/lower-case v))]])
+                                                         :card/type} ?rule-type)]))]
+                             (regex? v)
+                             (conj [(list 're-find v ?value)])
+                             (string? v)
+                             (conj [(list 'String/.toLowerCase ?value) ?value-lower]
+                                   [(list 'String/.contains
+                                          ?value-lower
+                                          (string/lower-case v))])
+                             (boolean not?)
+                             (as-> #__ datoms
+                               [(reduce (fn [accl datom]
+                                          (concat accl [datom]))
+                                        (list 'not-join
+                                              ['?card])
+                                        datoms)]))
                   (assoc (meta value)
                          :note (#?(:clj format
-                                   :cljs gstring/format) "the card traits %s \"%s\""
-                                (if (boolean not?)
-                                  "do not include"
-                                  "includes")
-                                v))))))
+                                   :cljs gstring/format) "the card traits %s %s"
+                                (if (regex? v)
+                                  (if (boolean not?)
+                                    "does not match the pattern"
+                                    "matches the pattern")
+                                  (if (boolean not?)
+                                    "does not include"
+                                    "includes"))
+                                (if (regex? v)
+                                  (str "/" v "/")
+                                  (str "\"" v "\""))))))))
    :text (fn text
            ([value]
             (text nil value))
            ([not? [_ v :as value]]
             (let [?value (gensym "?text")
-                  ?value-lower (symbol (str (name ?value) "-lower"))
+                  ?value-lower (gensym "?text-lower")
                   ?dual (gensym "?dual")
                   ?rule (gensym "?rule")
                   ?rule-type (symbol (str (name ?rule) "-type"))]
-              (with-meta (if (boolean not?)
-                           [(list 'not-join ['?card]
-                                  (list 'or-join ['?card ?value]
+              (with-meta (cond-> [(list 'or-join ['?card ?value]
                                         ['?card :card/attribute ?value]
                                         ['?card :card/form ?value]
                                         ['?card :card/type ?value]
@@ -1042,97 +1270,77 @@
                                                        :card/number
                                                        :card/attribute
                                                        :card/form
-                                                       :card/type} ?rule-type)]))
-                                  [(list 'String/.toLowerCase ?value) ?value-lower]
-                                  [(list 'String/.contains ?value-lower
-                                         (string/lower-case v))])]
-                           [(list 'or-join ['?card ?value]
-                                  ['?card :card/attribute ?value]
-                                  ['?card :card/form ?value]
-                                  ['?card :card/type ?value]
-                                  ['?card :card/number ?value]
-                                  ['?card :card/name ?value]
-                                  ['?card :card/effect ?value]
-                                  ['?card :card/inherited-effect ?value]
-                                  ['?card :card/security-effect ?value]
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/attribute ?value])
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/form ?value])
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/type ?value])
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/number ?value])
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/name ?value])
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/effect ?value])
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/inherited-effect ?value])
-                                  (list 'and
-                                        ['?card :card/dual ?dual]
-                                        [?dual :card/security-effect ?value])
-                                  (list 'and
-                                        ['?card :card/rules ?rule]
-                                        [?rule :rule/type ?rule-type]
-                                        [?rule :rule/value ?value]
-                                        [(list 'contains?
-                                               #{:card/name
-                                                 :card/number
-                                                 :card/attribute
-                                                 :card/form
-                                                 :card/type} ?rule-type)]))
-                            [(list 'String/.toLowerCase ?value) ?value-lower]
-                            [(list 'String/.contains ?value-lower
-                                   (string/lower-case v))]])
+                                                       :card/type} ?rule-type)]))]
+                           (regex? v)
+                           (conj [(list 're-find v ?value)])
+                           (string? v)
+                           (conj [(list 'String/.toLowerCase ?value) ?value-lower]
+                                 [(list 'String/.contains
+                                        ?value-lower
+                                        (string/lower-case v))])
+                           (boolean not?)
+                           (as-> #__ datoms
+                             [(reduce (fn [accl datom]
+                                        (concat accl [datom]))
+                                      (list 'not-join
+                                            ['?card])
+                                      datoms)]))
                 (assoc (meta value)
                        :note (#?(:clj format
-                                 :cljs gstring/format) "the card text %s \"%s\""
-                              (if (boolean not?)
-                                "does not include"
-                                "includes")
-                              v))))))})
+                                 :cljs gstring/format) "the card text %s %s"
+                              (if (regex? v)
+                                (if (boolean not?)
+                                  "does not match the pattern"
+                                  "matches the pattern")
+                                (if (boolean not?)
+                                  "does not include"
+                                  "includes"))
+                              (if (regex? v)
+                                (str "/" v "/")
+                                (str "\"" v "\""))))))))})
 
 (defn transform
   [transform-map parse-tree]
   (->> (insta/transform transform-map parse-tree)
        (map (fn [s]
-              (if (string? s)
+              (if (or (string? s)
+                      (regex? s))
                 (with-meta (let [?value (gensym "?card-name-or-number")
+                                 ?value-lower (gensym "?value-lower")
                                  ?dual (gensym "?dual")
                                  ?rule (gensym "?rule")
                                  ?rule-type (symbol (str (name ?rule) "-type"))]
-                             [(list 'or-join
-                                    ['?card ?value]
-                                    ['?card :card/name ?value]
-                                    ['?card :card/number ?value]
-                                    (list 'and
-                                          ['?card :card/dual ?dual]
-                                          [?dual :card/name ?value])
-                                    (list 'and
-                                          ['?card :card/dual ?dual]
-                                          [?dual :card/number ?value])
-                                    (list 'and
-                                          ['?card :card/rules ?rule]
-                                          [?rule :rule/type ?rule-type]
-                                          [?rule :rule/value ?value]
-                                          [(list 'contains?
-                                                 #{:card/name
-                                                   :card/number} ?rule-type)]))
-                              [(list 'String/.toLowerCase ?value)
-                               (symbol (str (name ?value) "-lower"))]
-                              [(list 'String/.contains
-                                     (symbol (str (name ?value) "-lower"))
-                                     (string/lower-case s))]])
-                  {:note (#?(:clj format
-                             :cljs gstring/format) "the name or number includes \"%s\"" s)
+                             (cond-> [(list 'or-join
+                                            ['?card ?value]
+                                            ['?card :card/name ?value]
+                                            ['?card :card/number ?value]
+                                            (list 'and
+                                                  ['?card :card/dual ?dual]
+                                                  [?dual :card/name ?value])
+                                            (list 'and
+                                                  ['?card :card/dual ?dual]
+                                                  [?dual :card/number ?value])
+                                            (list 'and
+                                                  ['?card :card/rules ?rule]
+                                                  [?rule :rule/type ?rule-type]
+                                                  [?rule :rule/value ?value]
+                                                  [(list 'contains?
+                                                         #{:card/name
+                                                           :card/number} ?rule-type)]))]
+                               (regex? s)
+                               (conj [(list 're-find s ?value)])
+                               (string? s)
+                               (conj [(list 'String/.toLowerCase ?value) ?value-lower]
+                                     [(list 'String/.contains
+                                            ?value-lower
+                                            (string/lower-case s))])))
+                  {:note (str "the name or number "
+                              (if (regex? s)
+                                "matches the pattern "
+                                "includes ")
+                              (if (regex? s)
+                                (str "/" s "/")
+                                (str "\"" s "\"")))
                    :instaparse.gll/start-index nil
                    :instaparse.gll/end-index nil})
                 s)))))
@@ -1293,43 +1501,47 @@
 
 (defn query-highlight
   [s]
-  (->> (parser s)
-       (transform transform-map)
-       (keep (fn [xs]
-               (when (insta/span xs)
-                 (meta xs))))
-       (reduce (fn [accl {:instaparse.gll/keys [start-index end-index]
-                         :keys [error?]}]
-                 (let [processed-index
-                       (or (some->> (seq accl)
-                                    drop-last
-                                    (map (fn [s]
-                                           (if (string? s)
-                                             (count s)
-                                             (count (get s :highlight)))))
-                                    (apply +))
-                           0)
-                       before (subs s processed-index start-index)
-                       after (subs s end-index)
-                       text (subs s start-index end-index)]
-                   (-> accl
-                       drop-last
-                       (concat [(when-not (empty? before)
-                                  before)
-                                {:highlight text
-                                 :error? error?}
-                                after]))))
-               [s])
-       (map (fn [{:keys [highlight error?] :as s}]
-              (if highlight
-                (#?(:clj format
-                    :cljs gstring/format)
-                 "<span class=\"%s\">%s</span>"
-                 (cond-> "highlight"
-                   error? (str " error"))
-                 (escape-html highlight))
-                (escape-html s))))
-       (apply str)))
+  (try (->> (parser s)
+            (transform transform-map)
+            (keep (fn [xs]
+                    (when (insta/span xs)
+                      (meta xs))))
+            (reduce (fn [accl {:instaparse.gll/keys [start-index end-index]
+                               :keys [error?]}]
+                      (let [processed-index
+                            (or (some->> (seq accl)
+                                         drop-last
+                                         (map (fn [s]
+                                                (if (string? s)
+                                                  (count s)
+                                                  (count (get s :highlight)))))
+                                         (apply +))
+                                0)
+                            before (subs s processed-index start-index)
+                            after (subs s end-index)
+                            text (subs s start-index end-index)]
+                        (-> accl
+                            drop-last
+                            (concat [(when-not (empty? before)
+                                       before)
+                                     {:highlight text
+                                      :error? error?}
+                                     after]))))
+                    [s])
+            (map (fn [{:keys [highlight error?] :as s}]
+                   (if highlight
+                     (#?(:clj format
+                         :cljs gstring/format)
+                      "<span class=\"%s\">%s</span>"
+                      (cond-> "highlight"
+                        error? (str " error"))
+                      (escape-html highlight))
+                     (escape-html s))))
+            (apply str))
+       (catch #?(:clj Exception
+                 :cljs js/Error) e
+         #?(:cljs (js/console.error "Search Highlight Error" e))
+         s)))
 
 #?(:cljs
    (js/goog.exportSymbol "queryHighlight" query-highlight))
@@ -1341,9 +1553,9 @@
       :malformed? (fn [{{{{:keys [q]} :query} :parameters} :request}]
                     (string/blank? q))
       :exists? (fn [{{{{:keys [q page]
-                       :or {page 1}} :query} :parameters
-                     :dcg.api.core/keys [default-language]
-                     :or {default-language "en"}} :request}]
+                        :or {page 1}} :query} :parameters
+                      :dcg.api.core/keys [default-language]
+                      :or {default-language "en"}} :request}]
                  (let [{{:pagination/keys [pages]
                          :or {pages 1}} :query/pagination
                         :as query}
@@ -1363,15 +1575,15 @@
       :location (fn [_]
                   (router/by-name ::routes/search))
       :etag (fn [{{media-type :media-type} :representation
-                 ::keys [card]}]
+                  ::keys [card]}]
               (str (utils/sha card)
                    "--"
                    media-type))
       :handle-ok (fn [{{{{:keys [q page]
-                         :or {page 1}} :query} :parameters} :request
-                      {{:pagination/keys [cards errors summary fragments total
-                                          pages prev next]} :query/pagination}
-                      ::query}]
+                          :or {page 1}} :query} :parameters} :request
+                       {{:pagination/keys [cards errors summary fragments total
+                                           pages prev next]} :query/pagination}
+                       ::query}]
                    (let [q (string/trim q)
                          cards (->> cards
                                     (map (fn [card]
