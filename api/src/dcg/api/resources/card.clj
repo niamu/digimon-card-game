@@ -74,7 +74,8 @@
                                       :card/language
                                       {:card/image
                                        [:image/path]}]}
-                    :panorama/order]}])
+                    :panorama/order]}
+   {:card/dual 1}])
 
 (defn process-card
   [{:card/keys [language number parallel-id]
@@ -141,7 +142,11 @@
                                                (:limitation/date l)
                                                (update :limitation/date
                                                        utils/inst->iso8601)))
-                                           limitations))))}}
+                                           limitations)))
+                            (:card/dual card)
+                            (update :card/dual
+                                    dissoc
+                                    :card/icons))}}
       (seq alt-arts)
       (-> (assoc-in [:data :relationships :alternate-arts]
                     {:data
@@ -269,7 +274,8 @@
 (defn all-cards
   []
   (let [cards (db/q {:find [[(list 'pull '?c query) '...]]
-                     :where '[[?c :card/id _]]})
+                     :where '[[?c :card/id _]
+                              (not [_ :card/dual ?c])]})
         cards-by-number (group-by :card/number cards)]
     (->> cards
          (map (fn [{:card/keys [id language number] :as card}]
@@ -305,11 +311,12 @@
                            0)
            cards-for-number (db/q {:find [[(list 'pull '?c query) '...]]
                                    :in '[$ ?number]
-                                   :where '[[?c :card/number ?number]]}
+                                   :where '[[?c :card/number ?number]
+                                            (not [_ :card/dual ?c])]}
                                   number)
            card (get-in (reduce (fn [accl {:card/keys [language
-                                                       parallel-id]
-                                           :as card}]
+                                                      parallel-id]
+                                          :as card}]
                                   (assoc-in accl
                                             [language parallel-id]
                                             card))
@@ -346,13 +353,13 @@
                                 {:language (s/conform ::routes/language language)
                                  :card-id (s/conform ::routes/card-id card-id)}}))
    :etag (fn [{{media-type :media-type} :representation
-               ::keys [card]}]
+              ::keys [card]}]
            (str (utils/sha card)
                 "--"
                 media-type))
    :handle-ok
    (fn [{card ::card
-         ::keys [alt-arts international-arts]}]
+        ::keys [alt-arts international-arts]}]
      (process-card card alt-arts international-arts))
    :handle-method-not-allowed errors/error405-body
    :handle-not-acceptable errors/error406-body

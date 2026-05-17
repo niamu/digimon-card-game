@@ -1141,13 +1141,14 @@
                                (list 'not ['?card :card/dual])
                                ['?card :card/dual])]
                             [(if (boolean not?)
-                               (list 'and
-                                     (list 'not
-                                           ['?card attribute])
-                                     (list 'not-join
+                               (list 'not-join
+                                     ['?card]
+                                     (list 'or-join
                                            ['?card]
-                                           ['?card :card/dual ?dual]
-                                           [?dual attribute]))
+                                           ['?card attribute]
+                                           (list 'and
+                                                 ['?card :card/dual ?dual]
+                                                 [?dual attribute])))
                                (list 'or-join
                                      ['?card]
                                      ['?card attribute]
@@ -1507,7 +1508,7 @@
                     (when (insta/span xs)
                       (meta xs))))
             (reduce (fn [accl {:instaparse.gll/keys [start-index end-index]
-                               :keys [error?]}]
+                              :keys [error?]}]
                       (let [processed-index
                             (or (some->> (seq accl)
                                          drop-last
@@ -1553,9 +1554,9 @@
       :malformed? (fn [{{{{:keys [q]} :query} :parameters} :request}]
                     (string/blank? q))
       :exists? (fn [{{{{:keys [q page]
-                        :or {page 1}} :query} :parameters
-                      :dcg.api.core/keys [default-language]
-                      :or {default-language "en"}} :request}]
+                       :or {page 1}} :query} :parameters
+                     :dcg.api.core/keys [default-language]
+                     :or {default-language "en"}} :request}]
                  (let [{{:pagination/keys [pages]
                          :or {pages 1}} :query/pagination
                         :as query}
@@ -1575,15 +1576,15 @@
       :location (fn [_]
                   (router/by-name ::routes/search))
       :etag (fn [{{media-type :media-type} :representation
-                  ::keys [card]}]
+                 ::keys [card]}]
               (str (utils/sha card)
                    "--"
                    media-type))
       :handle-ok (fn [{{{{:keys [q page]
-                          :or {page 1}} :query} :parameters} :request
-                       {{:pagination/keys [cards errors summary fragments total
-                                           pages prev next]} :query/pagination}
-                       ::query}]
+                         :or {page 1}} :query} :parameters} :request
+                      {{:pagination/keys [cards errors summary fragments total
+                                          pages prev next]} :query/pagination}
+                      ::query}]
                    (let [q (string/trim q)
                          cards (->> cards
                                     (map (fn [card]
