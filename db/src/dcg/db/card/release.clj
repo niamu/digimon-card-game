@@ -696,4 +696,12 @@
         missing (remove (fn [{:release/keys [cardlist-uri]}]
                           (contains? cardlist-uris cardlist-uri))
                         releases)]
-    (concat merged missing)))
+    (->> (concat merged missing)
+         (map (fn [{:release/keys [image-uri] :as release}]
+                (cond-> release
+                  image-uri
+                  (-> (assoc :release/id
+                             (format "release_%s_%s"
+                                     language
+                                     (hash (:release/name release))))
+                      download-image!)))))))

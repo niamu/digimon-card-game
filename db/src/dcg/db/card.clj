@@ -192,8 +192,8 @@
 (defn- reindex-parallel-ids
   [cards]
   (map-indexed (fn [idx {:card/keys [language number parallel-id]
-                        {:image/keys [source]} :card/image
-                        :as card}]
+                         {:image/keys [source]} :card/image
+                         :as card}]
                  (if (or (and (= language "en")
                               (= number "P-039")
                               (> parallel-id 1))
@@ -322,7 +322,18 @@
                                   (comp str
                                         :image/source
                                         :card/image)))
-                   reindex-parallel-ids)))))))
+                   reindex-parallel-ids)))))
+       (map (fn [{:card/keys [id number parallel-id rarity image language
+                              dual] :as card}]
+              (cond-> card
+                dual
+                (-> (assoc-in [:card/dual :card/id] (str id "/dual"))
+                    (assoc-in [:card/dual :card/language] language)
+                    (assoc-in [:card/dual :card/number] number)
+                    (assoc-in [:card/dual :card/parallel-id] parallel-id)
+                    (assoc-in [:card/dual :card/rarity] rarity)
+                    (assoc-in [:card/dual :card/image]
+                              [:image/id (:image/id image)])))))))
 
 (defn image-processing
   [cards]
@@ -870,6 +881,59 @@
                                          (string/join "\n")
                                          card-utils/normalize-string
                                          repair/text-fixes)
+                     dual (when-let [dual-dom (some->> dom-tree
+                                                       (select/select
+                                                        (select/descendant
+                                                         (select/class "dualCardCol")))
+                                                       first)]
+                            {:card/name (->> dual-dom
+                                             (select/select
+                                              (select/descendant
+                                               (select/class "cardTitle")))
+                                             first
+                                             ((comp card-utils/normalize-string
+                                                    string/trim
+                                                    (fn [s]
+                                                      (-> s
+                                                          (string/replace #"\s+" " ")
+                                                          (string/replace
+                                                           (re-pattern
+                                                            (format "%s\\s*(%s)?\\s*"
+                                                                    number
+                                                                    rarity))
+                                                           "")))
+                                                    first
+                                                    :content)))
+                             :card/color (->> (get dl "DUAL Color")
+                                              (select/select (select/tag "span"))
+                                              (mapcat (fn [el]
+                                                        (let [color
+                                                              (-> (get-in el [:attrs :class] "")
+                                                                  (string/replace "cardColor_" ""))]
+                                                          (if (= color "all")
+                                                            ["red" "blue" "yellow"
+                                                             "green" "purple" "black"
+                                                             "white"]
+                                                            [color]))))
+                                              (remove string/blank?)
+                                              (map-indexed (fn [i color]
+                                                             {:color/id (format "color/%s_index%d/dual"
+                                                                                number i)
+                                                              :color/index i
+                                                              :color/color (keyword color)}))
+                                              (into []))
+                             :card/category (condp #(string/ends-with? %2 %1)
+                                                category
+                                              "Digi-Egg" :digi-egg
+                                              "Digimon" :digimon
+                                              "Tamer" :tamer
+                                              "Option" :option
+                                              nil)
+                             :card/use-cost (some->> (get dl "DUAL Cost")
+                                                     card-utils/text-content
+                                                     card-utils/normalize-string
+                                                     parse-long)
+                             :card/effect lower-text})
                      digivolution-requirements
                      (->> [(dl "Digivolve Cost 1")
                            (dl "Digivolve Cost 2")]
@@ -962,7 +1026,14 @@
                                            "Digimon"  :digimon
                                            "Tamer"    :tamer
                                            "Option"   :option
-                                           nil)
+                                           (if (string/includes? category "/")
+                                             (condp #(string/starts-with? %2 %1)
+                                                 category
+                                               "Digi-Egg" :digi-egg
+                                               "Digimon" :digimon
+                                               "Tamer" :tamer
+                                               nil)
+                                             nil))
                           :card/color colors
                           :card/name (->> (select/select
                                            (select/descendant
@@ -986,6 +1057,7 @@
                           :card/notes notes
                           :card/image {:image/language language
                                        :image/source source}}
+                   dual (assoc :card/dual dual)
                    rarity (assoc :card/rarity rarity)
                    play-cost (assoc (if (= category "Option")
                                       :card/use-cost
@@ -1000,7 +1072,8 @@
                    effect (assoc :card/effect effect)
                    (and lower-text
                         (not (string/starts-with? lower-text
-                                                  "[Security]")))
+                                                  "[Security]"))
+                        (not dual))
                    (assoc :card/inherited-effect lower-text)
                    (and lower-text
                         (string/starts-with? lower-text
@@ -1047,7 +1120,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri]
-                   :as release} dom-tree]
+                  :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -1154,6 +1227,59 @@
                                          (string/join "\n")
                                          card-utils/normalize-string
                                          repair/text-fixes)
+                     dual (when-let [dual-dom (some->> dom-tree
+                                                       (select/select
+                                                        (select/descendant
+                                                         (select/class "dualCardCol")))
+                                                       first)]
+                            {:card/name (->> dual-dom
+                                             (select/select
+                                              (select/descendant
+                                               (select/class "cardTitle")))
+                                             first
+                                             ((comp card-utils/normalize-string
+                                                    string/trim
+                                                    (fn [s]
+                                                      (-> s
+                                                          (string/replace #"\s+" " ")
+                                                          (string/replace
+                                                           (re-pattern
+                                                            (format "%s\\s*(%s)?\\s*"
+                                                                    number
+                                                                    rarity))
+                                                           "")))
+                                                    first
+                                                    :content)))
+                             :card/color (->> (get dl "デュアル条件色")
+                                              (select/select (select/tag "span"))
+                                              (mapcat (fn [el]
+                                                        (let [color
+                                                              (-> (get-in el [:attrs :class] "")
+                                                                  (string/replace "cardColor_" ""))]
+                                                          (if (= color "all")
+                                                            ["red" "blue" "yellow"
+                                                             "green" "purple" "black"
+                                                             "white"]
+                                                            [color]))))
+                                              (remove string/blank?)
+                                              (map-indexed (fn [i color]
+                                                             {:color/id (format "color/%s_index%d/dual"
+                                                                                number i)
+                                                              :color/index i
+                                                              :color/color (keyword color)}))
+                                              (into []))
+                             :card/category (condp #(string/ends-with? %2 %1)
+                                                category
+                                              "デジタマ"   :digi-egg
+                                              "デジモン"   :digimon
+                                              "テイマー"   :tamer
+                                              "オプション" :option
+                                              nil)
+                             :card/use-cost (some->> (get dl "デュアル使用コスト")
+                                                     card-utils/text-content
+                                                     card-utils/normalize-string
+                                                     parse-long)
+                             :card/effect lower-text})
                      digivolution-requirements
                      (->> [(dl "進化条件1")
                            (dl "進化条件2")]
@@ -1247,7 +1373,14 @@
                                            "デジモン"   :digimon
                                            "テイマー"   :tamer
                                            "オプション" :option
-                                           nil)
+                                           (if (string/includes? category "/")
+                                             (condp #(string/starts-with? %2 %1)
+                                                 category
+                                               "デジタマ"   :digi-egg
+                                               "デジモン"   :digimon
+                                               "テイマー"   :tamer
+                                               nil)
+                                             nil))
                           :card/color colors
                           :card/name (->> (select/select
                                            (select/descendant
@@ -1271,6 +1404,7 @@
                           :card/notes notes
                           :card/image {:image/language language
                                        :image/source source}}
+                   dual (assoc :card/dual dual)
                    rarity (assoc :card/rarity rarity)
                    play-cost (assoc (if (= category "オプション")
                                       :card/use-cost
@@ -1286,11 +1420,13 @@
                    effect (assoc :card/effect effect)
                    (and lower-text
                         (not (string/starts-with? lower-text
-                                                  "【セキュリティ】")))
+                                                  "【セキュリティ】"))
+                        (not dual))
                    (assoc :card/inherited-effect lower-text)
                    (and lower-text
                         (string/starts-with? lower-text
-                                             "【セキュリティ】"))
+                                             "【セキュリティ】")
+                        (not dual))
                    (assoc :card/security-effect lower-text)
                    notes (assoc :card/notes notes)
                    :pack-type (as-> #__ card
@@ -1350,7 +1486,9 @@
                                         card-utils/normalize-string
                                         (re-find #"[0-9]+")
                                         parse-long)
-                         rarity (last (re-find #"（(.*)）" rareDegree))
+                         rarity (or (last (re-find #"（(.*)）" rareDegree))
+                                    (when (not= rareDegree "-")
+                                      rareDegree))
                          attribute (some-> attribute card-utils/normalize-string)
                          type (some-> type card-utils/normalize-string)
                          form (some-> form card-utils/normalize-string)
@@ -1365,15 +1503,30 @@
                          effect (some-> effect
                                         card-utils/normalize-string
                                         repair/text-fixes
-                                        (string/replace "enter" "\n"))
+                                        (string/replace "enter" "\n")
+                                        string/trim)
                          inherited-effect (some-> envolutionEffect
                                                   card-utils/normalize-string
                                                   repair/text-fixes
-                                                  (string/replace "enter" "\n"))
+                                                  (string/replace "enter" "\n")
+                                                  string/trim)
                          security-effect (some-> safeEffect
                                                  card-utils/normalize-string
                                                  repair/text-fixes
-                                                 (string/replace "enter" "\n"))
+                                                 (string/replace "enter" "\n")
+                                                 string/trim)
+                         dual (when (or (= entryConsumeValue "D")
+                                        (and inherited-effect
+                                             (string/starts-with? inherited-effect
+                                                                  "选项:")))
+                                {:card/category :option
+                                 :card/name (->> inherited-effect
+                                                 (re-find #"选项:(.*)\n*")
+                                                 second)
+                                 :card/use-cost play-cost
+                                 :card/effect (string/replace inherited-effect
+                                                              #"选项:.*\n*"
+                                                              "")})
                          repair-fn (-> repair/text-fixes-by-number-by-language
                                        (get-in [number language]))]
                      (cond-> {:card/id card-id
@@ -1390,14 +1543,23 @@
                                                "数码宝贝" :digimon
                                                "驯兽师"   :tamer
                                                "选项"     :option
-                                               nil)
+                                               (if (string/includes? belongsType "/")
+                                                 (condp #(string/starts-with? %2 %1)
+                                                     belongsType
+                                                   "数码蛋"   :digi-egg
+                                                   "数码宝贝" :digimon
+                                                   "驯兽师"   :tamer
+                                                   nil)
+                                                 nil))
                               :card/name (card-utils/normalize-string name)
                               :card/image {:image/language language
                                            :image/source (URI. imageCover)}}
+                       dual (assoc :card/dual dual)
                        rarity (assoc :card/rarity rarity)
-                       play-cost (assoc (if (= belongsType "选项")
-                                          :card/use-cost
-                                          :card/play-cost) play-cost)
+                       (and play-cost
+                            (not dual)) (assoc (if (= belongsType "选项")
+                                                 :card/use-cost
+                                                 :card/play-cost) play-cost)
                        level (assoc :card/level level)
                        dp (assoc :card/dp dp)
                        form (assoc :card/form form)
@@ -1405,8 +1567,9 @@
                        attribute (assoc :card/attribute
                                         (card-utils/normalize-string attribute))
                        type (assoc :card/type type)
-                       (seq effect) (assoc :card/effect effect)
-                       (seq inherited-effect)
+                       effect (assoc :card/effect effect)
+                       (and inherited-effect
+                            (not dual))
                        (assoc :card/inherited-effect inherited-effect)
                        (seq security-effect) (assoc :card/security-effect
                                                     security-effect)

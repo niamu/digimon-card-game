@@ -39,8 +39,12 @@
                            (every? (fn [{:release/keys [image-uri]}]
                                      (not image-uri)))))
                     r)
-            (str "Not every release matched with a product. "
-                 "Consider refreshing Korean product listing."))
+            (str "Not every release matched with a product.\n"
+                 (->> r
+                      (mapcat (fn [releases]
+                                (->> releases
+                                     (filter :release/image-uri))))
+                      (into []))))
     r))
 
 (defn process-cards
@@ -94,6 +98,19 @@
                     accl))
                 {}
                 unrefined-cards)
+        dual-colors-by-number
+        (->> unrefined-cards
+             (filter :card/dual)
+             (reduce (fn [accl {:card/keys [number parallel-id language dual]
+                               :as card}]
+                       (if (and (= language "ja")
+                                (zero? parallel-id))
+                         (assoc accl
+                                number
+                                (select-keys dual
+                                             [:card/color]))
+                         accl))
+                     {}))
         cards-with-errata-and-limitations
         (pmap (fn [{:card/keys [id number language] :as card}]
                 (let [card-limitations (or (get-in limitations [number language])
@@ -136,25 +153,52 @@
                     (= language "ko")
                     (merge (select-keys (get common-values-by-number number)
                                         [:card/use-cost]))
+                    (:card/dual card)
+                    (update :card/dual
+                            merge
+                            (get dual-colors-by-number number))
                     errata-for-card
                     (as-> #__ c
                       (-> (reduce-kv
                            (fn [m k v]
-                             (let [error-indexes
+                             (let [dual-v (get-in m [:card/dual k])
+                                   error-indexes
                                    (some->> errors
                                             (map-indexed (fn [idx s]
                                                            [idx s])))
                                    [error-index error]
                                    (some->> error-indexes
-                                            (filter (fn [[_ s]]
-                                                      (and (string? v)
-                                                           (string/includes? v s))))
+                                            (filter
+                                             (fn [[_ s]]
+                                               (or (and (string? v)
+                                                        (string/includes? v s))
+                                                   (and (string? dual-v)
+                                                        (string/includes? dual-v s)))))
                                             first)
                                    correction (and error-index
                                                    (nth corrections
                                                         error-index
                                                         nil))]
                                (cond-> m
+                                 (and (:card/dual m)
+                                      dual-v
+                                      (if errors-by-attribute
+                                        (and (string? dual-v)
+                                             error
+                                             correction
+                                             (string/includes? dual-v error)
+                                             (not (string/includes? dual-v correction))
+                                             (= (get errors-by-attribute k)
+                                                error))
+                                        (and (string? dual-v)
+                                             error
+                                             correction
+                                             (string/includes? dual-v error)
+                                             (not (string/includes? dual-v correction)))))
+                                 (assoc-in [:card/dual k]
+                                           (string/replace dual-v
+                                                           error
+                                                           correction))
                                  (if errors-by-attribute
                                    (and (string? v)
                                         error
@@ -227,6 +271,13 @@
     (->> cards
          (filter (fn [{{:image/keys [path]} :card/image}]
                    (io/resource (subs path 1))))
+         ;; NOTE: Temporary hack until I can train a CNN for block icons
+         (map (fn [{:card/keys [number] :as card}]
+                (cond-> card
+                  (or (string/starts-with? number "BT25-")
+                      (string/starts-with? number "ST23-")
+                      (string/starts-with? number "ST24-"))
+                  (assoc :card/block-icon 6))))
          (sort-by :card/id))))
 
 (defn generate-phash-db!

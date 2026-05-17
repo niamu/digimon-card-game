@@ -16,6 +16,10 @@
           (string/includes? text "Overflow")
           (string/includes? text "溢出")
           (string/includes? text "오버플로우")) :overflow
+      (or (string/includes? text "アーツ進化")
+          (string/includes? text "Arts Digivolve")
+          (string/includes? text "技艺进化")) :arts-digivolve
+      (string/includes? text "Once Per Turn") :precondition
       (string/includes? text "Your Turn") :timing
       (or (re-matches #".リンク." text)
           (re-matches #".Link." text)
@@ -183,11 +187,16 @@
                    :card/inherited-effect
                    :card/security-effect]))]
     (->> (reduce (fn [{:keys [translations] :as accl} card-group]
-                   (let [cards (map (fn [card]
-                                      (let [icons (card-icons card)]
+                   (let [cards (map (fn [{:card/keys [dual] :as card}]
+                                      (let [icons (card-icons card)
+                                            dual-icons (when dual
+                                                         (card-icons dual))]
                                         (cond-> card
                                           (seq icons)
-                                          (assoc :card/icons icons))))
+                                          (assoc :card/icons icons)
+                                          (seq dual-icons)
+                                          (assoc-in [:card/dual :card/icons]
+                                                    dual-icons))))
                                     card-group)
                          without-brackets (fn [s] (subs s 1 (dec (count s))))
                          ja-map
@@ -195,24 +204,27 @@
                                   (filter (fn [{:card/keys [language]}]
                                             (= language "ja")))
                                   first
-                                  :card/icons
+                                  ((fn [{:card/keys [icons]
+                                        {dual-icons :card/icons} :card/dual}]
+                                     (concat icons
+                                             dual-icons)))
                                   (reduce (fn [m {:icon/keys [index text field]
                                                  :as icon}]
                                             (let [ja-text (without-brackets text)]
-                                              (-> m
-                                                  (assoc [field ja-text index]
-                                                         icon)
-                                                  (assoc [field ja-text]
-                                                         icon)
-                                                  (assoc [field index]
-                                                         icon))))
+                                              (assoc m
+                                                     [field ja-text index] icon
+                                                     [field ja-text] icon
+                                                     [field index] icon)))
                                           {}))
                          en-icons
                          (some->> cards
                                   (filter (fn [{:card/keys [language]}]
                                             (= language "en")))
                                   first
-                                  :card/icons
+                                  ((fn [{:card/keys [icons]
+                                        {dual-icons :card/icons} :card/dual}]
+                                     (concat icons
+                                             dual-icons)))
                                   (remove (fn [{icon-type :icon/type
                                                :icon/keys [text]}]
                                             (let [text (without-brackets text)]
@@ -267,13 +279,19 @@
                                                   (or icon-type
                                                       :mention))))))))
                          cards
-                         (map (fn [{:card/keys [icons] :as card}]
+                         (map (fn [{:card/keys [icons] :as card
+                                   {dual-icons :card/icons} :card/dual}]
                                 (cond-> card
                                   (some (fn [{icon-type :icon/type}]
                                           (nil? icon-type))
                                         icons)
                                   (update :card/icons
-                                          update-icons)))
+                                          update-icons)
+                                  (some (fn [{icon-type :icon/type}]
+                                          (nil? icon-type))
+                                        dual-icons)
+                                  (update-in [:card/dual :card/icons]
+                                             update-icons)))
                               cards)]
                      (-> accl
                          (assoc :translations translations)

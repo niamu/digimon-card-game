@@ -120,7 +120,11 @@
      :db/cardinality :db.cardinality/one}
     {:db/ident :card/panorama
      :db/valueType :db.type/ref
-     :db/cardinality :db.cardinality/one}]
+     :db/cardinality :db.cardinality/one}
+    {:db/ident :card/dual
+     :db/valueType :db.type/ref
+     :db/cardinality :db.cardinality/one
+     :db/isComponent true}]
    ;; Supplemental Rarity
    [{:db/ident :supplemental-rarity/id
      :db/valueType :db.type/string
@@ -389,13 +393,16 @@
                update-image-path)))
 
 (defn- update-card-images
-  [card]
-  (-> card
-      (update-in [:card/image :image/path]
-                 update-image-path)
-      (update-in [:card/releases]
-                 (fn [releases]
-                   (map update-release-images releases)))))
+  [{:card/keys [dual] :as card}]
+  (cond-> (-> card
+              (update-in [:card/image :image/path]
+                         update-image-path)
+              (update-in [:card/releases]
+                         (fn [releases]
+                           (map update-release-images releases))))
+    dual
+    (update-in [:card/dual :card/image :image/path]
+               update-image-path)))
 
 (defn export!
   []
@@ -505,7 +512,33 @@
                       :panorama/columns
                       :panorama/order
                       {:panorama/cards
-                       [:card/id]}]}]
+                       [:card/id]}]}
+                    {:card/dual
+                     [:card/id
+                      :card/language
+                      :card/number
+                      :card/parallel-id
+                      :card/name
+                      :card/rarity
+                      :card/effect
+                      :card/category
+                      {:card/color
+                       [:color/id
+                        :color/index
+                        :color/color]}
+                      {:card/image
+                       [:image/id
+                        :image/language
+                        :image/source
+                        :image/path
+                        :image/hash
+                        :image/hash-segments]}
+                      {:card/icons
+                       [:icon/id
+                        :icon/type
+                        :icon/field
+                        :icon/index
+                        :icon/text]}]}]
         card-datoms (d/datoms (d/db conn) {:index :avet
                                            :components [:card/id]
                                            :limit -1})]
@@ -523,37 +556,5 @@
                        :where [[?r :release/id ?rid]]})
                   (apply concat))]
     (d/transact conn {:tx-data [[:db/retractEntity [:release/id id]]]}))
-
-  (->> (q '{:find [(pull ?c [:card/id
-                             {:card/digivolution-requirements
-                              [:digivolve/id
-                               :digivolve/category
-                               :digivolve/color
-                               :digivolve/cost
-                               :digivolve/form
-                               :digivolve/level
-                               :digivolve/index]}]) (count ?dr)]
-            :where [[?c :card/digivolution-requirements ?dr]
-                    [?c :card/language "ja"]]})
-       (filter (fn [[{:card/keys [digivolution-requirements]
-                     :as card} dr]]
-                 (and (> dr 1)
-                      #_(->> digivolution-requirements
-                             (map (fn [{:digivolve/keys [cost color]}]
-                                    [cost color]))
-                             (apply =))
-                      (->> digivolution-requirements
-                           last
-                           :digivolve/level
-                           nil?)
-                      (->> digivolution-requirements
-                           last
-                           :digivolve/form
-                           nil?)
-                      (->> digivolution-requirements
-                           last
-                           :digivolve/category
-                           (not= :tamer)))))
-       (map first))
 
   )

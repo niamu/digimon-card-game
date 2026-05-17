@@ -29,6 +29,28 @@
                         (assoc accl number result))))
                   (sorted-map))))
 
+(defn- dual-cards
+  "DUAL Cards that differ across languages"
+  [cards]
+  (->> cards
+       (filter :card/dual)
+       (group-by :card/number)
+       (reduce-kv (fn [accl number card-group]
+                    (let [result
+                          (->> card-group
+                               (map (comp #(apply hash-map %)
+                                          (juxt :card/id
+                                                (comp #(select-keys % [:card/category
+                                                                       :card/color
+                                                                       :card/use-cost])
+                                                      :card/dual))))
+                               (apply merge)
+                               (into (sorted-map)))]
+                      (if (apply = (vals result))
+                        accl
+                        (assoc accl number result))))
+                  (sorted-map))))
+
 (defn- field-translations
   [field cards]
   (let [tr-map (->> cards
@@ -37,7 +59,7 @@
                                          :card/number)
                                    :card/parallel-id))
                     (reduce (fn [accl {:card/keys [number language]
-                                       :as card}]
+                                      :as card}]
                               (assoc-in accl
                                         [number language]
                                         (get card field)))
@@ -120,14 +142,13 @@
          (filter :card/icons)
          (group-by :card/number)
          (remove (fn [[number cards]]
-                   (every? (fn [card]
-                             (->> card
-                                  :card/icons
-                                  (every? (comp (partial not= :mention)
-                                                :icon/type))))
-                           cards)))
-         (remove (fn [[number cards]]
                    (or (contains? checked-card-numbers number)
+                       (every? (fn [card]
+                                 (->> card
+                                      :card/icons
+                                      (every? (comp (partial not= :mention)
+                                                    :icon/type))))
+                               cards)
                        (->> cards
                             (group-by :card/language)
                             (every? (fn [[language cards]]
@@ -194,7 +215,11 @@
                                              (map #(nth (get m "ja") % nil)))))
                                    (apply hash-map)))))
                      (apply merge accl)))
-              {}))]
+              {}))
+        fallback-tr-map {[:precondition "Once Per Turn"] [:precondition "ターン1回"]
+                         [:precondition "每回合1次"] [:precondition "ターン1回"]
+                         [:precondition "턴에 1회"] [:precondition "ターン1回"]
+                         [:precondition "턴 1회"] [:precondition "ターン1回"]}]
     (-> (group-by :card/number cards)
         (update-vals (fn [cards]
                        (let [l-map
@@ -215,8 +240,10 @@
                                       (let [result
                                             (remove
                                              (fn [text]
-                                               (contains? (get l-map "ja")
-                                                          (get tr-map text)))
+                                               (or (contains? (get l-map "ja")
+                                                              (get tr-map text))
+                                                   (contains? (get l-map "ja")
+                                                              (get fallback-tr-map text))))
                                              texts)]
                                         (cond-> m
                                           (and (seq result)
@@ -263,7 +290,11 @@
                                                 (comp #(dissoc % :mention)
                                                       frequencies
                                                       #(map :icon/type %)
-                                                      :card/icons))))
+                                                      (fn [{:card/keys [icons]
+                                                           {dual-icons :card/icons}
+                                                           :card/dual}]
+                                                        (concat icons
+                                                                dual-icons))))))
                                (apply merge)
                                (into (sorted-map)))]
                       (if (apply = (vals result))
@@ -392,7 +423,8 @@
                                (:card/form card)
                                (:card/attribute card)
                                (:card/type card)
-                               (:card/name card)]
+                               (:card/name card)
+                               (get-in card [:card/dual :card/effect])]
                               (remove nil?)
                               string/join)]
                    (some (fn [correction]
@@ -481,7 +513,10 @@
                               "ST22" 5
                               "BT24" 5
                               "EX11" 5
-                              "AD1" 5}
+                              "AD1" 5
+                              "BT25" 6
+                              "ST23" 6
+                              "ST24" 6}
         saved-block-icons (->> (io/resource "block-icons.edn")
                                io/reader
                                (PushbackReader.)
@@ -644,6 +679,14 @@
                {:timing 2, :precondition 1, :keyword-effect 1},
                "card/zh-Hans_BT11-054_P0"
                {:timing 2, :rule 1, :precondition 1, :keyword-effect 1}},
+              "BT16-058"
+              {"card/en_BT16-058_P0" {:timing 5, :keyword-effect 3},
+               "card/ja_BT16-058_P0" {:timing 5, :keyword-effect 3},
+               "card/ja_BT16-058_P1" {:timing 5, :keyword-effect 3},
+               "card/ko_BT16-058_P0" {:timing 5, :keyword-effect 3},
+               "card/ko_BT16-058_P1" {:timing 5, :keyword-effect 2},
+               "card/zh-Hans_BT16-058_P0" {:timing 5, :keyword-effect 3},
+               "card/zh-Hans_BT16-058_P1" {:timing 5, :keyword-effect 3}},
               "EX4-057"
               {"card/en_EX4-057_P0"
                {:timing 3, :keyword-effect 2, :precondition 1},
@@ -709,6 +752,9 @@
   (assert (empty? (releases cards))
           (format "Malformed releases:\n%s"
                   (releases cards)))
+  (assert (empty? (dual-cards cards))
+          (format "DUAL Cards are not equal across languages:\n%s"
+                  (dual-cards cards)))
   cards)
 
 (comment

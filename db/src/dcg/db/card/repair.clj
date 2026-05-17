@@ -100,6 +100,8 @@
           (string/replace "＜Rule＞" "⟨Rule⟩")
           (string/replace "명칭 :" "명칭:")
           (string/replace "<链接>" "〈链接〉")
+          (string/replace "＜Arts Digivolve＞" "[Arts Digivolve]")
+          (string/replace "≪アーツ進化≫" "【アーツ進化】")
           ;; https://world.digimoncard.com/rule/card_text/
           (string/replace "X-Antibody" "X Antibody")))
 

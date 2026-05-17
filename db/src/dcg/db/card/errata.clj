@@ -28,6 +28,10 @@
                 (string/replace s "(Once Per Turn)" "[Once Per Turn]"))
    "BT14-091" (fn [s]
                 (string/replace s "Then if" "Then, if"))
+   "BT25-057" (fn [s]
+                (-> s
+                    (string/replace "<" "＜")
+                    (string/replace ">" "＞")))
    "EX3-001" (fn [s]
                (string/replace s
                                "[All Turns] [Once Per Turn] When this Digimon with [Dramon] or [Examon] in its name becomes unsuspended, this Digimon gets +1000 for the turn."
@@ -263,7 +267,10 @@
                          date-string (some->> div
                                               (select/select (select/tag :h4))
                                               first :content first)
-                         date (try (.parse (SimpleDateFormat. "MMM. dd, yyyy")
+                         date (try (.parse (SimpleDateFormat.
+                                            (if (string/includes? date-string ".")
+                                              "MMM. dd, yyyy"
+                                              "MMM dd, yyyy"))
                                            date-string)
                                    (catch ParseException _ nil))
                          text-fixes (fn [s]
