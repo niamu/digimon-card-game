@@ -190,8 +190,8 @@
                                (if (string/starts-with? href "http")
                                  href
                                  (str url (string/replace href
-                                                          "../cardlist"
-                                                          "/cardlist")))))
+                                                          "../card"
+                                                          "/card")))))
         cardlist-uri (or cardlist-uri
                          (cardlist-uri-from-product origin uri))
         image (let [src (->> dom-tree

@@ -493,6 +493,7 @@
                                              "特征:"
                                              "拥有"
                                              ;; names
+                                             "名称に"
                                              "名称:"
                                              "Name:"
                                              "명칭:"
@@ -547,7 +548,8 @@
                                                             {:rule/type rule-type
                                                              :rule/value icon}))
                                                         icons)
-                                                   #{"名称:"
+                                                   #{"名称に"
+                                                     "名称:"
                                                      "Name:"
                                                      "명칭:"}
                                                    (map (fn [icon]

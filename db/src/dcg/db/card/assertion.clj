@@ -291,8 +291,8 @@
                                                       frequencies
                                                       #(map :icon/type %)
                                                       (fn [{:card/keys [icons]
-                                                           {dual-icons :card/icons}
-                                                           :card/dual}]
+                                                            {dual-icons :card/icons}
+                                                            :card/dual}]
                                                         (concat icons
                                                                 dual-icons))))))
                                (apply merge)
@@ -516,7 +516,8 @@
                               "AD1" 5
                               "BT25" 6
                               "ST23" 6
-                              "ST24" 6}
+                              "ST24" 6
+                              "EX12" 6}
         saved-block-icons (->> (io/resource "block-icons.edn")
                                io/reader
                                (PushbackReader.)

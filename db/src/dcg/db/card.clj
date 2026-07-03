@@ -192,8 +192,8 @@
 (defn- reindex-parallel-ids
   [cards]
   (map-indexed (fn [idx {:card/keys [language number parallel-id]
-                         {:image/keys [source]} :card/image
-                         :as card}]
+                        {:image/keys [source]} :card/image
+                        :as card}]
                  (if (or (and (= language "en")
                               (= number "P-039")
                               (> parallel-id 1))
@@ -324,7 +324,7 @@
                                         :card/image)))
                    reindex-parallel-ids)))))
        (map (fn [{:card/keys [id number parallel-id rarity image language
-                              dual] :as card}]
+                             dual] :as card}]
               (cond-> card
                 dual
                 (-> (assoc-in [:card/dual :card/id] (str id "/dual"))
@@ -694,7 +694,11 @@
         card-detail-selector (select/descendant
                               (select/id "article")
                               (select/class "image_lists")
-                              (select/class "popup")
+                              (select/follow (select/and
+                                              (select/class "card_img")
+                                              (select/has-child
+                                               (select/tag "img")))
+                                             (select/class "popup"))
                               (select/class "card_detail"))
         cards-dom-tree (select/select card-detail-selector page)
         additional-pages (->> page
@@ -743,7 +747,7 @@
                                                   (re-find #"[0-9]+$")
                                                   parse-long))))
         card (fn [{:release/keys [language cardlist-uri]
-                   :as release} dom-tree]
+                  :as release} dom-tree]
                (let [origin (str (.getScheme ^URI cardlist-uri) "://"
                                  (.getHost ^URI cardlist-uri))
                      header (->> (select/select
@@ -1461,9 +1465,9 @@
                     (concat cards cardlist))))]
     (->> cards
          (pmap (fn [{:strs [parallCard belongsType name model form attribute type
-                            dp rareDegree entryConsumeValue envolutionConsumeTwo
-                            cardLevel effect envolutionEffect safeEffect
-                            imageCover getWayStr cardGroup]}]
+                           dp rareDegree entryConsumeValue envolutionConsumeTwo
+                           cardLevel effect envolutionEffect safeEffect
+                           imageCover getWayStr cardGroup]}]
                  (when imageCover
                    (let [number (if (= model "-")
                                   (str (string/replace cardGroup "-" "")

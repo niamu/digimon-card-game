@@ -481,6 +481,42 @@
            #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=47520",
            :genre "관련상품",
            :date #inst "2026-04-17T00:00:00.000-00:00"}
+ #:release{:name "WORLD CONVERGENCE",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/47740",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/740/047/308c3eb551a6107bcb00b174473bb4ae.jpg",
+           :language "ko",
+           :id "release_ko_47740",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=47744",
+           :genre "확장팩",
+           :date #inst "2026-05-29T00:00:00.000-00:00"}
+ #:release{:name "HERO OF HOPE",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/47737",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/737/047/a6a7cef0366d9cb76b0f96dcee3dd660.png",
+           :language "ko",
+           :id "release_ko_47737",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=47940",
+           :genre "구축완료 덱",
+           :date #inst "2026-05-29T00:00:00.000-00:00"}
+ #:release{:name "VERSUS MONSTERS【EXK-09】",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/48621",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/621/048/5fb666eacdd7f7defa3cf0c1c75d1522.jpg",
+           :language "ko",
+           :id "release_ko_48621",
+           :card-image-language "ko",
+           :cardlist-uri
+           #uri "https://digimoncard.co.kr/index.php?mid=cardlist&category=48269",
+           :genre "확장팩",
+           :date #inst "2026-06-26T00:00:00.000-00:00"}
  #:release{:name "디지몬 카드 게임 오피셜 카드 슬리브 2025 Ver.1.0",
            :product-uri
            #uri "https://digimoncard.co.kr/products/40424",
@@ -520,4 +556,14 @@
            :id "release_ko_46831",
            :card-image-language "ko",
            :genre "확장팩",
-           :date #inst "2026-03-20T00:00:00.000-00:00"})
+           :date #inst "2026-03-20T00:00:00.000-00:00"}
+ #:release{:name "PROTECTOR OF LIGHT",
+           :product-uri
+           #uri "https://digimoncard.co.kr/products/47729",
+           :image-uri
+           #uri "https://digimoncard.co.kr/files/extravar_upload/135/729/047/a130891762c4f1cfb2663248bf109b9a.png",
+           :language "ko",
+           :id "release_ko_47729",
+           :card-image-language "ko",
+           :genre "구축완료 덱",
+           :date #inst "2026-05-29T00:00:00.000-00:00"})

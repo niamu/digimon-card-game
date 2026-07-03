@@ -325,7 +325,11 @@
 
 (defn transact!
   [datoms]
-  (doseq [batch (partition-all 100 datoms)]
+  (doseq [batch (->> datoms
+                     (map (fn [{:card/keys [dual image] :as card}]
+                            (cond-> card
+                              dual (assoc-in [:card/dual :card/image] image))))
+                     (partition-all 100))]
     (d/transact conn {:tx-data batch})))
 
 (defn q
