@@ -276,7 +276,10 @@
                 (cond-> card
                   (or (string/starts-with? number "BT25-")
                       (string/starts-with? number "ST23-")
-                      (string/starts-with? number "ST24-"))
+                      (string/starts-with? number "ST24-")
+                      (string/starts-with? number "EX12-")
+                      (string/starts-with? number "BT26-")
+                      (string/starts-with? number "EX13-"))
                   (assoc :card/block-icon 6))))
          (sort-by :card/id))))
 
