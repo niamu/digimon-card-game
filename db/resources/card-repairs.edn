@@ -5010,6 +5010,12 @@
                         (-> s
                             (string/replace "【≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌】"
                                             "≪数码合体-2≫1张记述有《保存》的数码宝贝卡牌")))))}
+ "BT21-071"
+ {"zh-Hans" (fn [{:card/keys [inherited-effect] :as card}]
+              (cond-> card
+                (nil? inherited-effect)
+                (assoc :card/inherited-effect
+                       "〈链接〉特征“应用兽”:费用2（从手牌/战斗区中,将此卡牌以横向状态插入战斗区中指定的数码宝贝中）\nDP+3000\n\n【链接时】《抽2张卡》,并丢弃我方的2张手牌。")))}
  "BT21-081"
  {"en" (fn [card]
          (-> card
@@ -5266,11 +5272,23 @@
                         (cond->> s
                           (not (string/starts-with? s "【进化】"))
                           (str "【进化】拥有“TS”特征的Lv.4:费用3\n\n")))))}
+ "BT26-019"
+ {"zh-Hans" (fn [{:card/keys [inherited-effect] :as card}]
+              (cond-> card
+                (nil? inherited-effect)
+                (assoc :card/inherited-effect
+                       "〈链接〉特征“应用兽”:费用3（从手牌/战斗区中,将此卡牌以横向状态插入战斗区中指定的数码宝贝中）\nDP+3000\n\n【链接时】直到对方的回合结束为止,对方的1只数码宝贝/驯兽师无法转换为休息状态。")))}
  "BT26-031"
  {"en" (fn [card]
          (cond-> card
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
  "BT26-032"
  {"en" (fn [{:card/keys [form] :as card}]
          (cond-> card
@@ -5279,37 +5297,87 @@
                   :card/attribute "Data"
                   :card/type "Shaman/Olympos XII/Iliad/TS")
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
  "BT26-033"
  {"en" (fn [card]
          (cond-> card
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
  "BT26-050"
  {"en" (fn [card]
          (cond-> card
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
  "BT26-056"
  {"en" (fn [card]
          (cond-> card
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
  "BT26-057"
  {"en" (fn [card]
          (cond-> card
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
  "BT26-075"
  {"en" (fn [card]
          (cond-> card
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
  "BT26-080"
  {"en" (fn [card]
          (cond-> card
            (= (get-in card [:card/dual :card/category]) :tamer)
-           (assoc-in [:card/dual :card/category] :option)))}
+           (assoc-in [:card/dual :card/category] :option)))
+  "zh-Hans" (fn [card]
+              (update-in card [:card/dual :card/effect]
+                         (fn [s]
+                           (cond-> s
+                             (and s (not (string/includes? s "【技艺进化】")))
+                             (str "\n\n【技艺进化】（使用后,可以将我方的卡牌不支付费用进化成此卡牌以代替丢弃）")))))}
+ "BT26-085"
+ {"zh-Hans" (fn [card]
+              (-> card
+                  (dissoc :card/form)
+                  (update :card/effect
+                          (fn [s]
+                            (some-> s
+                                    (string/replace (re-pattern "卡牌】$") "卡牌"))))))}
  "BT26-097"
  {"en" (fn [{:card/keys [category play-cost] :as card}]
          (cond-> card

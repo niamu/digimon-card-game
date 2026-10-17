@@ -917,15 +917,18 @@
   ["LM-060"
    {6
     #{"card/en_LM-060_P0"
-      "card/ja_LM-060_P0"}}]
+      "card/ja_LM-060_P0"
+      "card/zh-Hans_LM-060_P0"}}]
   ["LM-061"
    {6
     #{"card/en_LM-061_P0"
-      "card/ja_LM-061_P0"}}]
+      "card/ja_LM-061_P0"
+      "card/zh-Hans_LM-061_P0"}}]
   ["LM-062"
    {6
     #{"card/en_LM-062_P0"
-      "card/ja_LM-062_P0"}}]
+      "card/ja_LM-062_P0"
+      "card/zh-Hans_LM-062_P0"}}]
   ["LM-054"
    {5
     #{"card/zh-Hans_LM-054_P0"
