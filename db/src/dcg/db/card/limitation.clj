@@ -119,6 +119,39 @@
                               :limitation/language language}))
                          card-utils/text-content)))))))))
 
+(defn mirror-banned-pairs
+  "Bandai lists a banned pair under one of its cards only. Gives each paired
+  card the same limitation pointing back, so either side shows the pairing."
+  [limitations]
+  (reduce-kv
+   (fn [accl card-number by-language]
+     (reduce-kv
+      (fn [accl language card-limitations]
+        (reduce
+         (fn [accl {:limitation/keys [id paired-card-numbers]
+                    :as limitation}]
+           (reduce
+            (fn [accl paired-card-number]
+              (if (some (fn [{:limitation/keys [type paired-card-numbers]}]
+                          (and (= type :banned-pair)
+                               (some #{card-number} paired-card-numbers)))
+                        (get-in accl [paired-card-number language]))
+                accl
+                (update-in accl
+                           [paired-card-number language]
+                           (fnil conj [])
+                           (assoc limitation
+                                  :limitation/id (str id "_" paired-card-number)
+                                  :limitation/paired-card-numbers [card-number]))))
+            accl
+            paired-card-numbers))
+         accl
+         (filter (comp #{:banned-pair} :limitation/type) card-limitations)))
+      accl
+      by-language))
+   limitations
+   limitations))
+
 (defmulti limitations :origin/language)
 
 (defmethod limitations :default
@@ -309,7 +342,8 @@
                            (fn [s]
                              (->> (string/upper-case s)
                                   (re-find card-utils/card-number-re)))))))))
-         process-sections)))
+         process-sections
+         mirror-banned-pairs)))
 
 (defmethod limitations "zh-Hans" [_] nil)
 (defmethod limitations "ko" [_] nil)
