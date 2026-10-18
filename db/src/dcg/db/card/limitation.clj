@@ -162,9 +162,15 @@
                  (utils/partition-at (fn [{:keys [tag]}]
                                        (= tag :h4)))
                  (mapcat (fn [[effective-date & contents]]
-                           (let [date (->> effective-date
-                                           card-utils/text-content
-                                           (parse-date origin))]
+                           (let [heading (card-utils/text-content effective-date)
+                                 date (parse-date origin heading)
+                                 ;; A heading that lifts limitations covers
+                                 ;; every card under it, whatever its
+                                 ;; subheadings say: the English cards lifted
+                                 ;; on November 17, 2023 sit under
+                                 ;; "Restricted Cards (1)".
+                                 lifted? (= (limitation-type origin heading)
+                                            :unrestrict)]
                              (->> contents
                                   (utils/partition-at (fn [{:keys [tag]}]
                                                         (= tag :h5)))
@@ -175,8 +181,10 @@
                                                                         card-utils/text-content)
                                                                    (rest cards)]
                                                                   ["" cards])
-                                                  limitation-type (or (limitation-type origin title)
-                                                                      :unrestrict)
+                                                  limitation-type (if lifted?
+                                                                    :unrestrict
+                                                                    (or (limitation-type origin title)
+                                                                        :unrestrict))
                                                   allowance (case limitation-type
                                                               :banned-pair 0
                                                               :ban 0
