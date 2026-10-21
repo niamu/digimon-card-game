@@ -30,9 +30,8 @@
 
 (defmethod parse-date "en"
   [_ s]
-  (or (some->> (re-find #"\w+\.? \d+, [0-9]{4}" s)
-               ;; Abbreviated months come with a period, e.g. "Sep. 1, 2026"
-               (#(string/replace % "." ""))
+  (or (some->> (string/replace s #"\. (\d+)" " $1")
+               (re-find #"\w+ \d+, [0-9]{4}")
                (.parse (SimpleDateFormat. "MMM dd, yyyy")))
       (when (string/includes? s "BT-08")
         #inst "2022-05-13T04:00:00.000-00:00")))
