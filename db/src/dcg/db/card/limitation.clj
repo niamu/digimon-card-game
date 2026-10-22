@@ -30,7 +30,8 @@
 
 (defmethod parse-date "en"
   [_ s]
-  (or (some->> (re-find #"\w+ \d+, [0-9]{4}" s)
+  (or (some->> (string/replace s #"\. (\d+)" " $1")
+               (re-find #"\w+ \d+, [0-9]{4}")
                (.parse (SimpleDateFormat. "MMM dd, yyyy")))
       (when (string/includes? s "BT-08")
         #inst "2022-05-13T04:00:00.000-00:00")))
@@ -160,9 +161,8 @@
                  (utils/partition-at (fn [{:keys [tag]}]
                                        (= tag :h4)))
                  (mapcat (fn [[effective-date & contents]]
-                           (let [date (->> effective-date
-                                           card-utils/text-content
-                                           (parse-date origin))]
+                           (let [heading (card-utils/text-content effective-date)
+                                 date (parse-date origin heading)]
                              (->> contents
                                   (utils/partition-at (fn [{:keys [tag]}]
                                                         (= tag :h5)))
@@ -173,7 +173,13 @@
                                                                         card-utils/text-content)
                                                                    (rest cards)]
                                                                   ["" cards])
-                                                  limitation-type (or (limitation-type origin title)
+                                                  ;; A heading that lifts limitations covers
+                                                  ;; every card under it, whatever its
+                                                  ;; subheadings say: the English cards lifted
+                                                  ;; on November 17, 2023 sit under
+                                                  ;; "Restricted Cards (1)".
+                                                  limitation-type (or (#{:unrestrict} (limitation-type origin heading))
+                                                                      (limitation-type origin title)
                                                                       :unrestrict)
                                                   allowance (case limitation-type
                                                               :banned-pair 0
