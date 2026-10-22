@@ -175,6 +175,10 @@
                     ;; TODO: Add support for all icon types
                     (or (= htype :timing)
                         (= htype :precondition)))
+        fallback-tr-map {[:precondition "Once Per Turn"] [:precondition "ターン1回"]
+                         [:precondition "每回合1次"] [:precondition "ターン1回"]
+                         [:precondition "턴에 1회"] [:precondition "ターン1回"]
+                         [:precondition "턴 1회"] [:precondition "ターン1回"]}
         tr-map
         (->> cards
              (sort-by (juxt (comp identity
@@ -202,9 +206,14 @@
                               (->> (interleave
                                     new-texts
                                     (or (->> (get m "ja")
+                                             ;; The fallback texts are known,
+                                             ;; so pairing one by position
+                                             ;; would only mistranslate
                                              (remove (fn [text]
-                                                       (get (set/map-invert accl)
-                                                            text)))
+                                                       (or (get (set/map-invert accl)
+                                                                text)
+                                                           (contains? (set (vals fallback-tr-map))
+                                                                      text))))
                                              seq)
                                         (->> (keep-indexed
                                               (fn [idx text]
@@ -215,11 +224,7 @@
                                              (map #(nth (get m "ja") % nil)))))
                                    (apply hash-map)))))
                      (apply merge accl)))
-              {}))
-        fallback-tr-map {[:precondition "Once Per Turn"] [:precondition "ターン1回"]
-                         [:precondition "每回合1次"] [:precondition "ターン1回"]
-                         [:precondition "턴에 1회"] [:precondition "ターン1回"]
-                         [:precondition "턴 1회"] [:precondition "ターン1回"]}]
+              {}))]
     (-> (group-by :card/number cards)
         (update-vals (fn [cards]
                        (let [l-map
@@ -517,7 +522,9 @@
                               "BT25" 6
                               "ST23" 6
                               "ST24" 6
-                              "EX12" 6}
+                              "EX12" 6
+                              "BT26" 6
+                              "EX13" 6}
         saved-block-icons (->> (io/resource "block-icons.edn")
                                io/reader
                                (PushbackReader.)
